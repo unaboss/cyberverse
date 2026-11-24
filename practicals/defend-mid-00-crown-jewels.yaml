@@ -1,0 +1,326 @@
+# Intermediate defend tower, floor 0. Built on 2026-11-21 from the plan the
+# owner asked for ("tell me the floor plans, then build"): no design round per
+# floor.
+#
+# After the night shift, Siyakhula borrows the learner from DataQuant for its
+# SOC. Floor 0 is about knowing the estate before defending it: the crown
+# jewels (what the town can't live without, and which information would hurt
+# most), how big a network is (a /24 in binary), and the risk register, the
+# floor's new desk tool. The learner scores three risks as likelihood x impact,
+# works out a residual score with the right order of operations, links last
+# week's incident to the risk it proves, and says who owns a risk.
+
+id: defend-mid-00-crown-jewels
+title: "The crown jewels"
+status: draft
+role: prey
+org: siyakhula
+startTime: "08:30"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+  note: A small campus this time. The civic centre, the services building where you'll sit, and the works depot that keeps the lights and water on.
+briefing: |
+  Siyakhula Local Municipality liked your night shift. Pieter van Wyk, the
+  ICT manager, has asked DataQuant to lend you to the municipality's SOC for a
+  month.
+
+  It's a bigger place than DataQuant: eight departments, five networks and
+  210 000 residents who need electricity, water and a bill that's right. Today
+  you learn what matters most here. No clock yet.
+tools:
+  risk:
+    risks:
+      - id: vending-takeover
+        name: Somebody takes over the prepaid vending server
+        asset: vending
+        owner: vending-supervisor
+        description: The vendor installed Tomcat with its manager app and default login switched on.
+        expect: { likelihood: [3, 5], impact: [4, 5] }
+        why:
+          likelihood: Default logins are the first thing attackers try, and every desk on our flat staff network can reach the vending server.
+          impact: Prepaid electricity is the town's biggest income, and the server holds 95 000 meter records. Down or stolen, it hurts badly.
+      - id: webmail-spray
+        name: Password spraying gets into a webmail account
+        asset: mail
+        owner: ict-manager
+        description: Webmail faces the internet with a password alone, and several staff use seasonal passwords.
+        expect: { likelihood: [4, 5], impact: [3, 4] }
+        why:
+          likelihood: Webmail is on the internet for anyone to try, with no second factor, and seasonal passwords like Summer2026! get guessed every day.
+          impact: One mailbox is a moderate to major loss. It is not the billing system, but it is the start of fake invoices and phishing our own staff.
+      - id: plant-tampering
+        name: Somebody changes the chlorine dose at the treatment works
+        asset: plc
+        owner: water-manager
+        description: The dosing controller accepts writes from the staff network.
+        expect: { likelihood: [1, 3], impact: [5, 5] }
+        why:
+          likelihood: An attacker first needs a foothold on the staff network and must know how the plant works. Possible, but not likely.
+          impact: The wrong chlorine dose harms people. Nothing we run is worse, so impact is always 5.
+      - id: fileserver-exploit
+        name: The legacy HR file server is broken into
+        asset: fs01
+        owner: hr-officer
+        description: Samba 3.0.20, which nobody dared to upgrade, and no log agent.
+        expect: { likelihood: [3, 4], impact: [4, 4] }
+        why:
+          likelihood: The exploit is public and the server is reachable from every desk.
+          impact: 1 400 personnel files with ID numbers and medical certificates.
+        given: { likelihood: 3, impact: 4 }
+      - id: eservices-dump
+        name: Resident accounts dumped through the e-services portal
+        asset: eservices
+        owner: cfo
+        description: The statement page builds its database query from the URL.
+        expect: { likelihood: [3, 4], impact: [5, 5] }
+        why:
+          likelihood: SQL injection is easy to find with free tools, and the portal faces the internet.
+          impact: 72 000 residents' billing accounts, the most harmful leak we could have.
+        given: { likelihood: 3, impact: 5 }
+    incidents:
+      - id: last-week
+        name: 14 Nov, Johan Botha's mailbox
+        report: Somebody on the internet tried Summer2026! on 40 mailboxes and got into Johan Botha's. Two fake invoices went out from it before we noticed.
+        risk: webmail-spray
+        why: Exactly what the register feared, on webmail, a week ago.
+guide:
+  mentor: ict-manager
+  hold: [vulnerability-scan]
+  steps:
+    - id: estate
+      title: A bigger building
+      say: >-
+        Welcome to Siyakhula. DataQuant had one network. We have five: the
+        public services anyone on the internet can reach, the staff network, the
+        servers, the treatment works, and our SOC. Walk the floor first.
+      do: Open the ICT Services room, where you'll sit.
+      hint: ICT Services is on the left of the floor. Click its floor or one of its machines.
+      show: { room: ict }
+      done: { look: room, id: ict }
+      praise: >-
+        This is us: the directory, mail, backups, the data warehouse and the
+        SOC. Every other department leans on this room.
+
+    - id: jewels
+      title: What can't the town live without?
+      say: >-
+        Some systems the town can do without for a day. Some it can't. Those
+        are the crown jewels: what we protect first and restore first.
+      do: Look around the floor, then answer.
+      hint: Machines with a gold dot on the roof are business critical. Open a few and read "Business critical".
+      ask:
+        question: Which of these would stop the town if they went down?
+        options:
+          - text: Prepaid vending, billing and the treatment works controls
+            correct: true
+            reply: >-
+              Yes. No vending, nobody buys electricity. No billing, no income.
+              No treatment controls, no safe water. They come first, every time.
+          - text: The library PCs and the GIS map server
+            reply: >-
+              Annoying when they break, but the town keeps running. Look for the
+              gold dots.
+          - text: The tender portal and the building plans portal
+            reply: >-
+              They matter, but a day without them stops nothing. Look at what
+              earns the money and what keeps people safe.
+      done: { answer: correct }
+
+    - id: most-people
+      title: Where the people are
+      say: >-
+        Critical means the town stops. There's a second question: whose
+        information do we hold? Every machine's panel lists what it holds and
+        how many records.
+      do: Open the servers that hold residents' information, compare the record counts, then answer.
+      hint: Look at "Information held" on vehicle licensing, prepaid vending and billing.
+      ask:
+        question: Which system holds records on the most people?
+        options:
+          - text: Vehicle licensing
+            correct: true
+            reply: >-
+              130 000 driver and vehicle records, with ID numbers: everything an
+              identity thief wants. Billing holds fewer people, 72 000, but with
+              bank details, so a billing leak would cost the most. Both are
+              crown jewels.
+          - text: Prepaid vending
+            reply: >-
+              95 000 meter records is close, but vehicle licensing holds
+              130 000. Read the record counts on each machine.
+          - text: Billing
+            reply: >-
+              72 000 accounts: the most harmful leak, because of the bank
+              details, but not the most people. Vehicle licensing holds 130 000.
+      done: { answer: correct }
+
+    - id: networks
+      title: Count the addresses
+      say: >-
+        Each network is a range of addresses. The server network is
+        10.88.22.0/24. An address has 32 bits; the /24 means the first 24 are
+        fixed (10.88.22), and the last 8 are free.
+      do: Answer the question.
+      hint: Each free bit doubles the count. 8 free bits is 2 x 2 x 2 x 2 x 2 x 2 x 2 x 2.
+      ask:
+        question: How many addresses are in 10.88.22.0/24?
+        options:
+          - text: 256, which is 2 to the power 8
+            correct: true
+            reply: >-
+              Right. 8 free bits give 2^8 = 256 addresses, .0 to .255. Take away
+              the network and broadcast addresses and 254 are left for machines.
+          - text: "24"
+            reply: >-
+              24 is how many bits are fixed, not how many addresses. 32 - 24 = 8
+              bits are free, and 8 bits count up to 2^8.
+          - text: 65 536
+            reply: >-
+              That's a /16, with 16 free bits. A /24 leaves 8 free bits: 2^8.
+      done: { answer: correct }
+
+    - id: binary
+      title: Read it like a computer
+      say: >-
+        A computer sees 10.88.22.0 as four bytes of 8 bits. Reading binary is
+        how you check a subnet mask or a firewall rule without guessing.
+      do: Answer the question.
+      hint: "The 8 place values, from the left: 128, 64, 32, 16, 8, 4, 2, 1. 22 = 16 + 4 + 2."
+      ask:
+        question: What is 22 in binary, as 8 bits?
+        options:
+          - text: "00010110"
+            correct: true
+            reply: >-
+              16 + 4 + 2 = 22, so 0001 0110. Every address and mask is just
+              four of these.
+          - text: "00010011"
+            reply: >-
+              That's 16 + 2 + 1 = 19. Put a 1 under 16, 4 and 2.
+          - text: "00100010"
+            reply: >-
+              That's 32 + 2 = 34. The place values from the left are 128, 64,
+              32, 16, 8, 4, 2, 1.
+      done: { answer: correct }
+
+    - id: register
+      title: The risk register
+      say: >-
+        Now the part I need your help with. The risk register is our list of
+        what could go wrong: how likely it is, how bad it would be, and which
+        manager owns it. Two risks are scored. Three aren't.
+      do: Open the Risk register.
+      hint: It's a window on the left of the floor. Click into it.
+      show: { tab: risk }
+      done: { look: tab, id: risk }
+      praise: >-
+        Each row is a risk. Score = likelihood x impact, each from 1 to 5, and
+        the heat map puts the worst top right.
+
+    - id: score-vending
+      title: Score the vending risk
+      say: >-
+        Start with prepaid vending. The vendor installed Tomcat with its
+        default login switched on, and every desk on our staff network can
+        reach the server.
+      do: Score "Somebody takes over the prepaid vending server". Pick its likelihood and impact, then save.
+      hint: >-
+        Likelihood: how easily could it happen? Impact: what does the town
+        lose if it does? The risk sits on a crown jewel.
+      show: { tab: risk }
+      done: { action: risk.score, target: vending-takeover }
+      praise: >-
+        A high score on a crown jewel goes near the top of the list for fixing.
+
+    - id: score-two
+      title: Two more
+      say: >-
+        Webmail faces the internet with passwords only. The treatment works sits
+        behind the staff network, but its controller sets the chlorine dose.
+      do: Score the webmail risk and the treatment works risk.
+      hint: >-
+        Something easy and common can still have a moderate impact. Something
+        hard to pull off can still be the worst thing that could happen.
+      show: { tab: risk }
+      done: { action: risk.score, targets: [webmail-spray, plant-tampering] }
+      praise: >-
+        See the difference: webmail is likely but survivable, the plant is
+        unlikely but catastrophic. Both need attention, for different reasons.
+
+    - id: precedence
+      title: Order of operations
+      say: >-
+        The register also works out what is left after our controls:
+        likelihood x impact - 2 x controls in place. A spreadsheet follows the
+        rules of maths, and so must you: multiply before you subtract.
+      do: Answer the question.
+      hint: Do both multiplications first, then the subtraction.
+      ask:
+        question: "Likelihood 4, impact 5, two controls in place. What is 4 x 5 - 2 x 2?"
+        options:
+          - text: "16"
+            correct: true
+            reply: >-
+              4 x 5 = 20 and 2 x 2 = 4, so 20 - 4 = 16. Multiplication before
+              subtraction, every time.
+          - text: "36"
+            reply: >-
+              That goes left to right: 20 - 2 = 18, then x 2. Multiply first:
+              20 - 4 = 16.
+          - text: "24"
+            reply: >-
+              That's 4 x (5 - 2) x 2, with brackets that aren't there. Multiply
+              first: 20 - 4 = 16.
+      done: { answer: correct }
+
+    - id: incident
+      title: Check it against what happened
+      say: >-
+        A register is only honest if you check it against real incidents. Last
+        week's report is at the bottom of the register.
+      do: Link last week's incident to the risk it proves.
+      hint: What did the attacker do, and to which system?
+      show: { tab: risk }
+      done: { action: risk.link, target: last-week }
+      wrong: >-
+        Read the incident again: which system did they get into, and how?
+      praise: That's how a register stays true. Incidents feed back into it.
+
+    - id: owner
+      title: Who decides?
+      say: >-
+        Last thing. The scores tell us what's worst. The owners tell us who
+        decides what to do about it.
+      do: Answer the question.
+      hint: Look at the Owner column for the vending risk.
+      ask:
+        question: Who should decide how to fix the vending risk?
+        options:
+          - text: Nokuthula Shabalala, the vending supervisor who owns it
+            correct: true
+            reply: >-
+              Yes. She owns the risk, so she decides, with our advice and a
+              budget. ICT runs the systems; the business owns its risks. That's
+              governance.
+          - text: Me, the SOC analyst
+            reply: >-
+              We advise and we watch, but the business owns its risks. The owner
+              decides, because the owner answers for the money and the service.
+          - text: The vendor who installed it
+            reply: >-
+              The vendor did the work, but the risk is ours. The owner in the
+              register answers for it.
+      done: { answer: correct }
+  outro:
+    title: Floor 0 complete
+    learned:
+      - The crown jewels are what the town can't live without, and the information that would hurt most if it leaked.
+      - "A /24 network has 2^8 = 256 addresses. Binary is place values: 128, 64, 32, 16, 8, 4, 2, 1."
+      - Risk = likelihood x impact. The heat map puts the worst top right.
+      - Multiply before you subtract, in a register and in a spreadsheet.
+      - Check the register against real incidents. Something that happened has likelihood 5.
+      - The business owns its risks. Security advises.
+    next: "Floor 1: Patch Tuesday"
+qcto: [FA1.2, FA1.6, KM-02-KT02, KM-03-KT01, KM-03-KT02, KM-04-KT01, KM-04-KT05, PM-02-PS03, KM-06-KT01, KM-06-KT02, KM-06-KT03, KM-06-KT04, KM-06-KT08, PM-04-PS01, PM-04-PS02, PM-04-PS03]

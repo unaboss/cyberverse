@@ -1,0 +1,291 @@
+# Intermediate defend tower, floor 3. Built on 2026-11-21 from the agreed
+# floor plan.
+#
+# Stage 4 load shedding: the municipal offices lose power from 10:00 to
+# 12:30. The learner works out how long the server room UPS lasts (and what
+# goes wrong when you forget the inverter's losses), decides which machines
+# stay on the battery with the floor's first new tool, the UPS panel, and says
+# what starts first when power returns. Then the second new tool, the
+# workbench: the backup server, shut down for last night's slot, won't boot.
+# The learner makes it safe, forms a theory, tests parts with a meter,
+# replaces the flat CMOS battery, sets the BIOS (the clock matters to
+# certificates and logins) and boots it. Re-imaging it does nothing.
+
+id: defend-mid-03-load-shedding
+title: "Load shedding"
+status: draft
+role: prey
+org: siyakhula
+startTime: "09:15"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+briefing: |
+  Stage 4 load shedding today. The municipal offices are off from 10:00 to
+  12:30, and the server room runs on its UPS until the power comes back.
+
+  And the backup server, shut down for last night's slot, didn't come back
+  up this morning. Pieter wants the UPS plan first, then the server fixed.
+tools:
+  power:
+    ups: { name: Server room UPS, battery: 4000, efficiency: 0.9 }
+    fixed: { name: "The core switch, firewall and cooling fans", watts: 300 }
+    slot: { from: "10:00", to: "12:30" }
+    loads:
+      - { system: dc01, watts: 150 }
+      - { system: billing, watts: 220 }
+      - { system: vending, watts: 160 }
+      - { system: payroll, watts: 140 }
+      - { system: mail, watts: 120 }
+      - { system: eservices, watts: 110 }
+      - { system: vend-gw, watts: 90 }
+      - { system: dwh, watts: 240 }
+      - { system: licensing, watts: 150 }
+      - { system: gis, watts: 130 }
+      - { system: soc, watts: 130 }
+      - { system: historian, watts: 120 }
+      - { system: fs01, watts: 110 }
+      - { system: ids, watts: 90 }
+      - { system: tenders, watts: 70 }
+      - { system: plans-portal, watts: 70 }
+  bench:
+    system: backup
+    fault: cmos-battery
+    symptoms:
+      - "CMOS checksum error - Defaults loaded"
+      - "System date: 01/01/2000 00:00"
+      - "No boot device found. Press F1 to retry."
+guide:
+  mentor: ict-manager
+  target: 20
+  hold: [vulnerability-scan, nightly-backup]
+  steps:
+    - id: runtime
+      title: How long does it last?
+      say: >-
+        The UPS panel shows everything on the battery: 2 400 W. The battery
+        holds 4 000 Wh, but the inverter that turns it back into mains loses
+        10 per cent, so only 90 per cent reaches the machines.
+      do: Open the UPS panel and work out how long it lasts with everything on.
+      hint: "Runtime in hours = usable watt-hours / watts. Usable = 4 000 x 0.9. Then turn the hours into minutes."
+      show: { tab: power }
+      ask:
+        question: With everything on, how long does the battery last?
+        options:
+          - text: 90 minutes
+            correct: true
+            reply: >-
+              4 000 x 0.9 = 3 600 Wh usable. 3 600 / 2 400 = 1.5 hours, which
+              is 90 minutes. The slot is 150. Everything on means everything
+              off, an hour before the power comes back.
+          - text: 100 minutes
+            reply: >-
+              That's 4 000 / 2 400 = 1.67 hours: the whole battery, as if the
+              inverter lost nothing. A calculation error like that is how a
+              plan that looks fine on paper goes dark at 11:30. Use 90 per
+              cent.
+          - text: 1 hour 50 minutes
+            reply: >-
+              1.5 hours is not 1 hour 50 minutes. The .5 is half an hour: 0.5 x
+              60 = 30 minutes. Decimal hours aren't minutes.
+      done: { answer: correct }
+
+    - id: plan
+      title: Shed the load
+      say: >-
+        So we shed load: machines we can do without for two and a half hours
+        are shut down cleanly before 10:00, and the rest ride the battery.
+        Crown jewels stay on.
+      do: Untick the machines to shut down until the UPS lasts the whole slot, then save the plan.
+      hint: Keep every machine with a gold diamond. The chart turns green when the battery outlasts the slot.
+      show: { tab: power }
+      done: { action: power.plan, target: plan }
+      wrong: Not yet. Read what the panel says and adjust the plan.
+      praise: >-
+        That's our plan for every slot this week. The machines we shed go down
+        cleanly at 09:50, not with a bang at 10:00.
+
+    - id: startup
+      title: The power comes back
+      say: >-
+        At 12:30 the power returns and we start the shed machines again. Order
+        matters: some machines can't work until others are up. It's in our
+        disaster recovery plan.
+      do: Answer the question.
+      hint: What does every other machine need before it can log in or find another by name?
+      ask:
+        question: What do we start first when the power comes back?
+        options:
+          - text: The directory, then databases, then applications, then the public websites
+            correct: true
+            reply: >-
+              Yes. The directory answers logins and names for everyone, the
+              databases hold the data, the applications use both, and the
+              websites sit in front. Shut down in the reverse order.
+          - text: The public websites, because residents notice them first
+            reply: >-
+              Residents would see an error page: the websites need the
+              applications, which need the databases and the directory. Start
+              from the bottom of the stack.
+          - text: Everything at once, to save time
+            reply: >-
+              Applications that start before the directory and databases fail
+              and often need a second restart. It costs more time, not less.
+              Follow the order in the plan.
+      done: { answer: correct }
+
+    - id: safety
+      title: The server that won't boot
+      say: >-
+        Now the backup server. It was shut down cleanly for last night's slot
+        and won't boot: read its screen on the Workbench. Before anyone opens
+        a case: there's mains voltage in the power supply, and static from
+        your hands can kill a memory module without a spark you'd notice.
+      do: Make the server safe, in the right order, then open the case.
+      hint: Power first, then yourself, then the case.
+      show: { tab: bench }
+      done: { action: bench.prepare, targets: [unplug, strap, open], order: true }
+      wrong: >-
+        Wrong order. Switch off and unplug first, then put the strap on, then
+        open the case.
+      praise: >-
+        Unplugged, earthed, open. Remember the screen: "CMOS checksum error,
+        defaults loaded", a clock in the year 2000, and no boot device.
+
+    - id: theory
+      title: What's your theory?
+      say: >-
+        Good technicians don't start swapping parts. They form a theory from
+        the symptoms, test it, and only then fix it. Look at the parts and
+        read what each one does.
+      do: Answer the question.
+      hint: Which part keeps the BIOS settings and the clock while the machine is unplugged?
+      show: { tab: bench }
+      ask:
+        question: Settings lost, the clock reset to 2000, no boot device. What's the likely cause?
+        options:
+          - text: The CMOS battery is flat, so the BIOS forgot its settings while it was unplugged
+            correct: true
+            reply: >-
+              That fits all three. The coin cell keeps the settings and the
+              clock alive with the power off. Flat, it forgets them, including
+              which disk to boot from. Now test the theory.
+          - text: The disks have died
+            reply: >-
+              Dead disks would explain "no boot device", but not a clock reset
+              to 2000 or lost settings. Find the cause that explains all three.
+          - text: The power supply is failing
+            reply: >-
+              It switches on and shows a BIOS screen, so it's getting power.
+              Find the part that keeps the settings while it's unplugged.
+      done: { answer: correct }
+
+    - id: test
+      title: Test the theory
+      say: Put the meter on the part your theory points at.
+      do: Test the CMOS battery.
+      hint: Click the small round coin cell on the motherboard, then Test it.
+      show: { tab: bench }
+      done: { action: bench.test, target: cmos-battery }
+      wrong: That part reads fine. Test the one your theory points at.
+      praise: 2.1 V where a healthy cell reads 3 V. Theory confirmed.
+
+    - id: replace
+      title: Replace what failed
+      say: A new CR2032 costs less than a cup of coffee. Swap it, and nothing else.
+      do: Replace the CMOS battery.
+      hint: Select the coin cell and press Replace it.
+      show: { tab: bench }
+      done: { action: bench.replace, target: cmos-battery }
+      wrong: That part tested fine. Replace only the one that failed.
+      praise: New cell, 3.2 V.
+
+    - id: bios
+      title: Set it up again
+      say: >-
+        The BIOS lost everything, so set it again: the date and time, and boot
+        from the RAID volume where the operating system lives.
+      do: Close up and save the BIOS with the right clock and boot device.
+      hint: Tick "Set the date and time to now" and choose RAID volume.
+      show: { tab: bench }
+      done: { action: bench.bios, target: bios }
+      wrong: Not quite. Read what's wrong and save it again.
+      praise: Clock right, booting from the RAID volume.
+
+    - id: clock
+      title: Why the clock matters
+      say: >-
+        You could have left the clock in the year 2000 and it would still
+        boot. It matters anyway.
+      do: Answer the question.
+      hint: Think about certificates and about logging in to the directory.
+      ask:
+        question: Why does a server's clock matter to security?
+        options:
+          - text: Certificates are only valid between two dates, and the directory refuses logins from a clock more than five minutes out
+            correct: true
+            reply: >-
+              Yes. Encryption trusts a certificate only inside its dates, and
+              the directory's logins (Kerberos) reject clocks that disagree.
+              Logs with the wrong time are useless as evidence, too.
+          - text: It doesn't. Only people read the clock
+            reply: >-
+              Machines read it all the time. Certificates have start and end
+              dates, and directory logins fail when clocks disagree by more
+              than five minutes.
+          - text: Only for the backup schedule
+            reply: >-
+              The schedule matters, but so do certificates' validity dates,
+              directory logins, and log timestamps you may need as evidence.
+      done: { answer: correct }
+
+    - id: boot
+      title: Switch it on
+      say: Moment of truth.
+      do: Switch the backup server on.
+      hint: Press "Switch it on" in the Workbench.
+      show: { tab: bench }
+      done: { action: bench.boot, target: boot }
+      wrong: It didn't come up. Read what it says and fix that first.
+      praise: It boots, and the backup account logs in to the directory again. Tonight's backups will run.
+
+    - id: maintain
+      title: Next time
+      say: >-
+        Last one. That battery was five years old. Load shedding means every
+        server loses power twice a day, and every weak part shows up.
+      do: Answer the question.
+      hint: What could we check on a schedule, before anything fails?
+      ask:
+        question: How do we stop this from happening again?
+        options:
+          - text: Preventive maintenance on a schedule, replacing coin cells and UPS batteries by age and cleaning the dust filters
+            correct: true
+            reply: >-
+              Yes. Replace parts that wear out before they fail, test the UPS
+              battery, and clean the filters you saw caked in dust. It goes in
+              the monthly maintenance checklist.
+          - text: Fix things when they break, as today
+            reply: >-
+              Today we were lucky: one backup server. Wait for failure and the
+              next one might be billing at month-end. Replace wearing parts on
+              a schedule.
+          - text: Leave the servers on through load shedding
+            reply: >-
+              With a 150-minute slot and a 90-minute battery, "leave it on"
+              means "let it crash". Plan the load, and maintain the parts.
+      done: { answer: correct }
+  outro:
+    title: Floor 3 complete
+    learned:
+      - UPS runtime = usable watt-hours / watts. Count the inverter's losses, or the plan fails early.
+      - Shed what you can do without, keep the crown jewels, and shut down cleanly before the slot.
+      - Start the directory first, then databases, then applications, then websites. Shut down in reverse.
+      - Unplug, earth yourself with a wrist strap, then open the case.
+      - Form a theory from the symptoms, test it, and replace only the part that failed.
+      - The CMOS battery keeps the BIOS settings and the clock. Flat, the machine forgets how to boot.
+      - Certificates and directory logins depend on the clock being right.
+      - Replace parts that wear out on a schedule, before they fail.
+    next: "Floor 4: Helpdesk Monday"
+qcto: [KM-07-KT01, KM-07-KT02, KM-07-KT03, KM-07-KT04, KM-07-KT05, KM-07-KT06, KM-07-KT07, KM-07-KT08, KM-07-KT09, KM-07-KT10, KM-07-KT14, KM-07-KT15, KM-07-KT21, KM-06-KT04, KM-06-KT05, PM-03-PS05, KM-03-KT20]

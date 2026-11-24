@@ -1,0 +1,63 @@
+# Siyakhula Local Municipality: a fictional municipality, and the mature
+# organisation of the miniverse. It carries the enterprise-scale practicals
+# (a domain, a SOC, billing, prepaid electricity, a water treatment works)
+# while DataQuant grows level by level. DataQuant's Offensive Security team
+# tests it under a signed scope, and DataQuant's integration runner reaches its
+# data warehouse over a VPN.
+#
+# Any resemblance to a real municipality's systems is by design (this is how
+# municipalities are built); the name, people and data are made up.
+
+id: siyakhula
+name: Siyakhula Local Municipality
+kind: Local municipality
+domain: siyakhula.internal
+tagline: Serving 210 000 residents with electricity, water, roads and community services.
+fictional: true
+level: 3
+colour: "#f59e0b"
+revenuePerHour: 180000
+
+floor: { width: 20, height: 10 }
+
+zones:
+  - { id: dmz, name: Public services (DMZ), cidr: 10.88.20.0/24 }
+  - { id: corporate, name: Staff network, cidr: 10.88.21.0/24 }
+  - { id: servers, name: Server network, cidr: 10.88.22.0/24 }
+  - { id: ot, name: Treatment works controls (OT), cidr: 10.88.23.0/24 }
+  - { id: security, name: Security operations, cidr: 10.88.24.0/24, from: 3 }
+
+policy:
+  - { src: internet, dst: dmz, ports: [25, 80, 443], note: Residents and suppliers reach mail and the public portals. }
+  - { src: dmz, dst: servers, ports: [389, 3306, 5432, 8080], note: Portals read billing and the directory; the vending gateway talks to the vending server. }
+  - { src: corporate, dst: servers, ports: any, note: A flat staff network. Every desk can reach every server. }
+  - { src: corporate, dst: dmz, ports: any }
+  - { src: corporate, dst: ot, ports: [502, 5900], until: 3, note: Engineering PCs on the staff network reach the treatment works directly. }
+  - { src: corporate, dst: ot, ports: [5900], from: 4, note: Only the engineering jump host reaches the plant. }
+  - { src: servers, dst: ot, ports: [502], note: The historian polls the controllers. }
+  - { src: security, dst: dmz, ports: any, from: 3 }
+  - { src: security, dst: corporate, ports: any, from: 3 }
+  - { src: security, dst: servers, ports: any, from: 3 }
+  - { src: security, dst: ot, ports: any, from: 3 }
+
+# The room the security team sits in: the learner's own desk on the map.
+home: ict
+
+departments:
+  - municipal-manager
+  - corporate-services
+  - treasury
+  - planning
+  - ict
+  - community
+  - electrical
+  - water
+
+# On the map the municipality is a small campus: the civic centre where the
+# council's offices are, the services building with ICT, and the works depot
+# that runs the electricity and water. The wifi survey still uses the rooms'
+# own places above; the shifts only open up roads between the buildings.
+sites:
+  - { id: civic, name: Civic centre, rooms: [municipal-manager, corporate-services, treasury, planning] }
+  - { id: services, name: Services building, rooms: [ict, community], shift: { x: 0, y: 2 } }
+  - { id: depot, name: Works depot, kind: depot, rooms: [electrical, water], shift: { x: 2, y: 2 } }

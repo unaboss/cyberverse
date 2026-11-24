@@ -1,0 +1,111 @@
+# Intro attack tower, floor 3. Enumeration. Having fingerprinted the services,
+# the learner digs into each one: browsing the web app for exposed folders and
+# files (an open directory listing on the tenders portal), and looking up a
+# fingerprinted version for published exploits with searchsploit.
+
+id: attack-03-enumeration
+title: "Enumeration"
+status: draft
+role: predator
+org: siyakhula
+startTime: "10:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  Fingerprints in hand, you enumerate. Enumeration is the patient part of the
+  job: going through each service for anything it gives away. A folder left
+  open, a file that should be private, a version with a published exploit.
+
+  Most real break-ins start with something the owner did not know was exposed.
+  Today you find two of them on Siyakhula's public portals.
+guide:
+  mentor: founder
+  target: 15
+  steps:
+    - id: what
+      title: What enumeration is
+      say: Scanning found the doors. Enumeration is walking up to each one and seeing what it gives away before you try to force it.
+      do: Answer the question.
+      hint: What are you hoping each service hands you for free?
+      ask:
+        question: What is the goal of enumeration?
+        options:
+          - text: To pull out every detail a service exposes — paths, files, usernames, versions — that could become a way in.
+            correct: true
+            reply: >-
+              Yes. Enumeration is slow and thorough, and it is where most real
+              break-ins begin, with something the owner never meant to expose.
+          - text: To crash the service and see what happens
+            reply: That is a denial of service, and it is destructive and usually out of scope. Enumeration is quiet observation.
+          - text: To guess the admin password straight away
+            reply: Password attacks come later, and work better once enumeration tells you the usernames. First, see what is exposed.
+      done: { answer: correct }
+
+    - id: dirs
+      title: Browse the tenders portal
+      say: Web servers often leave folders listable. Ask the tenders portal for its uploads folder and see if it shows you a list instead of refusing.
+      do: Request the uploads folder on the tenders portal.
+      hint: "Type `curl https://{ip:tenders}/uploads/` and press Enter."
+      show: { tab: term }
+      done: { command: { did: read, text: uploads } }
+      praise: There it is — a full directory listing of the uploads folder, no login asked. Everything in it is readable by anyone on the internet.
+
+    - id: listing
+      title: What did it expose?
+      say: The uploads folder on a tenders portal holds the bid documents suppliers send in. And it is wide open.
+      do: Answer the question.
+      hint: Who benefits from reading sealed bids early, and who is harmed?
+      ask:
+        question: An open listing of sealed tender bids — why does it matter?
+        options:
+          - text: A bidder could read competitors' sealed prices before closing, which makes the whole tender corrupt. It is a serious confidentiality and integrity failure.
+            correct: true
+            reply: >-
+              Yes. Not every finding is a shell. Information disclosure like this
+              can do real harm — here, rigging a public tender. It goes in the
+              report as a high-severity finding.
+          - text: It does not matter; they are only documents
+            reply: They are sealed bids. Reading them early corrupts the tender and can be a crime. This is a serious finding.
+          - text: Only if you download and leak them
+            reply: The exposure itself is the finding. That anyone could read them is the risk, whether or not you do.
+      done: { answer: correct }
+
+    - id: searchsploit
+      title: Look up the versions
+      say: You fingerprinted the software on each host. Now check whether any of those versions has a published exploit. searchsploit searches a local database of known exploits.
+      do: Search for exploits against the software you found.
+      hint: "Type `searchsploit apache` (or a version you noted) and press Enter."
+      show: { tab: term }
+      done: { command: { did: read, text: searchsploit } }
+      praise: That is how a version becomes a plan. A product and version on one side, a published exploit on the other. You now have both open folders and exploitable software to write up.
+
+    - id: next
+      title: From here
+      say: Enumeration gave you an exposed folder and software with known exploits. Think about what comes next.
+      do: Answer the question.
+      hint: You have found weaknesses. What proves they are real?
+      ask:
+        question: What is the next phase after enumeration?
+        options:
+          - text: Exploitation — actually using a weakness to get access or data, to prove the risk is real.
+            correct: true
+            reply: >-
+              Yes. A list of maybes is not a pentest. The next floors turn two of
+              these findings into proof — a cracked login, and a database read
+              straight off the internet.
+          - text: Write the report and stop
+            reply: A finding you have not proven is a guess. You exploit it carefully to show it is real, then report it.
+          - text: Scan everything again from the start
+            reply: You already have the map and the fingerprints. The next step is to prove a weakness, not re-scan.
+      done: { answer: correct }
+  outro:
+    title: You found the openings
+    learned:
+      - Enumeration is the patient search of each service for anything it exposes.
+      - Web servers often leave folders listable; an open directory can expose private files.
+      - Information disclosure is a real finding, even without a shell.
+      - searchsploit matches a fingerprinted version to published exploits.
+      - After enumeration comes exploitation — proving a weakness is real.
+    next: "Floor 4: Password attacks"
+qcto: [KM-03-KT06, KM-03-KT07, KM-03-KT14, PM-02-PS02, FA3.4]

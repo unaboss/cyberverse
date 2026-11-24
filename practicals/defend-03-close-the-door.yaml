@@ -1,0 +1,154 @@
+# Defend tower, floor 3. Built on 2026-11-21; the owner asked for floors 3 to
+# 6 to be finished without a design round each.
+#
+# The scanner from floor 2 (10.88.0.143) comes back. Blocking unlocks today:
+# the learner decides how much to block, blocks the one address, checks the
+# block works when the scanner tries again, and closes the alert. The lesson:
+# block the smallest thing that stops the attack, and check that it did.
+#
+# Blocking too much hurts: a block on a whole range shuts out DataQuant's
+# clients too, and the business bar drops while it stays. A block stops traffic
+# at the perimeter, before the network sensor behind it, so a blocked scan
+# raises no alert; the Blocks tab counts what each block stopped.
+
+id: defend-03-close-the-door
+title: "Close the door"
+status: draft
+role: prey
+org: dataquant
+startTime: "10:05"
+durationMin: 0
+speed: 1
+controls: { cloud-ids: on }
+map:
+  rooms: [trust-risk, strategy-leadership, growth, data-insights, operations, offensive-security]
+  outside: [internet]
+  perimeter: true
+  note: The firewall stands on the corner that faces the internet. Today you learn to close it.
+briefing: |
+  Your fourth day at DataQuant. Yesterday somebody on the internet scanned our
+  website, and you marked it as real.
+
+  Today you can block addresses at the perimeter, the edge of our network.
+  Still no clock. Isolating machines and changing accounts stay locked.
+guide:
+  mentor: founder
+  hold: [attack-surface-check]
+  locked: { lock: 4, reset: 4, control: 4, isolate: 5, release: 5, rebuild: 5 }
+  steps:
+    - id: back-again
+      title: The scanner is back
+      say: >-
+        Keep an eye on the alerts. People who scan us once often come back.
+      do: Wait for the alert, then open it.
+      hint: Alerts land in the Alerts tab. Click the alert's name to open it.
+      show: { tab: alerts, alert: nids-port-scan }
+      script:
+        - { after: 4, event: scan, system: website, src: 10.88.0.143 }
+      done: { look: alert, rule: nids-port-scan }
+      praise: >-
+        10.88.0.143 again, the same address as yesterday. Once is a look. Twice
+        is somebody interested in us.
+
+    - id: how-much
+      title: Block just enough
+      say: >-
+        A block at the perimeter is a bouncer with a list: traffic from that
+        address never reaches any of our machines. Block too little and they
+        get in. Block too much and our clients can't reach us either.
+      do: Choose what we should block.
+      hint: Which address did the scan come from? And who else lives in that range?
+      ask:
+        question: What should we block?
+        options:
+          - text: "10.88.0.143, the scanner's address"
+            correct: true
+            reply: >-
+              Yes. One address, the one that's scanning us. Nobody else is
+              affected.
+          - text: "10.88.0.0/24, the whole internet range"
+            reply: >-
+              That would stop the scanner, and every client who visits our
+              website, and every supplier who sends us mail. Block the visitor,
+              not the whole street.
+          - text: Our website, until they give up
+            reply: >-
+              The website is the business. Switching it off does the attacker's
+              job for them. Close the door on the visitor, not the shop.
+      done: { answer: correct }
+
+    - id: block
+      title: Close the door
+      say: >-
+        Now do it. Blocks are easy to undo, so you can fix a mistake, but every
+        minute a wrong block stays, clients are shut out.
+      do: Block 10.88.0.143.
+      hint: >-
+        Open the alert and press "Block 10.88.0.143", or type the address in
+        the Blocks tab of the SOC console.
+      show: { alert: nids-port-scan }
+      done: { action: block, target: 10.88.0.143 }
+      wrong: >-
+        That's not the scanner's address. A block that misses the attacker only
+        gets in the way. Unblock it in the Blocks tab, then block 10.88.0.143.
+      replies:
+        10.88.0.0/24: >-
+          That blocks the whole internet range: every client and supplier too.
+          Watch the business bar drop. Unblock it in the Blocks tab, then block
+          just 10.88.0.143.
+      praise: >-
+        Done. Traffic from 10.88.0.143 now stops at the perimeter, before it
+        reaches any of our machines.
+
+    - id: check
+      title: Did it work?
+      say: >-
+        Never assume a fix worked. Watch what happens the next time they try.
+      do: Wait for the scanner to try again, then answer.
+      hint: Look at the Blocks tab, and at the alerts. Did anything new come in?
+      show: { tab: blocks }
+      script:
+        - { after: 6, event: scan, system: website, src: 10.88.0.143 }
+      ask:
+        question: The scanner just tried again. How can you tell the block worked?
+        options:
+          - text: The Blocks tab counts the tries it stopped, and no new alert came in.
+            correct: true
+            reply: >-
+              Exactly. Their probes stopped at the perimeter. Our network sensor
+              sits behind it, so it never saw them, and the counter shows the
+              block doing its job.
+          - text: The scanner's alert closed itself.
+            reply: >-
+              Alerts never close themselves. You close them, once you know what
+              happened. Look at the Blocks tab.
+          - text: You can't tell until tomorrow.
+            reply: >-
+              You can tell right now. Look at the Blocks tab: each block counts
+              the tries it stopped.
+      done: { answer: correct }
+
+    - id: close
+      title: Close the alert
+      say: >-
+        The attack is handled. Record it, so the next person on shift knows what
+        happened and what you did.
+      do: Close the scan alert with the right verdict.
+      hint: Open the alert in the Alerts tab and choose True positive or False positive.
+      show: { alert: nids-port-scan }
+      done: { alert: closed, rule: nids-port-scan, verdict: true-positive }
+      praise: >-
+        True positive, blocked and on record. That's a whole response: you saw
+        it, judged it, stopped it, checked it and wrote it down.
+      wrong: >-
+        This was a real scan from somebody outside: a true positive. Blocking
+        them doesn't make it harmless. It means you handled it.
+  outro:
+    title: Floor 3 complete
+    learned:
+      - A block at the perimeter stops an address before it reaches any machine.
+      - Block the smallest thing that stops the attack. A whole range shuts out clients too.
+      - Check a fix worked. The Blocks tab counts what each block stopped.
+      - A real attack you stopped is still a true positive.
+    next: "Floor 4: The default password"
+qcto: [KM-02-KT01, KM-02-KT03, KM-02-KT05, PM-01-PS04, PM-03-PS07, FA2.1, FA4.1, FA4.2]

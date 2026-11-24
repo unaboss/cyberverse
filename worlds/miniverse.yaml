@@ -1,0 +1,37 @@
+# The Cyberverse: every organisation in the lab and the links between
+# them. Everything lives inside the lab range and never touches the real
+# internet. The "internet" zone is the lab's stand-in for the outside world.
+
+id: miniverse
+name: The Cyberverse
+labRange: 10.88.0.0/16
+
+internet:
+  cidr: 10.88.0.0/24
+  # Addresses an attacker can come from. Burning one (getting it blocked)
+  # forces the attacker onto the next.
+  attackerPool:
+    - 10.88.0.143
+    - 10.88.0.77
+    - 10.88.0.201
+    - 10.88.0.58
+    - 10.88.0.166
+    - 10.88.0.19
+
+organisations:
+  - dataquant
+  - siyakhula
+  - ikhaya
+
+links:
+  - id: dq-siyakhula-vpn
+    name: DataQuant to Siyakhula data platform VPN
+    kind: vpn
+    src: dataquant/etl
+    dst: siyakhula/dwh
+    ports: [5432]
+    description: >-
+      DataQuant's integration runner loads the municipality's billing and
+      vending data into the data warehouse DataQuant built for it. It is the
+      classic consultancy back door: whoever owns the runner can reach the
+      municipality.

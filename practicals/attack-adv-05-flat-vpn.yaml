@@ -1,0 +1,94 @@
+# Advanced attack tower, floor 5. The flat VPN. Every store joins head office over
+# one VPN, and the VPN is flat: any store device can reach any head-office server.
+# So the learner's foothold in a single store's camera recorder can scan the
+# domain controller, the point-of-sale server and the orders database at head
+# office. This is the segmentation failure that turns one weak store into a way
+# into the whole company.
+
+id: attack-adv-05-flat-vpn
+title: "The flat VPN"
+status: draft
+role: predator
+org: ikhaya
+startTime: "11:30"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+foothold: cctv
+briefing: |
+  You own a camera recorder in one store. Now you find out what that store can
+  reach.
+
+  Ikhaya runs one flat VPN: every store device can talk to every head-office
+  server. The store was meant to send sales to the till system — but the network
+  does not stop there. From this recorder you can scan the domain controller, the
+  point-of-sale server and the orders database, all at head office.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: flat
+      title: One network for everything
+      say: The store needed to reach one server at head office. Instead it can reach them all, because the VPN was never divided up.
+      do: Answer the question.
+      hint: What does "flat" mean, and why is it dangerous here?
+      ask:
+        question: Why is a flat VPN between stores and head office so risky?
+        options:
+          - text: A flat network lets any device reach any other, so one weak store device becomes a path to every head-office server — the store's weakness becomes the company's.
+            correct: true
+            reply: >-
+              Yes. Flat means no internal walls. The recorder only needed to
+              reach the till system, but it can reach the domain controller and
+              the databases too. One soft store device now threatens everything.
+          - text: VPNs are always insecure and should never be used
+            reply: The VPN is fine; the lack of segmentation is the problem. A store should reach only what it needs. Flat means it reaches everything, so one weak device endangers the lot.
+          - text: It only matters if the VPN password is weak
+            reply: Even with a perfect VPN password, a flat network lets a compromised store device reach every server. The fix is segmentation — walls inside the network — not just a better password.
+      done: { answer: correct }
+
+    - id: enter
+      title: Work from the store
+      say: Step into your foothold on the recorder, so your scans come from inside the store, where the VPN trusts them.
+      do: Interact with your session.
+      hint: "Type `sessions -i 1` and press Enter."
+      show: { tab: term }
+      done: { command: { did: read, text: sessions } }
+
+    - id: scan
+      title: Scan head office
+      say: From the store, scan the head-office servers. You are looking for the crown jewels — the directory that runs every login, the till system, the orders database.
+      do: Scan the head-office servers from the store.
+      hint: "Type `nmap -Pn -p 445,1433,5432,88 10.88.32.10 10.88.32.25 10.88.32.20` and press Enter."
+      show: { tab: term }
+      done: { command: { did: scan, of: dc01 } }
+      praise: There they are, from a camera recorder in Mthatha — the domain controller, the point-of-sale server, the orders database at head office. A flat VPN put all of them one hop from a store.
+
+    - id: next
+      title: What you can now reach
+      say: The scan changes the picture entirely.
+      do: Answer the question.
+      hint: Of the three servers you found, which one is the keys to the kingdom?
+      ask:
+        question: You can now reach head office. What is the prize?
+        options:
+          - text: The domain controller — it runs every staff login across head office and all 120 stores, so taking it means taking the whole company.
+            correct: true
+            reply: >-
+              Yes. The domain controller is the master of every login. Own it and
+              you own head office and every store at once. That is where an
+              attacker goes next, and where the last technical floor goes.
+          - text: The point-of-sale server, because it has the money
+            reply: The till system matters, but the domain controller runs the logins for everything, including the till system. Take the directory and the rest follows.
+          - text: Nothing useful; you can only scan, not log in
+            reply: Scanning is reconnaissance for the real target. The domain controller you just found runs every login in the company, and that is the prize the next floor chases.
+      done: { answer: correct }
+  outro:
+    title: One store, the whole company
+    learned:
+      - A flat network lets any device reach any other, with no internal walls.
+      - One flat VPN turns a single weak store device into a path to every head-office server.
+      - From a store foothold you can reach the directory, the till system and the databases at head office.
+      - The fix is segmentation — a store should reach only the few systems it actually needs.
+    next: "Floor 6: The domain"
+qcto: [KM-03-KT10, KM-03-KT11, KM-03-KT13, KM-07-KT20, PM-02-PS02, FA3.4]

@@ -1,0 +1,204 @@
+id: treasury
+name: Budget & Treasury Office
+purpose: The municipality's money. Billing and revenue, creditors, the budget, and supply chain management, which runs every tender.
+room: { x: 10, y: 0, w: 5, h: 4 }
+
+people:
+  - id: cfo
+    role: Chief Financial Officer
+    kind: human
+    name: Fatima Patel
+    awareness: 0.6
+  - id: creditors-clerk
+    role: Creditors clerk
+    kind: human
+    name: Johan Botha
+    awareness: 0.3
+  - id: scm-officer
+    role: Supply chain management officer
+    kind: human
+    name: Thandi Nkosi
+    awareness: 0.5
+
+processes:
+  - id: resident-self-service
+    name: Residents paying and checking accounts
+    owner: cfo
+    every: 2m
+    hours: always
+    steps:
+      - Residents view statements and pay their accounts on the e-services portal at any hour.
+    activity:
+      - { action: http, system: eservices, via: internet, path: /account.php?id=10442 }
+  - id: creditors-invoices
+    name: Supplier invoices
+    owner: creditors-clerk
+    every: 20m
+    hours: work
+    steps:
+      - Receive supplier invoices by mail, check them against orders and capture them for payment.
+      - A change of supplier bank details needs a signed form and a call-back.
+    activity:
+      - { action: mail, system: mail, via: finance-pc }
+      - { action: login, system: billing, via: finance-pc, typo: 0.1 }
+  - id: tender-publishing
+    name: Publish tender documents
+    owner: scm-officer
+    every: 2h
+    cadence: whenever a tender opens
+    hours: work
+    steps:
+      - Publish bid documents and close submissions on time. Bids stay sealed until the opening.
+    activity:
+      - { action: http, system: tenders, via: finance-pc, path: /admin/upload }
+
+systems:
+  - id: billing
+    name: Municipal billing system
+    hostname: billing
+    kind: web
+    zone: servers
+    ip: 10.88.22.20
+    os: Ubuntu 18.04
+    critical: true
+    services:
+      - { port: 443, name: https, product: Municipal billing system, version: "4.2" }
+      - { port: 3306, name: mysql, product: MySQL, version: 5.7.33 }
+    accounts:
+      - { user: billing_admin, password: "B1ll!ng#2023x", role: admin, service: https }
+      - { user: johan, password: Summer2026!, role: user, person: creditors-clerk, service: https }
+  - id: eservices
+    name: Resident e-services portal
+    hostname: eservices
+    kind: web
+    zone: dmz
+    ip: 10.88.20.20
+    os: Ubuntu 18.04
+    critical: true
+    services:
+      - { port: 80, name: http, product: Apache httpd, version: 2.4.29 }
+      - { port: 443, name: https, product: Apache httpd, version: 2.4.29 }
+    weaknesses:
+      - id: eservices-sqli
+        name: SQL injection in the account statement page
+        kind: vulnerable-service
+        port: 443
+        module: sqli
+        path: /account.php?id=
+        exposes: [customer-accounts]
+        description: The statement page builds its query from the account number in the URL, so the whole billing database can be read through it.
+    live: { image: "vulnerables/web-dvwa:latest" }
+  - id: tenders
+    name: Tender portal
+    hostname: tenders
+    kind: web
+    zone: dmz
+    ip: 10.88.20.21
+    os: Ubuntu 20.04
+    services:
+      - { port: 80, name: http, product: nginx, version: 1.18.0 }
+      - { port: 443, name: https, product: nginx, version: 1.18.0 }
+    weaknesses:
+      - id: tenders-dir-listing
+        name: Uploads folder lists every bid document
+        kind: misconfiguration
+        port: 443
+        module: directory-listing
+        path: /uploads/
+        exposes: [bid-documents]
+        description: Directory listing is on for the uploads folder, so sealed bids can be read before the closing date.
+  - id: finance-pc
+    name: Creditors desktop
+    hostname: fin-pc
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.40
+    os: Windows 10 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+      - { port: 3389, name: ms-wbt-server, product: Microsoft Terminal Services, version: "10.0" }
+    weaknesses:
+      - id: creditors-phishable
+        name: Opens every invoice attachment
+        kind: phishable
+        grants: user
+        description: Opening invoices is the job. A fake invoice with a macro is very hard to spot.
+
+data:
+  - id: customer-accounts
+    name: Resident billing accounts
+    sensitivity: restricted
+    personalInformation: true
+    system: billing
+    path: billing.customers
+    records: 72000
+    impact: 6000000
+    description: Names, ID numbers, addresses, phone numbers and payment history for every account holder.
+  - id: bid-documents
+    name: Sealed bid documents
+    sensitivity: confidential
+    personalInformation: false
+    system: tenders
+    path: /var/www/tenders/uploads
+    records: 220
+    impact: 750000
+
+connections:
+  - { to: municipal-manager, kind: internal, trust: Large payments and awards need the accounting officer. }
+  - { to: org:dataquant, kind: supplier, trust: DataQuant builds the revenue dashboards from billing data in the data warehouse. }
+  - { to: external:residents, kind: portal, trust: Residents use e-services from the internet. }
+
+threats:
+  - id: eservices-dump
+    name: Dumping resident accounts through SQL injection
+    attack: T1190
+    stage: collection
+    target: eservices
+    uses: eservices-sqli
+    description: An attacker on the internet reads every resident's personal information through the statement page. A POPIA breach affecting 72 000 people.
+    qcto: [KM-03-KT15, KM-08-KT04, KM-03-KT14]
+  - id: fake-invoice
+    name: Malicious supplier invoice
+    attack: T1566.001
+    stage: initial-access
+    target: finance-pc
+    uses: creditors-phishable
+    description: A fake invoice with a macro gives the attacker the creditors clerk's desktop, next to the payment run.
+    qcto: [KM-03-KT10, KM-03-KT08]
+  - id: bid-leak
+    name: Reading sealed bids early
+    attack: T1213
+    stage: collection
+    target: tenders
+    uses: tenders-dir-listing
+    description: A bidder reads competitors' prices before the closing date, which makes the tender irregular.
+    qcto: [KM-04-KT03, KM-03-KT14]
+
+controls:
+  - id: web-firewall
+    name: Web application firewall and secure code review
+    kind: preventive
+    status: planned
+    from: 4
+    fixes: [eservices-sqli]
+    description: Parameterised queries in the portal, with a web application firewall in front.
+  - id: disable-listing
+    name: No directory listing on public servers
+    kind: preventive
+    status: planned
+    fixes: [tenders-dir-listing]
+    description: Web servers never list folders; uploads are stored outside the web root.
+  - id: segregation-of-duties
+    name: Segregation of duties on payments
+    kind: preventive
+    status: in-place
+    description: The person who captures an invoice can never approve its payment.
+    policy: Two people for every payment. Bank detail changes need a signed form and a call-back.
+
+maturity:
+  1: Manual billing and paper tenders.
+  2: A billing system and e-services portal.
+  3: Online tenders, card payments and a reporting warehouse built by DataQuant.
+  4: Secure development, a web application firewall and fraud analytics.
+
+qcto: [KM-03-KT15, KM-08-KT04, KM-04-KT08, PM-01-PS01, FA1.2, PM-03-PS01]

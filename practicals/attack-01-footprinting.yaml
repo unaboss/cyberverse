@@ -1,0 +1,92 @@
+# Intro attack tower, floor 1. The first hands-on floor: footprinting. From the
+# internet, which of Siyakhula's machines can you even reach, and what is
+# listening? The learner sweeps the public network to find the live hosts, then
+# scans the e-services portal's ports. Only the DMZ answers from outside, which
+# is the first lesson.
+
+id: attack-01-footprinting
+title: "Footprinting"
+status: draft
+role: predator
+org: siyakhula
+startTime: "09:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  Scope letter signed, notes open. Today you map the ground.
+
+  Before you attack anything you find out what is there: which of the client's
+  machines face the internet, and what is listening on each one. You cannot
+  break into a door you have not found. This is footprinting, and it is where
+  every test starts.
+guide:
+  mentor: founder
+  target: 15
+  steps:
+    - id: first
+      title: The first question
+      say: We are sitting on the internet, outside Siyakhula's network, exactly where a real attacker sits. Before anything else, one question.
+      do: Answer the question.
+      hint: An attacker on the internet cannot see the whole network.
+      ask:
+        question: Where does an external test begin?
+        options:
+          - text: Find out which machines are reachable from the internet at all, and what is listening on them.
+            correct: true
+            reply: >-
+              Yes. Most of their network is hidden behind the firewall. Your way
+              in is whatever faces the outside. First you find it, then you look
+              at it.
+          - text: Go straight for the most valuable database
+            reply: You cannot reach it yet, and you do not know where it is. First map what faces the internet.
+          - text: Try the admin password on everything
+            reply: On what, exactly? You have not found a single host yet. Map first.
+      done: { answer: correct }
+
+    - id: sweep
+      title: Sweep the public range
+      say: Siyakhula's public services sit in one block of addresses, 10.88.20.0/24. A ping sweep asks every address "are you there?" and lists the ones that answer.
+      do: Sweep the public network for live hosts.
+      hint: "Type `nmap -sn 10.88.20.0/24` and press Enter. -sn pings without scanning ports."
+      show: { tab: term }
+      done: { command: { did: scan } }
+      praise: Those are the machines that answered from the internet — the portals and the mail server. Everything else on their network is behind the firewall, out of your reach for now.
+
+    - id: ports
+      title: Knock on the portal
+      say: One of them is the resident e-services portal, at {ip:eservices}. Now look at it closely. A port scan asks which doors (ports) are open and what service sits behind each.
+      do: Scan the ports on the e-services portal.
+      hint: "Type `nmap {ip:eservices}` and press Enter. No flags needed for the common ports."
+      show: { tab: term }
+      done: { command: { did: scan, of: eservices } }
+
+    - id: read
+      title: Read the result
+      say: The scan came back with open ports. Read what they tell you.
+      do: Answer the question.
+      hint: Ports 80 and 443 are the web's front doors.
+      ask:
+        question: Ports 80 and 443 are open on the portal. What is it?
+        options:
+          - text: A web server. 80 is HTTP and 443 is HTTPS, so there is a website to look at and attack.
+            correct: true
+            reply: >-
+              Yes. Open ports are a machine's attack surface: every one is a
+              service that might have a weakness. A web server means the next
+              step is the website itself.
+          - text: A mail server
+            reply: Mail listens on 25. 80 and 443 are the web. The mail server is a different host on the sweep.
+          - text: Nothing useful; closed ports only
+            reply: 80 and 443 are open, not closed. That is a live web server, and your way in.
+      done: { answer: correct }
+  outro:
+    title: You have the map
+    learned:
+      - Footprinting comes first. Find what is reachable before you attack it.
+      - From the internet you reach only the DMZ. The rest is behind the firewall.
+      - A ping sweep (nmap -sn) finds live hosts across a range of addresses.
+      - A port scan lists the open ports on a host, and each open port is a service to examine.
+      - Open ports are the attack surface. 80 and 443 mean a web server.
+    next: "Floor 2: Fingerprinting and stealth"
+qcto: [KM-03-KT05, KM-03-KT06, PM-02-PS02, FA3.4]

@@ -1,0 +1,277 @@
+id: technology
+name: Technology
+purpose: Runs the directory, the VPN to every store, mail, file shares and backups, and the security operations centre that watches it all, around the clock.
+room: { x: 0, y: 3, w: 8, h: 8 }
+
+people:
+  - id: cio
+    role: Chief information officer
+    kind: human
+    name: Rajesh Govender
+    awareness: 0.8
+  - id: soc-lead
+    role: SOC lead
+    kind: human
+    name: Thato Mabuza
+    awareness: 0.95
+    description: Runs the security operations centre, and mentors the learner on the advanced tower.
+  - id: network-engineer
+    role: Network engineer
+    kind: human
+    name: Lindiwe Zulu
+    awareness: 0.85
+  - id: service-desk
+    role: Service desk analyst
+    kind: human
+    name: Jaco van der Merwe
+    awareness: 0.6
+  - id: security-analyst
+    role: Security analyst
+    kind: human
+    name: Kgomotso Seabi
+    awareness: 0.9
+    description: The learner's seat on the advanced tower.
+
+processes:
+  - id: service-desk-logins
+    name: Service desk
+    owner: service-desk
+    every: 20m
+    hours: work
+    steps:
+      - Log every call, verify the caller with their employee number and a call-back, and reset passwords only through the self-service portal or with a manager's approval.
+    activity:
+      - { action: login, system: dc01, via: sd-pc }
+  - id: nightly-backup
+    name: Backups
+    owner: cio
+    every: 1h
+    cadence: nightly
+    hours: always
+    steps:
+      - Back up the directory, ERP, HR, files and order database every night. One copy is immutable for 30 days, one is offline.
+    activity:
+      - { action: transfer, system: backup, via: files, bytes: 40000000 }
+  - id: store-automation
+    name: Store checks from the jump host
+    owner: network-engineer
+    every: 2h
+    cadence: daily
+    hours: work
+    steps:
+      - Scripts on the jump host check every store's router, tills and devices each morning, and log what they find.
+      - A script is tested on one store before it runs on all of them, and it keeps going when a store doesn't answer.
+    activity:
+      - { action: http, system: store-router, via: jump, path: /status }
+
+systems:
+  - id: dc01
+    name: Domain controller
+    hostname: dc01
+    kind: directory
+    zone: servers
+    ip: 10.88.32.10
+    os: Windows Server 2022
+    critical: true
+    services:
+      - { port: 53, name: domain, product: Microsoft DNS, version: "10.0" }
+      - { port: 88, name: kerberos-sec, product: Microsoft Windows Kerberos, version: "10.0" }
+      - { port: 389, name: ldap, product: Microsoft Windows Active Directory LDAP, version: "10.0" }
+      - { port: 445, name: microsoft-ds, product: Windows Server 2022 SMB, version: "3.1.1" }
+      - { port: 636, name: ldaps, product: Microsoft Windows Active Directory LDAP, version: "10.0" }
+    accounts:
+      - { user: administrator, password: "Vt9!qLm2#Rx8wZ", role: admin, service: smb }
+      - { user: jaco, password: "Jv#Ikhaya-2026", role: user, person: service-desk, service: smb }
+      - { user: svc_sql, password: Ikhaya2018, role: service, service: smb }
+    weaknesses:
+      - id: svc-sql-kerberoast
+        name: SQL service account with a short, old password
+        kind: weak-password
+        port: 88
+        account: svc_sql
+        grants: root
+        description: Any staff account can ask the directory for the SQL service's Kerberos ticket, and its 2018 password cracks offline in minutes. It is a domain admin.
+  - id: vpn
+    name: VPN hub for the stores
+    hostname: vpn-hub
+    kind: server
+    zone: servers
+    ip: 10.88.32.5
+    os: FortiOS 7.2
+    critical: true
+    services:
+      - { port: 443, name: https, product: Fortinet SSL VPN, version: 7.2.8 }
+      - { port: 500, proto: udp, name: isakmp, product: IPsec IKE, version: "2" }
+  - id: files
+    name: File shares
+    hostname: files
+    kind: file
+    zone: servers
+    ip: 10.88.32.12
+    os: Windows Server 2022
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows Server 2022 SMB, version: "3.1.1" }
+  - id: backup
+    name: Backup server
+    hostname: backup
+    kind: backup
+    zone: servers
+    ip: 10.88.32.15
+    os: Ubuntu 22.04
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 8.9p1 }
+      - { port: 9443, name: https, product: Backup console, version: "12.1" }
+  - id: jump
+    name: Network jump host
+    hostname: jump
+    kind: server
+    zone: servers
+    ip: 10.88.32.8
+    os: Ubuntu 22.04
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 8.9p1 }
+  - id: mail
+    name: Cloud mail
+    hostname: mail
+    kind: mail
+    zone: cloud
+    ip: 10.88.30.25
+    os: Cloud service
+    critical: true
+    services:
+      - { port: 25, name: smtp, product: Cloud mail gateway, version: "2026" }
+      - { port: 443, name: https, product: Cloud webmail, version: "2026" }
+  - id: siem
+    name: SIEM
+    hostname: siem
+    kind: security
+    zone: security
+    ip: 10.88.34.10
+    os: Ubuntu 22.04
+    services:
+      - { port: 443, name: https, product: OpenSearch Dashboards, version: 2.15.0 }
+      - { port: 9200, name: http, product: OpenSearch, version: 2.15.0 }
+  - id: soc
+    name: SOC console
+    hostname: soc
+    kind: security
+    zone: security
+    ip: 10.88.34.11
+    os: Ubuntu 22.04
+    services:
+      - { port: 443, name: https, product: SOC console, version: "5.1" }
+  - id: ids
+    name: Network sensor
+    hostname: ids
+    kind: security
+    zone: security
+    ip: 10.88.34.12
+    os: Ubuntu 22.04
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 8.9p1 }
+  - id: sd-pc
+    name: Service desk desktop
+    hostname: sd-pc
+    kind: desktop
+    zone: hq
+    ip: 10.88.31.20
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: backups
+    name: Backup sets
+    sensitivity: restricted
+    personalInformation: true
+    system: backup
+    path: /srv/backups
+    records: 30
+    impact: 8000000
+
+connections:
+  - { to: stores, kind: vpn, trust: Every store connects to the VPN hub. Store support reaches store devices over it. }
+  - { to: ecommerce, kind: internal, trust: The shop's servers run in the cloud account Technology manages. }
+  - { to: external:managed-soc, kind: supplier, trust: A managed SOC partner watches the alerts overnight. }
+
+threats:
+  - id: kerberoast
+    name: Cracking the SQL service account's ticket
+    attack: T1558.003
+    stage: credential-access
+    target: dc01
+    uses: svc-sql-kerberoast
+    description: From any staff account, the attacker asks for the service's ticket and cracks its old password offline. The service account is a domain admin.
+    qcto: [KM-03-KT07, KM-03-KT05]
+
+controls:
+  - id: siem-servers
+    name: Server logs to the SIEM
+    kind: detective
+    status: in-place
+    sensor: { type: hids, covers: [dc01, erp, hr, files, backup, orders-db, pos, wms, crm, bi, vpn, jump] }
+    rules: [hids-ssh-bruteforce, hids-login-bruteforce, hids-password-spray, hids-login-after-failures, hids-service-account-new-source, hids-default-credentials, hids-suspicious-process, hids-new-admin, hids-mass-file-read, hids-ransomware-encrypt]
+    description: Every head office server sends its logs to the SIEM.
+  - id: siem-cloud
+    name: Shop and API logs to the SIEM
+    kind: detective
+    status: in-place
+    sensor: { type: weblog, covers: [shop, api, media, mail] }
+    rules: [weblog-sqli, weblog-dir-bruteforce, weblog-anonymous-listing]
+    description: The online shop, the app's API, the media storage and webmail send their access logs to the SIEM.
+  - id: network-sensor
+    name: Network sensor on the cloud and server networks
+    kind: detective
+    status: in-place
+    sensor: { type: nids, covers: [cloud, servers] }
+    rules: [nids-port-scan, nids-host-sweep, nids-exploit-signature, nids-large-outbound]
+    description: Watches everything entering or leaving the cloud account and the head office servers. Store traffic arrives inside the VPN and isn't watched.
+  - id: mail-gateway
+    name: Mail gateway scanning
+    kind: detective
+    status: in-place
+    sensor: { type: mail, covers: [mail] }
+    rules: [mail-malicious-attachment]
+    description: Inbound mail is scanned for malware and known lures.
+  - id: ad-lockout
+    name: Directory account lockout
+    kind: preventive
+    status: in-place
+    lockoutAfter: 10
+    description: Ten failed logins lock a directory account for 30 minutes.
+  - id: store-segmentation
+    name: Store network segmentation
+    kind: preventive
+    status: planned
+    description: Every store's tills, cameras, office PC and guest Wi-Fi sit on their own segments, and each reaches only what it needs at head office.
+    policy: A store device reaches only the head office services its job needs. Stores never reach each other.
+  - id: device-passwords
+    name: No default passwords on devices
+    kind: preventive
+    status: planned
+    fixes: [cctv-default]
+    description: Every router, camera recorder and printer gets a unique password from the password vault before it goes live.
+  - id: service-account-passwords
+    name: Long random passwords for service accounts
+    kind: preventive
+    status: planned
+    fixes: [svc-sql-kerberoast]
+    description: Service accounts get managed passwords of 30 characters or more, rotated automatically.
+  - id: soc-247
+    name: A 24/7 in-house SOC
+    kind: detective
+    status: planned
+    description: Analysts on shift around the clock, instead of a partner who only escalates overnight.
+  - id: immutable-backups
+    name: Immutable and offline backups
+    kind: corrective
+    status: in-place
+    description: Backups can't be changed or deleted for 30 days, and one copy is offline. Restores are tested every month.
+
+maturity:
+  1: One IT person and a router.
+  2: A domain, mail, backups and a service desk.
+  3: A VPN to every store, a SIEM and a small SOC.
+  4: A 24/7 SOC, segmented stores, managed service accounts and automation for everything done more than twice.
+
+qcto: [KM-02-KT01, KM-02-KT02, KM-07-KT20, PM-01-PS03, PM-05-PS01, PM-05-PS03, PM-05-PS04, PM-05-PS05, PM-05-PS06, KM-09-KT02]

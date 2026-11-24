@@ -1,0 +1,127 @@
+id: operations
+name: Operations
+purpose: Keeps the company running. Finance, contracts, people, vendors and the shared tools such as mail.
+room: { x: 0, y: 7, w: 8, h: 3 }
+
+people:
+  - id: bookkeeping-agent
+    role: Bookkeeping agent
+    kind: agent
+    name: Bookkeeping agent
+    permissions: [read:bank-feed, write:draft-invoices]
+    description: Reconciles the bank feed, drafts invoices and chases payments. It cannot pay anyone.
+  - id: ops-manager
+    role: Operations manager
+    kind: human
+    name: Grace Adams
+    awareness: 0.6
+    from: 3
+
+processes:
+  - id: reconcile
+    name: Bank reconciliation and invoicing
+    owner: bookkeeping-agent
+    every: 30m
+    hours: work
+    steps:
+      - Match bank transactions to invoices and draft new invoices for approval.
+      - Any change to a supplier's bank details is confirmed by phone on a known number before it is saved.
+    activity:
+      - { action: http, system: books, path: /api/bank-feed }
+  - id: approve-payments
+    name: Approve payments
+    owner: founder
+    every: 4h
+    cadence: twice a week
+    hours: work
+    steps:
+      - The founder approves every payment. Agents can only draft.
+    activity:
+      - { action: login, system: books, via: founder-laptop, typo: 0.05 }
+
+systems:
+  - id: mail
+    name: Mail server and webmail
+    hostname: mail
+    kind: mail
+    zone: cloud
+    ip: 10.88.10.5
+    os: Debian 12
+    critical: true
+    services:
+      - { port: 25, name: smtp, product: Postfix, version: 3.7.11 }
+      - { port: 443, name: https, product: Roundcube Webmail, version: 1.6.6 }
+    accounts:
+      - { user: ayanda, password: Dataquant2026, role: user, person: founder, service: https }
+    weaknesses:
+      - id: mail-spoofable
+        name: No DMARC policy on the domain
+        kind: misconfiguration
+        port: 25
+        description: Anyone can send mail that looks like it comes from dataquant.internal.
+    live: { image: "axllent/mailpit:v1.21" }
+  - id: books
+    name: Accounting system
+    hostname: books
+    kind: web
+    zone: cloud
+    ip: 10.88.10.80
+    os: Ubuntu 24.04
+    services:
+      - { port: 443, name: https, product: Accounting system, version: "2026.3" }
+    accounts:
+      - { user: ayanda, password: Dataquant2026, role: admin, person: founder, service: https }
+
+data:
+  - id: invoices-bank
+    name: Invoices and bank details
+    sensitivity: confidential
+    personalInformation: true
+    system: books
+    path: /var/lib/books
+    records: 300
+    impact: 500000
+
+connections:
+  - { to: strategy-leadership, kind: internal, trust: The founder approves every payment. }
+  - { to: trust-risk, kind: internal, trust: Tells Trust & Risk about every joiner and leaver. }
+  - { to: external:suppliers, kind: email, trust: Suppliers send invoices by email. }
+
+threats:
+  - id: invoice-fraud
+    name: Fake supplier bank details
+    attack: T1566.002
+    stage: impact
+    target: mail
+    uses: mail-spoofable
+    description: A spoofed mail from a "supplier" asks for future payments to go to a new account.
+    qcto: [KM-03-KT10, KM-01-KT03]
+
+controls:
+  - id: mail-filtering
+    name: Mail filtering
+    kind: detective
+    status: in-place
+    sensor: { type: mail, covers: [mail] }
+    rules: [mail-malicious-attachment]
+    description: Inbound mail is scanned for malware and known phishing lures.
+  - id: dmarc
+    name: DMARC, SPF and DKIM on the domain
+    kind: preventive
+    status: planned
+    fixes: [mail-spoofable]
+    description: Mail pretending to come from DataQuant is rejected by receiving servers.
+  - id: payment-callback
+    name: Call back before changing bank details
+    kind: preventive
+    status: in-place
+    description: A change of bank details is confirmed by phone on a number already on file.
+    policy: Never change bank details from an email alone.
+
+maturity:
+  1: The bookkeeping agent drafts; the founder approves every payment.
+  2: An outsourced accountant reviews the books monthly.
+  3: An operations manager owns finance, people and vendors.
+  4: Finance, HR and procurement each have an owner.
+
+qcto: [KM-04-KT08, KM-04-KT09, KM-04-KT06, KM-01-KT03]

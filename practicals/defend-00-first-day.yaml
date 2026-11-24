@@ -1,0 +1,171 @@
+# Defend tower, floor 0. Designed with the owner on 2026-11-21.
+#
+# The easiest floor: somebody who knows nothing about security reads the card
+# and follows it. No attacker, nothing to lose, no time limit. Every step ticks
+# itself off when the learner does it, and the scripted moments (Ayanda's login
+# and the fire drill) happen the same way every time.
+
+id: defend-00-first-day
+title: "First day"
+status: draft
+role: prey
+org: dataquant
+startTime: "08:30"
+durationMin: 0
+speed: 1
+map:
+  rooms: [trust-risk, strategy-leadership]
+  outside: []
+  note: Your desk is in Trust & Risk. Rooms open up as Ayanda shows you round, and more of the building as you climb.
+briefing: |
+  It's Monday morning, and you've just joined DataQuant as its first security
+  analyst. Until today, the founder and an AI triage agent looked after
+  security on their own. Ayanda, the founder, is going to show you round.
+
+  There's no attacker today, and you can't get anything wrong. Follow the card
+  on the right, one step at a time. If you get stuck, press
+  "Show me".
+guide:
+  mentor: founder
+  locked: { block: 3, unblock: 3, lock: 4, reset: 4, control: 4, isolate: 5, release: 5, rebuild: 5 }
+  steps:
+    - id: meet-floor
+      title: Meet the floor
+      say: >-
+        Welcome to DataQuant! This is our office, seen from above. Each square
+        on the floor is a room, and each room is one of our departments.
+      do: Click any room on the floor.
+      hint: The rooms are the flat squares with a name above them. Click the floor of one.
+      show: { room: strategy-leadership }
+      done: { look: room }
+      praise: >-
+        That box shows who works in the room. Most of our staff are AI agents,
+        and each one has a single job.
+
+    - id: find-team
+      title: Find your team
+      say: >-
+        Your desk is in Trust & Risk. That's the team that keeps our data, and
+        our clients' data, safe.
+      do: Find the Trust & Risk room and click it.
+      hint: Look for the name "Trust & Risk" above a room.
+      show: { room: trust-risk }
+      done: { look: room, id: trust-risk }
+      praise: >-
+        Meet the triage agent. It reads every log, all day, and passes anything
+        suspicious to a person. From today, that person is you.
+
+    - id: log-collector
+      title: Open the log collector
+      say: >-
+        The small blocks inside each room are machines. The most important one
+        for you is the log collector.
+      do: Click the Log collector machine in the Trust & Risk room.
+      hint: It's the green block in Trust & Risk. Hold your mouse over a block to see its name.
+      show: { host: log-collector }
+      done: { look: host, id: log-collector }
+      praise: >-
+        Every machine in our cloud sends a record of what happens on it to this
+        collector. That record is its log, and logs are how a security analyst
+        sees.
+
+    - id: open-crm
+      title: Open the CRM
+      say: >-
+        Let's watch a log at work. Growth keeps our leads, the people we hope
+        will become clients, in the CRM.
+      do: Open the CRM machine in the Growth room.
+      hint: Growth has two machines. Hold your mouse over each one to find the CRM.
+      show: { host: crm }
+      done: { look: host, id: crm }
+
+    - id: watch-login
+      title: Watch a login
+      say: >-
+        I'm about to log in to the CRM from my laptop. Keep your eye on the Logs
+        box in the machine panel.
+      do: Watch the CRM's log. When a new line appears, answer the question.
+      hint: The Logs box is on the right of the machine panel. The new line has "login ok" in it.
+      show: { host: crm }
+      script:
+        - { after: 5, event: login, system: crm, user: ayanda, from: founder-laptop }
+      ask:
+        question: Who just logged in to the CRM, and from where?
+        options:
+          - text: "ayanda, from {ip:founder-laptop}"
+            correct: true
+            reply: >-
+              That's right. A log line tells you when, on which machine, who,
+              and from where. {ip:founder-laptop} is my laptop.
+          - text: admin, from the internet
+            reply: >-
+              Not this time. Read the line again: the name after "login ok for"
+              is the account, and the address after "from" is where it came from.
+          - text: Nobody, the log is empty
+            reply: >-
+              Look again. The line lands in the Logs box on the right of the
+              machine panel, a few seconds after the step starts.
+      done: { answer: correct }
+
+    - id: crown-jewels
+      title: Find the crown jewels
+      say: >-
+        The most precious thing we look after is our clients' data. If it
+        leaks, real people get hurt, and the law (POPIA) says we must report it.
+      do: Find the machine that holds the client datasets.
+      hint: Open machines and read the "Information held" line. Data & Insights is a good place to start.
+      show: { host: dataroom }
+      done: { look: host, id: dataroom }
+      praise: >-
+        The data room holds restricted personal information. Most attackers who
+        come for us will be after what's on this machine.
+
+    - id: blind-spot
+      title: Find the machine nobody can see
+      say: >-
+        One of our machines sends nothing to the log collector. Whatever happens
+        on it, we would never know.
+      do: Find the machine that has no log agent.
+      hint: Open machines and read the "Log agent" line. Laptops are easy to forget.
+      show: { host: founder-laptop }
+      done: { look: host, id: founder-laptop }
+      praise: >-
+        That's my laptop, and fixing it is on my list. Remember this: when a
+        machine is quiet, it doesn't mean it's safe. It can mean you're blind there.
+
+    - id: fire-drill
+      title: Fire drill
+      say: >-
+        Last one. I'm sending you a test alert, so you know what one looks and
+        sounds like. Real alerts arrive the same way.
+      do: Open the Alerts tab, pick up the test alert, then close it as a false positive.
+      hint: >-
+        Click the alert to open it. "Pick it up" tells the team it's yours.
+        "False positive" means the alarm went off, but nothing bad happened.
+      show: { alert: drill }
+      script:
+        - after: 3
+          event: drill
+          system: log-collector
+          severity: medium
+          name: "TEST: fire drill"
+          summary: "TEST: a practice alert from Ayanda. Nothing is wrong."
+          response: >-
+            This is a drill. Pick it up, then close it as a false positive,
+            because nothing bad happened.
+      done: { alert: closed, drill: true, verdict: false-positive }
+      praise: >-
+        That's your first alert handled. You picked it up so nobody else spent
+        time on it, and you closed it with the right verdict.
+      wrong: >-
+        You closed it as a true positive. A test is a false positive, because
+        the alarm went off but nothing bad happened. Floor 1 is all about
+        telling the two apart.
+  outro:
+    title: Floor 0 complete
+    learned:
+      - The floor shows our departments as rooms and our machines as blocks.
+      - A log line says when, on which machine, who, and from where. The log collector gathers them.
+      - Know where the sensitive data lives, and which machines you can't see.
+    next: "Floor 1: Your first alert"
+qcto: [KM-01-KT07, KM-02-KT04, PM-03-PS01, PM-03-PS02]

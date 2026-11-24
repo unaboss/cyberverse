@@ -1,0 +1,102 @@
+# Intermediate attack tower, floor 0. A bigger, internal engagement. The intro
+# tower was an external test of the perimeter; now Siyakhula has asked DataQuant
+# to see how far an attacker gets once inside. This floor sets the scope, the
+# method, and the extra care an internal test needs.
+
+id: attack-mid-00-engagement
+title: "The internal engagement"
+status: draft
+role: predator
+org: siyakhula
+startTime: "09:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  Siyakhula liked the first report. Now they want the harder question answered:
+  if an attacker does get a foothold, how far can they reach, and what can they
+  take? That is an internal penetration test, and it is the bulk of real work.
+
+  More access means more care. A bigger scope, data you must handle properly,
+  and systems that run real services for real people. Today you set that up.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: method
+      title: A method, not a rummage
+      say: A test without a method misses things and cannot be repeated. Professionals follow a set of phases, the same order every time.
+      do: Answer the question.
+      hint: Recon, then get in, then see how far, then write it up.
+      ask:
+        question: What is the shape of a penetration test?
+        options:
+          - text: Reconnaissance, then exploitation to get a foothold, then post-exploitation to go deeper, then reporting — a repeatable set of phases.
+            correct: true
+            reply: >-
+              Yes. Recon, exploit, post-exploit, report. A method means you
+              cover the ground the same way every time, and the client can trust
+              what you did and did not do.
+          - text: Try random exploits until something works
+            reply: That misses most of the attack surface and cannot be repeated or trusted. A test follows phases, in order.
+          - text: Only the single most valuable system
+            reply: You do not know which system that is until you have looked, and attackers chain weak systems to reach strong ones. Work the whole method.
+      done: { answer: correct }
+
+    - id: scope
+      title: The scope, again
+      say: An internal test touches far more, so the scope letter matters even more. Read this engagement's letter before you start.
+      do: Read the scope letter.
+      hint: Type `cat scope-letter.pdf` and press Enter.
+      show: { tab: term }
+      done: { command: { did: read, text: scope-letter } }
+      praise: Same rule as always. Siyakhula's systems are in scope; nothing else is. The wider you can reach, the more it matters that you stay inside the lines.
+
+    - id: data
+      title: Their data is theirs
+      say: Inside, you will touch databases full of residents' personal information. How you handle it is part of the test.
+      do: Answer the question.
+      hint: You are proving the risk, not collecting the data.
+      ask:
+        question: You can read a database of 72 000 residents. What do you do?
+        options:
+          - text: Take only the small proof you need, keep it encrypted, record what you accessed, and delete it when the report is done.
+            correct: true
+            reply: >-
+              Yes. You prove you could read it, you do not hoard it. A sample,
+              handled securely and deleted after, is proof enough. You are the
+              one they are trusting with it.
+          - text: Download all of it, in case the report needs it
+            reply: The report needs proof, not a copy of everyone's ID numbers sitting on your laptop. Take a sample, securely, and delete it.
+          - text: Email yourself a copy to work on later
+            reply: That is exactly the leak you are testing for. Personal data stays secured, minimal, and deleted after.
+      done: { answer: correct }
+
+    - id: damage
+      title: Do no harm
+      say: Some of what you can reach runs real services. A water treatment works, payment systems, live databases.
+      do: Answer the question.
+      hint: A finding is never worth breaking a live service.
+      ask:
+        question: An action might prove a point but could disrupt a live service. Do you?
+        options:
+          - text: No. You prove the access safely, note what further damage was possible, and agree any risky step with the client first.
+            correct: true
+            reply: >-
+              Yes. You demonstrate the reach without pulling the trigger. "I
+              could have changed this" is a finding; actually changing it could
+              hurt someone. Agree anything risky with the client, in writing.
+          - text: Yes, to make the finding undeniable
+            reply: An undeniable finding is not worth an outage or a safety incident. Prove the access, describe the damage, do not cause it.
+          - text: Only if you can undo it afterwards
+            reply: Some things cannot be cleanly undone, and you may not know which. Prove access safely and agree risky steps with the client first.
+      done: { answer: correct }
+  outro:
+    title: The engagement is set
+    learned:
+      - A penetration test follows phases — recon, exploit, post-exploit, report — the same way every time.
+      - A wider internal scope makes the scope letter matter more, not less.
+      - Handle the client's data as theirs. Take a minimal sample, secure it, and delete it after.
+      - Prove access without causing harm. "I could have" is a finding; actually breaking a live service is not worth it.
+    next: "Floor 1: The foothold"
+qcto: [KM-03-KT01, KM-03-KT02, KM-03-KT03, KM-03-KT04, PM-02-PS01, FA1.3, FA3.4]

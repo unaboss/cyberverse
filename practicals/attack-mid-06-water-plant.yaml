@@ -1,0 +1,86 @@
+# Intermediate attack tower, floor 6. The water plant. From the server network
+# the learner can reach the water treatment plant's dosing controller over
+# Modbus, which has no authentication. The whole lesson is restraint: you READ
+# the setpoints to prove the reach, and you never write, because changing
+# chlorine dosing is a public safety incident, not a data breach.
+
+id: attack-mid-06-water-plant
+title: "The water plant"
+status: draft
+role: predator
+org: siyakhula
+startTime: "12:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+foothold: vending
+briefing: |
+  From the server network, one more thing is in reach — the dosing controller at
+  the water treatment works. It speaks Modbus, an industrial protocol with no
+  authentication. Anything that can reach it can change the chlorine setpoint.
+
+  That is exactly why you tread carefully. You READ the setpoints, to prove you
+  got there. You do not write. A wrong dosing value is unsafe water, and proving
+  a point is never worth that.
+guide:
+  mentor: founder
+  target: 10
+  steps:
+    - id: careful
+      title: Reach is not permission
+      say: You can reach a controller that doses chlorine into drinking water. The protocol will happily let you change it.
+      do: Answer the question.
+      hint: What is the difference between showing you could, and actually doing it?
+      ask:
+        question: The controller accepts writes from anyone. Do you change a setpoint to prove the risk?
+        options:
+          - text: No. You read the values to prove you reached it, note that you could have changed them, and agree any write with the client first — in writing.
+            correct: true
+            reply: >-
+              Yes. "I could have changed the chlorine dose" is a devastating
+              finding on its own. Actually changing it could poison a town's
+              water. You demonstrate the reach without pulling the trigger.
+          - text: Yes, change it and change it back, so the finding is undeniable
+            reply: Some things do not undo cleanly, and you may not know which. A dosing change is a safety incident the moment it happens. Read to prove reach; never write without written agreement.
+          - text: Yes, a finding is only real if you actually did it
+            reply: Not in operational technology. Reaching a safety system is the finding. Causing harm to prove it is exactly what a professional must not do.
+      done: { answer: correct }
+
+    - id: read
+      title: Read the setpoints
+      say: Read the controller's registers over Modbus. The request goes through your foothold on the server network, which is the only place that can reach the plant.
+      do: Read the dosing controller over Modbus.
+      hint: "Type `modbus read {ip:plc}` and press Enter."
+      show: { tab: term }
+      done: { command: { did: read, text: modbus } }
+      praise: You read the live chlorine dose, the flow setpoint, and the auto-mode flag — straight off a safety-critical controller. You reached it, you proved it, and you touched nothing.
+
+    - id: finding
+      title: What you write up
+      say: You read the setpoints and stopped. Now turn that into the finding.
+      do: Answer the question.
+      hint: The value of this floor is a sentence in the report, not a change on the plant.
+      ask:
+        question: What is the finding from the water plant?
+        options:
+          - text: From a staff-network foothold an attacker could change the chlorine dosing, a public-safety risk — proven by reading the live setpoints, and fixed by segmenting and authenticating the OT network.
+            correct: true
+            reply: >-
+              Yes. You state the reach, the impact, and the proof, and you
+              recommend the fix — keep the plant off the staff network and put
+              authentication in front of the controller. Impact shown, harm not
+              caused.
+          - text: The vending server is vulnerable to Tomcat default credentials
+            reply: True earlier, but that is a different floor. This finding is about the water plant — that a staff-network foothold can reach and command a safety-critical controller.
+          - text: There is no finding, since you did not change anything
+            reply: Not changing anything is the professional part. The finding is that you reached a safety-critical controller at all, and could have commanded it. That is serious on its own.
+      done: { answer: correct }
+  outro:
+    title: You reached the plant, safely
+    learned:
+      - Industrial protocols like Modbus often have no authentication, so reach equals control.
+      - A foothold on the staff network can reach operational technology it should never touch.
+      - In OT you prove the reach by reading, and you do not write — a wrong value can hurt people.
+      - '"I could have changed this" is a finding; actually changing a live safety system is not worth it.'
+    next: "Floor 7: Lateral movement and the report"
+qcto: [KM-03-KT11, KM-03-KT18, KM-09-KT01, PM-02-PS02, PM-03-PS05, FA3.4]

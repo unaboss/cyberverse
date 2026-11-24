@@ -1,0 +1,141 @@
+id: trust-risk
+name: Trust & Risk
+purpose: Keeps DataQuant and its clients' data safe. Internal security, the SOC, POPIA compliance, governance and incident response.
+room: { x: 4, y: 3, w: 4, h: 4 }
+
+people:
+  - id: triage-agent
+    role: Alert triage agent
+    kind: agent
+    name: Triage agent
+    permissions: [read:logs, read:alerts, write:tickets]
+    description: Reads every log and alert, groups them and escalates what looks real to a person.
+  - id: security-analyst
+    role: Security analyst
+    kind: human
+    name: Zinhle Mbatha
+    awareness: 0.9
+    from: 2
+    description: The learner's role in DataQuant. Works the SOC queue and responds to incidents.
+  - id: head-trust-risk
+    role: Head of Trust & Risk and Information Officer
+    kind: human
+    name: Naledi Dube
+    awareness: 0.95
+    from: 3
+
+processes:
+  - id: log-triage
+    name: Log and alert triage
+    owner: triage-agent
+    every: 5m
+    hours: always
+    steps:
+      - Pull new log events, group them, and escalate anything that matches an attack pattern.
+      - A person decides on every escalation within the response time for its severity.
+    activity:
+      - { action: http, system: log-collector, path: /api/search?since=5m }
+  - id: popia-review
+    name: POPIA register review
+    owner: founder
+    every: 8h
+    cadence: monthly
+    hours: work
+    steps:
+      - Keep the register of personal information DataQuant processes for each client, its lawful basis and where it is stored.
+      - Report a suspected breach to the client and the Information Regulator as soon as reasonably possible.
+    activity:
+      - { action: file, system: log-collector, via: founder-laptop, path: /compliance/popia-register.xlsx }
+
+systems:
+  - id: log-collector
+    name: Log collector
+    hostname: logs
+    kind: security
+    zone: cloud
+    ip: 10.88.10.60
+    os: Ubuntu 24.04
+    services:
+      - { port: 443, name: https, product: Graylog, version: "5.2" }
+      - { port: 514, proto: udp, name: syslog, product: Graylog syslog input, version: "5.2" }
+    live: { image: "graylog/graylog:5.2" }
+  - id: soc-console
+    name: SOC console
+    hostname: soc
+    kind: security
+    zone: cloud
+    ip: 10.88.10.61
+    os: Ubuntu 24.04
+    from: 2
+    services:
+      - { port: 443, name: https, product: Wazuh dashboard, version: 4.9.2 }
+      - { port: 1514, name: wazuh, product: Wazuh manager, version: 4.9.2 }
+
+data:
+  - id: security-logs
+    name: Security logs and incident records
+    sensitivity: confidential
+    personalInformation: true
+    system: log-collector
+    path: /var/lib/graylog
+    records: 2000000
+    impact: 60000
+
+connections:
+  - { to: strategy-leadership, kind: internal, trust: Reports incidents and POPIA matters to the Information Officer. }
+  - { to: operations, kind: internal, trust: Joiners and leavers come from Operations so access is granted and removed on time. }
+  - { to: org:siyakhula, kind: service, trust: From level 3, co-manages the municipality's SOC under contract. }
+
+threats:
+  - id: log-blind-spot
+    name: Attacks on systems that send no logs
+    attack: T1562.008
+    stage: impact
+    target: log-collector
+    description: Any system not shipping logs is invisible to the SOC. Attackers prefer them.
+    qcto: [KM-02-KT04, FA3.1]
+
+controls:
+  - id: cloud-audit-logging
+    name: Central logging for cloud systems
+    kind: detective
+    status: in-place
+    sensor: { type: hids, covers: [website, crm, git, etl, dataroom, notebooks, agent-gateway, vault, mail, books, cyberlab-portal] }
+    rules: [hids-ssh-bruteforce, hids-login-bruteforce, hids-password-spray, hids-login-after-failures, hids-default-credentials, hids-suspicious-process, hids-mass-file-read, hids-new-admin]
+    description: Every cloud system ships its logs to the log collector, where the triage agent watches them.
+  - id: mfa-everywhere
+    name: MFA on every person's account
+    kind: preventive
+    status: in-place
+    lab: off
+    mfa: true
+    description: Every account a person uses needs a second factor. A stolen password alone does not get in.
+    policy: MFA on every account that supports it. No exceptions for the founder.
+  - id: login-lockout
+    name: Lock accounts after repeated failures
+    kind: preventive
+    status: planned
+    lockoutAfter: 10
+    description: Ten failed logins lock the account for 15 minutes.
+  - id: cloud-ids
+    name: Network intrusion detection on the cloud network
+    kind: detective
+    status: planned
+    from: 2
+    sensor: { type: nids, covers: [cloud] }
+    rules: [nids-port-scan, nids-host-sweep, nids-exploit-signature, nids-large-outbound]
+    description: A network sensor watches traffic into and out of the cloud network.
+  - id: incident-plan
+    name: Incident response and breach notification plan
+    kind: corrective
+    status: in-place
+    description: Who to call, how to contain, and how to notify the client and the Information Regulator.
+    policy: Contain first, keep the evidence, notify the client within 24 hours and the Regulator as soon as reasonably possible.
+
+maturity:
+  1: Central logging with a triage agent; the founder is the Information Officer and responder.
+  2: A security analyst works the queue with a SOC console and network detection.
+  3: A head of Trust & Risk, a 24/7 rota with agents, and a co-managed SOC service for clients.
+  4: Certified (ISO 27001), with a managed detection and response offering.
+
+qcto: [KM-02-KT04, KM-02-KT05, KM-03-KT21, KM-04-KT02, PM-01-PS01, PM-03-PS02, PM-03-PS03, PM-03-PS04, PM-03-PS06, PM-03-PS07, PM-03-PS10, FA3.1, FA3.2, FA4.1, FA4.3]

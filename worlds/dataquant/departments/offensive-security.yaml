@@ -1,0 +1,131 @@
+id: offensive-security
+name: Offensive Security
+purpose: Breaks things for clients, legally. Penetration tests, bug bounties and security reviews, with agents doing recon and first-draft reports.
+room: { x: 13, y: 0, w: 3, h: 4 }
+
+people:
+  - id: recon-agent
+    role: Recon agent
+    kind: agent
+    name: Recon agent
+    permissions: [scan:in-scope-only, write:engagement-notes]
+    description: Maps a client's attack surface inside the signed scope and drafts findings for a person to verify.
+  - id: pentester
+    role: Penetration tester (associate)
+    kind: human
+    name: Liam Petersen
+    awareness: 0.9
+    from: 2
+
+processes:
+  - id: attack-surface-check
+    name: Own attack surface check
+    owner: recon-agent
+    every: 6h
+    cadence: daily
+    hours: always
+    steps:
+      - Scan DataQuant's own public services and report anything new or unexpected.
+      - Client systems are only ever scanned inside a signed scope, in the agreed window.
+    activity:
+      - { action: scan, system: website, via: vault }
+  - id: engagement-reporting
+    name: Engagement reporting
+    owner: founder
+    every: 4h
+    cadence: at the end of each engagement phase
+    hours: work
+    steps:
+      - Verify every agent finding by hand, write the report and store it encrypted in the engagement vault.
+      - Reports go to the client's named contact only, never by plain email.
+    activity:
+      - { action: login, system: vault, via: founder-laptop }
+      - { action: file, system: vault, via: founder-laptop, path: /engagements/current/report.pdf }
+
+systems:
+  - id: vault
+    name: Engagement vault
+    hostname: vault
+    kind: storage
+    zone: cloud
+    ip: 10.88.10.50
+    os: Debian 12
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 9.2p1 }
+      - { port: 443, name: https, product: Nextcloud, version: 28.0.1 }
+    accounts:
+      - { user: ayanda, password: Dataquant2026, role: admin, person: founder, service: https }
+      - { user: pentest, password: Summer2026!, role: user, person: pentester, service: https }
+    weaknesses:
+      - id: vault-shared-password
+        name: Associates share one vault login
+        kind: weak-password
+        port: 443
+        account: pentest
+        grants: user
+        from: 2
+        description: Associates on short contracts share a single seasonal password.
+  - id: ops-kali
+    name: Pentest workstation
+    hostname: ops-kali
+    kind: workstation
+    zone: office
+    ip: 10.88.12.50
+    os: Kali Linux 2024.4
+    from: 2
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 9.9p1 }
+
+data:
+  - id: pentest-reports
+    name: Client penetration test reports
+    sensitivity: restricted
+    personalInformation: false
+    system: vault
+    path: /engagements
+    records: 18
+    impact: 3000000
+    description: Each report lists a client's weaknesses and how to exploit them. The most dangerous file in the company.
+
+connections:
+  - { to: strategy-leadership, kind: internal, trust: The founder signs every scope letter. }
+  - { to: org:siyakhula, kind: engagement, trust: Tests the municipality only inside a signed scope and window. }
+
+threats:
+  - id: report-theft
+    name: Stealing client pentest reports
+    attack: T1213
+    stage: collection
+    target: vault
+    uses: vault-shared-password
+    from: 2
+    description: With the shared password the attacker downloads every client's report, which is a map of how to break into each of them.
+    qcto: [KM-03-KT01, KM-04-KT03]
+
+controls:
+  - id: signed-scope
+    name: Signed scope before any test
+    kind: preventive
+    status: in-place
+    description: No client system is touched without a signed authorisation letter naming the systems, the dates and the contact person.
+    policy: Testing without written permission can be a crime under the Cybercrimes Act. No scope letter, no test.
+  - id: report-encryption
+    name: Reports encrypted at rest and in transit
+    kind: preventive
+    status: in-place
+    description: Reports are stored encrypted and shared through the vault with expiring links.
+  - id: individual-vault-logins
+    name: One login per person, with MFA
+    kind: preventive
+    status: planned
+    from: 2
+    fixes: [vault-shared-password]
+    description: Every associate gets their own vault login with MFA, removed when the contract ends.
+
+maturity:
+  1: The founder tests; the recon agent maps and drafts.
+  2: Associate pentesters join per engagement, with a pentest workstation.
+  3: A small red team with a methodology, peer review and a bug bounty practice.
+  4: A national platform for South African pentesters (a separate product).
+
+qcto: [KM-03-KT01, KM-03-KT03, KM-03-KT04, KM-03-KT05, KM-03-KT06, KM-04-KT03, KM-04-KT04, PM-02-PS01, PM-02-PS02, PM-02-PS04, FA1.3, FA3.4]

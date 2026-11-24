@@ -1,0 +1,122 @@
+# Advanced attack tower, floor 6. The domain. This floor names the Active
+# Directory attacks the terminal does not act out, grounded in Ikhaya's real
+# weakness: a SQL service account, svc_sql, with a short 2018 password that any
+# staff account can request a Kerberos ticket for and crack offline — and it is a
+# domain admin. Owning it owns head office and all 120 stores. The floor teaches
+# Kerberoasting, credential theft, and the blast radius of one domain admin.
+
+id: attack-adv-06-the-domain
+title: "The domain"
+status: draft
+role: predator
+org: ikhaya
+startTime: "12:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  You can reach the domain controller — the server that runs every staff login in
+  head office and all 120 stores. This is where a large attack ends: not with one
+  more box, but with the directory itself.
+
+  You do not need an exploit. Ikhaya's directory has a SQL service account,
+  svc_sql, whose password was set in 2018 and never changed. Any staff account can
+  ask the directory for that service's login ticket, and a weak password on a
+  ticket cracks offline in minutes. svc_sql is a domain admin.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: kerberoast
+      title: A ticket anyone can ask for
+      say: Active Directory hands out tickets so accounts can use services. The catch is who can ask, and what a weak password does to the ticket.
+      do: Answer the question.
+      hint: What can any ordinary staff account request, and what do you do with it offline?
+      ask:
+        question: How do you get the service account's password without exploiting anything?
+        options:
+          - text: Any domain account can request the service's Kerberos ticket, which is encrypted with the service's password — so you take the ticket away and crack that password offline.
+            correct: true
+            reply: >-
+              Yes. That is Kerberoasting. The directory will hand a ticket to any
+              authenticated account, and the ticket is locked with the service's
+              own password. A weak, old password like a 2018 one falls in
+              minutes on your own machine, with nothing noisy on the network.
+          - text: You brute-force the login against the domain controller directly
+            reply: That would be loud and would lock the account out. Kerberoasting is quieter — you request a ticket you are allowed to request, then crack it offline, off the network entirely.
+          - text: You read the password straight out of the directory
+            reply: The directory never shows passwords. It hands out a ticket encrypted with the password, and you crack that offline. That is the whole trick of Kerberoasting.
+      done: { answer: correct }
+
+    - id: domainadmin
+      title: One account, everything
+      say: The account you just cracked is not an ordinary one. It is a domain admin.
+      do: Answer the question.
+      hint: What does a domain admin control across head office and 120 stores?
+      ask:
+        question: Why is a domain-admin service account the end of the game?
+        options:
+          - text: A domain admin controls every machine and account in the directory, so with it you own head office and all 120 stores at once — logins, servers, the lot.
+            correct: true
+            reply: >-
+              Yes. Domain admin is the master key. Every server, every staff
+              login, every store device trusts the directory, and the directory
+              now trusts you. From here an attacker can go anywhere and do
+              anything, quietly.
+          - text: It only controls the SQL databases it was made for
+            reply: Its name says SQL, but its privilege says domain admin. That privilege spans the entire directory — every machine and account — not just the databases.
+          - text: It is powerful, but only inside head office, not the stores
+            reply: The stores log in against the same directory over the VPN. A domain admin owns their logins too. One account, the whole company.
+      done: { answer: correct }
+
+    - id: blast
+      title: The blast radius
+      say: Step back from the technique and think about what a domain admin at a retailer could actually do.
+      do: Answer the question.
+      hint: What is the worst a single domain admin could cause here?
+      ask:
+        question: What is the real-world impact of owning the domain?
+        options:
+          - text: Total compromise — steal data across the company, shut down tills in every store, or deploy ransomware to all 120 stores and head office at once.
+            correct: true
+            reply: >-
+              Yes. This is how retailers get taken down company-wide. One domain
+              admin can push software to every machine, so a single account can
+              turn into every till frozen and every store dark. That is the risk
+              you are proving, and why this finding is the most serious of all.
+          - text: Some inconvenience, but the stores would keep running
+            reply: A domain admin can reach every store device over the VPN and push code to all of them. "Every till in every store at once" is exactly the scenario this proves.
+          - text: Only a data breach, nothing operational
+            reply: It is a data breach and an operational one. The same control that reads every database can also stop every till and encrypt every server. The blast radius is the whole company.
+      done: { answer: correct }
+
+    - id: fix
+      title: What breaks the chain
+      say: This whole path had cheap off-ramps. Name the ones that matter most.
+      do: Answer the question.
+      hint: Think about the service account, and about the walls between stores and head office.
+      ask:
+        question: What would have stopped the domain takeover?
+        options:
+          - text: A long, managed password on the service account and not making it a domain admin, tiered admin accounts, and segmenting the stores off the server network.
+            correct: true
+            reply: >-
+              Yes. A 25-character managed password makes Kerberoasting useless,
+              least privilege means the account could not own the domain,
+              tiering limits where admin logins work, and segmentation stops a
+              store ever reaching the directory. Any one of these breaks the
+              chain.
+          - text: Turning off Kerberos in the directory
+            reply: Kerberos is how the whole company logs in; you cannot remove it. You harden it — strong managed service passwords, least privilege, tiering — and you segment the network.
+          - text: Nothing; if an account is valid, it must be trusted
+            reply: Valid does not have to mean all-powerful. Least privilege, managed passwords and network segmentation all limit what a stolen account can reach. The takeover was avoidable.
+      done: { answer: correct }
+  outro:
+    title: You could own it all
+    learned:
+      - Kerberoasting lets any domain account request a service's ticket and crack its password offline, quietly.
+      - A weak, old service-account password is a direct route to whatever that account can reach.
+      - A domain-admin account is the master key to every machine and login — head office and all 120 stores.
+      - The fixes are managed service passwords, least privilege, tiered admin accounts, and network segmentation.
+    next: "Floor 7: The report"
+qcto: [KM-03-KT10, KM-03-KT11, KM-03-KT12, KM-03-KT13, PM-02-PS02, FA3.4]

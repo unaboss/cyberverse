@@ -1,0 +1,343 @@
+# Advanced defend tower, floor 0. Built on 2026-11-21 from the agreed floor
+# plan.
+#
+# The learner's first morning in Ikhaya Stores' SOC. Customers say somebody
+# spent their loyalty points, and the shop's sign-in log for yesterday has
+# 122 000 lines. The floor's new desk tool is a query console: real SELECT
+# queries, a clause at a time (COUNT, GROUP BY, WHERE, ORDER BY, LIKE,
+# DISTINCT), until the haystack gives up a credential-stuffing run: 70 000
+# leaked passwords from other sites, each tried once, from 180 addresses, by
+# one bot with one old browser string. 63 worked. The learner forces a reset
+# for exactly those 63, switches on bot protection, and turns the query into
+# an alert so nobody has to find it by hand again.
+
+id: defend-adv-00-sign-ins
+title: "122 000 sign-ins"
+status: draft
+role: prey
+org: ikhaya
+startTime: "08:30"
+durationMin: 0
+speed: 1
+map:
+  rooms: [technology, ecommerce, customer]
+  outside: [internet]
+  perimeter: true
+  note: Head office, where the SOC sits in Technology, and the online shop up in the cloud. The stores come into view as you climb.
+briefing: |
+  Welcome to Ikhaya Stores: 120 stores, an online shop and 1.1 million
+  loyalty members. You're the newest analyst in the security operations
+  centre.
+
+  Since yesterday afternoon, customer care has had 40 calls from customers
+  whose loyalty points were spent on vouchers they never bought. Thato, the
+  SOC lead, has pulled yesterday's sign-in log for the online shop.
+controls:
+  shop-bot-protection: off
+tools:
+  sql:
+    source: SIEM
+    start: SELECT * FROM signins LIMIT 10
+    tables:
+      signins:
+        dataset: signins
+        about: Every sign-in to the online shop and the app, yesterday, 00:00 to 23:59.
+    findings:
+      - { id: total, check: { value: 122000 } }
+      - { id: by-hour, check: { rows: 24, column: hour } }
+      - { id: by-ip, check: { column: ip, topIn: bot-ips, min: 5 } }
+      - { id: by-agent, check: { column: user_agent, topHas: Chrome/108 } }
+      - { id: distinct, check: { value: 70000, uses: distinct } }
+      - { id: taken, check: { set: taken } }
+    action:
+      column: username
+      set: taken
+      label: Force a password reset
+      noun: customers
+      done: >-
+        Exactly the 63. Their sessions are ended, their points are frozen
+        until they sign in with a new password, and each gets an SMS saying
+        why.
+guide:
+  mentor: soc-lead
+  target: 20
+  steps:
+    - id: look
+      title: Open the console
+      say: >-
+        A shop this size writes a sign-in line every second or so. Nobody
+        reads that by eye: we ask it questions, in SQL. The query console
+        reads the SIEM, and it's read-only, so you can't break anything.
+      do: Open the Query console on your desk.
+      hint: The tool windows sit folded at the top left of the desk. Press the arrow on "Query console".
+      done: { look: tab, id: sql }
+      praise: >-
+        One table, signins, one row per sign-in. The editor already holds
+        a query: SELECT * means every column, FROM says which table, LIMIT 10
+        stops after ten rows. Press Run to see what a row looks like.
+
+    - id: count
+      title: How many?
+      say: >-
+        Start with the size of the haystack. COUNT(*) counts rows instead of
+        showing them.
+      do: "Count the rows: SELECT COUNT(*) FROM signins"
+      hint: "Type SELECT COUNT(*) FROM signins in the editor and press Run, or Ctrl+Enter."
+      show: { tab: sql }
+      done: { action: sql.query, target: total }
+      wrong: Count every row in signins, with nothing in a WHERE.
+      praise: 122 000 sign-ins in one day.
+
+    - id: size
+      title: Is that a lot?
+      say: The shop has about 52 000 sign-ins on a normal day.
+      do: Answer the question.
+      hint: Divide 122 000 by 52 000.
+      ask:
+        question: How does yesterday compare with a normal day?
+        options:
+          - text: More than twice as many. Something added about 70 000 sign-ins.
+            correct: true
+            reply: >-
+              Yes: 122 000 ÷ 52 000 ≈ 2.3. Always size a number against
+              normal before you decide it's strange. Now find out when the
+              extra came.
+          - text: About the same. Shops are busy.
+            reply: 122 000 is more than twice 52 000. Something added about 70 000 sign-ins.
+          - text: Twenty times as many
+            reply: Divide again. 122 000 ÷ 52 000 is a little over 2.
+      done: { answer: correct }
+
+    - id: hours
+      title: When?
+      say: >-
+        GROUP BY puts rows into piles, one pile per value, and COUNT(*)
+        then counts each pile. Grouping by hour gives one row per hour of
+        the day. ORDER BY sorts the answer.
+      do: "Count the sign-ins in each hour: SELECT hour, COUNT(*) FROM signins GROUP BY hour ORDER BY hour"
+      hint: "SELECT hour, COUNT(*) FROM signins GROUP BY hour ORDER BY hour"
+      show: { tab: sql }
+      done: { action: sql.query, target: by-hour }
+      wrong: Group by hour, so you get one row for each of the 24 hours.
+
+    - id: when
+      title: Read the hours
+      say: Customers shop in the evening. Look at what the night looks like.
+      do: Answer the question.
+      hint: Which hours have over 20 000 sign-ins, when the evening peak has about 4 000?
+      ask:
+        question: When did the extra sign-ins come?
+        options:
+          - text: Between 02:00 and 05:00, when almost nobody shops
+            correct: true
+            reply: >-
+              Yes: 20 000 to 24 000 an hour, at an hour when the shop
+              normally sees a few hundred. Attacks run while people sleep,
+              because nobody's watching and the bot has the shop to itself.
+          - text: In the evening peak, 18:00 to 20:00
+            reply: The evening is busy, but only about 4 000 an hour. Look at hours 2, 3 and 4.
+          - text: Spread evenly through the day
+            reply: Look again. Three hours in the small hours have ten times the evening's sign-ins.
+      done: { answer: correct }
+
+    - id: by-ip
+      title: Who sent them?
+      say: >-
+        WHERE keeps only the rows you ask for. Text goes in single quotes.
+        Count the failed sign-ins per address, busiest first: DESC sorts
+        from high to low.
+      do: "SELECT ip, COUNT(*) FROM signins WHERE result = 'fail' GROUP BY ip ORDER BY COUNT(*) DESC LIMIT 10"
+      hint: "Copy it exactly: SELECT ip, COUNT(*) FROM signins WHERE result = 'fail' GROUP BY ip ORDER BY COUNT(*) DESC LIMIT 10"
+      show: { tab: sql }
+      done: { action: sql.query, target: by-ip }
+      wrong: Count only failed sign-ins (WHERE result = 'fail'), per ip, busiest first.
+
+    - id: block
+      title: Block them?
+      say: The busiest addresses each sent about 395 failed sign-ins.
+      do: Answer the question.
+      hint: Run the query again without LIMIT 10. How many addresses send a few hundred each?
+      ask:
+        question: Should we block those ten addresses?
+        options:
+          - text: No. Nearly 200 addresses send a few hundred each, and the bot rents new ones. Blocking won't stop it.
+            correct: true
+            reply: >-
+              Right. It's spread thin on purpose, so no address looks busy.
+              They're residential proxies: hijacked home routers and phones,
+              some of them in South Africa, which our own customers share.
+              Look at what the requests have in common instead.
+          - text: Yes. Block the ten and it's over.
+            reply: Run it without LIMIT 10. Nearly 200 addresses send a few hundred each. Block ten and the rest carry on.
+          - text: Block every address in the list
+            reply: >-
+              Some of them are home connections our real customers use too,
+              and tomorrow the bot rents others. Look for what the requests
+              have in common.
+      done: { answer: correct }
+
+    - id: by-agent
+      title: What do they have in common?
+      say: >-
+        Every request says which browser sent it, in the user_agent
+        column. Real customers use dozens of phones and browsers. A bot
+        usually uses one.
+      do: Count the failed sign-ins per user_agent, busiest first.
+      hint: "SELECT user_agent, COUNT(*) FROM signins WHERE result = 'fail' GROUP BY user_agent ORDER BY COUNT(*) DESC"
+      show: { tab: sql }
+      done: { action: sql.query, target: by-agent }
+      wrong: Group the failed sign-ins by user_agent, busiest first.
+      praise: >-
+        69 937 failures from one browser string: Chrome version 108, from
+        2022. Every honest Chrome in the log is version 130. That's the bot.
+
+    - id: distinct
+      title: One try each
+      say: >-
+        Is the bot guessing many passwords for a few accounts, or one
+        password for many? COUNT(DISTINCT username) counts different
+        usernames, not rows. LIKE with % matches part of a text: '%Chrome/108%'
+        means "Chrome/108 anywhere in it".
+      do: "SELECT COUNT(*), COUNT(DISTINCT username) FROM signins WHERE user_agent LIKE '%Chrome/108%'"
+      hint: "SELECT COUNT(*), COUNT(DISTINCT username) FROM signins WHERE user_agent LIKE '%Chrome/108%'"
+      show: { tab: sql }
+      done: { action: sql.query, target: distinct }
+      wrong: Count the rows and the distinct usernames for the bot's user_agent, with LIKE '%Chrome/108%'.
+
+    - id: what
+      title: Name it
+      say: 70 000 tries for 70 000 different accounts, each tried once.
+      do: Answer the question.
+      hint: Where would a bot get one password for each of 70 000 email addresses?
+      ask:
+        question: What kind of attack is this?
+        options:
+          - text: Credential stuffing. Email and password pairs leaked from other sites, tried once each, hoping people reused them.
+            correct: true
+            reply: >-
+              Yes. Breaches elsewhere leak billions of pairs, and people reuse
+              passwords. Group by reason and you'll see 52 500 "no such
+              account": the list was made for other sites, and the bot just
+              tries it everywhere.
+          - text: Brute force. Guessing every password for one account
+            reply: Brute force tries many passwords on few accounts. Here every account was tried once.
+          - text: Password spraying. One common password like Summer2026! on every account
+            reply: Close, but spraying uses the same guess for everyone. This bot had a different password for each email address, from a leaked list.
+      done: { answer: correct }
+
+    - id: taken
+      title: Who got in?
+      say: >-
+        A few of those tries worked. Combine two conditions with AND, and
+        DISTINCT shows each username once.
+      do: List the usernames the bot signed in as.
+      hint: "SELECT DISTINCT username FROM signins WHERE user_agent LIKE '%Chrome/108%' AND result = 'ok'"
+      show: { tab: sql }
+      done: { action: sql.query, target: taken }
+      wrong: The bot's user_agent, AND result = 'ok', one row per username.
+      praise: 63 customers. Those are the ones whose points were spent.
+
+    - id: reset
+      title: Lock the bot out
+      say: >-
+        The bot holds their passwords and maybe their sessions. Force a
+        reset for exactly those customers: no fewer, or the bot keeps some,
+        and no more, or you lock out customers who did nothing wrong.
+      do: With the 63 usernames in the result, press Force a password reset.
+      hint: Run the query from the last step again if the result shows something else, then press the red button under it.
+      show: { tab: sql }
+      done: { action: sql.act, target: taken }
+      wrong: Force the reset from the list of the 63 who got in.
+
+    - id: rate
+      title: How often does it work?
+      say: 70 000 tries, 63 got in.
+      do: Answer the question.
+      hint: 63 ÷ 70 000, as a percentage.
+      ask:
+        question: What's the bot's success rate?
+        options:
+          - text: About 0.09%, roughly one in 1 100
+            correct: true
+            reply: >-
+              Yes. It looks tiny, and it's why this crime pays: lists come in
+              the millions, the bot is free to run, and every account it gets
+              into has points, saved cards or an address to sell.
+          - text: About 9%
+            reply: 63 ÷ 70 000 = 0.0009. As a percentage that's 0.09%, not 9%.
+          - text: About 0.9%
+            reply: Ten times too big. 63 ÷ 70 000 = 0.0009, which is 0.09%.
+      done: { answer: correct }
+
+    - id: protect
+      title: Close the door
+      say: >-
+        The shop's sign-in takes unlimited tries from anywhere, with no
+        check for passwords that are already in breach lists.
+      do: In Controls, switch on bot protection for the shop's sign-in.
+      hint: Look for "Bot protection on the shop's sign-in".
+      show: { tab: controls }
+      done: { action: control, target: shop-bot-protection }
+      wrong: That won't slow the bot. Look for the shop's bot protection.
+      praise: >-
+        Automated traffic gets challenged, repeated failures slow down, and
+        a password that's in a known breach is refused at sign-in.
+
+    - id: advice
+      title: Tell the customers
+      say: >-
+        Customer care is writing to the 63, and to everyone else, about
+        passwords.
+      do: Answer the question.
+      hint: What made the attack work in the first place?
+      ask:
+        question: What's the one piece of advice that would have saved them?
+        options:
+          - text: Use a different password on every site, kept in a password manager, and turn on the second factor where you can.
+            correct: true
+            reply: >-
+              Yes. A leak on one site then stays on that site. The shop can
+              slow the bot down; only customers can stop reusing passwords.
+          - text: Change your password every month
+            reply: >-
+              Changing it often doesn't help if it's the same one you use
+              everywhere else. Forced rotation mostly makes people pick weaker
+              passwords. One per site is the fix.
+          - text: Make your password longer
+            reply: A long password leaked from another site still works here. The problem is reuse.
+      done: { answer: correct }
+
+    - id: alert
+      title: Never by hand again
+      say: >-
+        You found this with six queries. Next time, the SIEM should find it
+        for you while you sleep.
+      do: Answer the question.
+      hint: What did the attack look like in your queries?
+      ask:
+        question: What should the new SIEM alert look for?
+        options:
+          - text: Over 500 failed sign-ins in an hour from one browser string, or for over 500 different usernames
+            correct: true
+            reply: >-
+              Yes. A query you run by hand once becomes a detection rule that
+              runs every five minutes. It catches the shape of the attack,
+              not one address the bot will drop tomorrow.
+          - text: Any failed sign-in
+            reply: Honest customers mistype 2 000 times a day. You'd drown in alerts and start ignoring them.
+          - text: Sign-ins from 10.88.0.210
+            reply: That's one of 180 addresses the bot will stop using tomorrow. Alert on the shape of the attack instead.
+      done: { answer: correct }
+  outro:
+    title: Floor 0 complete
+    learned:
+      - Size a number against normal before you call it strange.
+      - "SQL: SELECT, FROM, WHERE, GROUP BY, ORDER BY, LIMIT, COUNT(*), COUNT(DISTINCT), LIKE and AND."
+      - Credential stuffing tries passwords leaked from other sites, once per account, spread across many addresses.
+      - Blocking addresses doesn't stop a botnet. Look for what the requests have in common.
+      - Act on exactly the accounts affected, no more and no fewer.
+      - A 0.09% success rate still pays an attacker who has millions of passwords.
+      - The fix is bot protection and breached-password checks, and customers using one password per site.
+      - A query you run once by hand should become an alert.
+    next: "Floor 1: Forty stores"
+qcto: [KM-08-KT02, KM-08-KT04, KM-08-KT06, KM-06-KT04, PM-06-PS08, KM-07-KT22, KM-01-KT04]

@@ -1,0 +1,92 @@
+# Intermediate attack tower, floor 2. Pivoting. The learner already holds a
+# shell on the plans portal (seeded foothold). From it they scan the internal
+# server network the firewall hid from the outside, and see the real targets.
+
+id: attack-mid-02-pivoting
+title: "Pivoting"
+status: draft
+role: predator
+org: siyakhula
+startTime: "10:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+foothold: plans-portal
+briefing: |
+  You have your shell on the plans portal. Now you use it. The server network,
+  10.88.22.0/24, was invisible from the internet. From inside, it is one hop
+  away.
+
+  Pivoting means attacking through a machine you already own. You run your scans
+  from the foothold, so they come from a trusted inside address, and you finally
+  see the servers.
+guide:
+  mentor: founder
+  target: 15
+  steps:
+    - id: why
+      title: Why scan from inside
+      say: You still have your Kali box on the internet. But a scan from there cannot see the server network.
+      do: Answer the question.
+      hint: What stands between your Kali box and the servers?
+      ask:
+        question: Why scan the servers from the foothold instead of from Kali?
+        options:
+          - text: The firewall blocks the internet from reaching the servers, but it lets the web server reach them. Scanning through the foothold inherits that access.
+            correct: true
+            reply: >-
+              Yes. That is pivoting. Your foothold sits where the firewall
+              trusts it, so traffic from it reaches machines your Kali box
+              never could. You attack through the machine you own.
+          - text: It is faster from the foothold
+            reply: Speed is not the point. From Kali the servers are simply unreachable. The foothold is on the inside, where they are not.
+          - text: There is no difference
+            reply: There is all the difference. The firewall hides the servers from the internet but not from the web server. That is why you pivot.
+      done: { answer: correct }
+
+    - id: enter
+      title: Enter your shell
+      say: Your foothold is session 1. Step into it, so the commands you type run from the plans portal, not from Kali.
+      do: Interact with your session.
+      hint: "Type `sessions -i 1` and press Enter. The prompt changes to the target."
+      show: { tab: term }
+      done: { command: { did: read, text: sessions } }
+
+    - id: scan
+      title: Scan the servers
+      say: Now scan the server network from inside. The internal firewall does not answer pings between zones, so skip the ping with -Pn and name the ports you care about.
+      do: Scan the internal servers from your foothold.
+      hint: "Type `nmap -Pn -p 8080 10.88.22.30 10.88.22.50` to check the two application servers on their web port."
+      show: { tab: term }
+      done: { command: { did: scan, of: vending } }
+      praise: There they are. A vending server and a GIS server, both running web apps on 8080, invisible from the internet a moment ago. These are the machines worth attacking.
+
+    - id: next
+      title: What you found
+      say: The internal scan changed the picture.
+      do: Answer the question.
+      hint: What do these internal servers run, and what does that invite?
+      ask:
+        question: You found internal servers running old web apps. What now?
+        options:
+          - text: Fingerprint their versions and look for known exploits, the same method as outside, but now against the soft internal machines.
+            correct: true
+            reply: >-
+              Yes. Inside, machines are often older and less guarded, because
+              everyone assumed the firewall would protect them. The method is
+              the same; the targets are softer.
+          - text: Stop; you have gone far enough
+            reply: You have a foothold and a map of the internal servers. The engagement is to show how far an attacker reaches, so you keep going, carefully.
+          - text: Attack the firewall itself
+            reply: The firewall is doing its job; you went around it with the foothold. The reachable internal servers are the way forward.
+      done: { answer: correct }
+  outro:
+    title: You can see inside
+    learned:
+      - Pivoting means attacking through a machine you already control.
+      - A foothold inherits the trust the firewall gives its position, reaching machines Kali cannot.
+      - Interact with a session to run commands from the foothold instead of from Kali.
+      - Internal firewalls often do not answer cross-zone pings, so scan with -Pn and named ports.
+      - Internal servers are frequently older and softer, because everyone trusted the perimeter.
+    next: "Floor 3: Internal exploitation"
+qcto: [KM-03-KT09, KM-03-KT10, KM-03-KT11, PM-02-PS02, FA3.4]

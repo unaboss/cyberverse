@@ -1,0 +1,74 @@
+id: customer
+name: Customer care
+purpose: The contact centre and the loyalty programme. Answers 4 000 calls, chats and emails a day.
+room: { x: 8, y: 7, w: 7, h: 4 }
+
+people:
+  - id: cs-lead
+    role: Customer care lead
+    kind: human
+    name: Naledi Shange
+    awareness: 0.6
+  - id: agent-bot
+    role: Customer chat assistant
+    kind: agent
+    name: Ikhaya Assist
+    permissions: [read order status, read loyalty balance]
+    description: The AI chat assistant on the website. It can look up an order and a points balance, and hands everything else to a person.
+
+processes:
+  - id: loyalty-queries
+    name: Loyalty and order queries
+    owner: cs-lead
+    every: 10m
+    hours: work
+    steps:
+      - Verify the caller with a one-time code to their cellphone before discussing an account. Never read out card or ID numbers.
+    activity:
+      - { action: http, system: crm, via: contact-pc, path: /members/search }
+
+systems:
+  - id: crm
+    name: Customer and loyalty CRM
+    hostname: crm
+    kind: web
+    zone: servers
+    ip: 10.88.32.70
+    os: Windows Server 2022
+    services:
+      - { port: 443, name: https, product: CRM, version: "9.1" }
+  - id: contact-pc
+    name: Contact centre desktop
+    hostname: cc-pc
+    kind: desktop
+    zone: hq
+    ip: 10.88.31.70
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: loyalty-members
+    name: Loyalty members
+    sensitivity: restricted
+    personalInformation: true
+    system: crm
+    path: crm.members
+    records: 1100000
+    impact: 10000000
+
+connections:
+  - { to: ecommerce, kind: internal, trust: The CRM and the shop share customer accounts. }
+  - { to: external:customers, kind: portal, trust: Customers call, chat and email. }
+
+threats: []
+
+controls: []
+
+maturity:
+  1: A phone at the till.
+  2: A call centre and a loyalty card.
+  3: A CRM and a loyalty programme with a million members.
+  4: Verified callers, an AI assistant with narrow permissions and every customer conversation in one place.
+
+qcto: [KM-09-KT13, KM-09-KT14]

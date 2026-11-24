@@ -1,0 +1,94 @@
+# Advanced attack tower, floor 3. The cloud bucket. Ikhaya's media bucket is
+# public so product photos load fast — and someone dropped a loyalty export of
+# 310 000 members into it to share with a marketing agency. A public bucket means
+# anyone who finds the name can list it and download everything in it. This is the
+# classic cloud misconfiguration, and it needs no login at all.
+
+id: attack-adv-03-public-bucket
+title: "The cloud bucket"
+status: draft
+role: predator
+org: ikhaya
+startTime: "10:30"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  The shop's product photos are served straight from a cloud storage bucket, and
+  to make them load fast, the bucket was made public.
+
+  Public means anyone can list it and read everything in it — no account, no
+  sign-in. And someone put a loyalty export in there to share with a marketing
+  agency: 310 000 members' names, numbers, emails and birthdays. You do not even
+  have to log in to take it.
+guide:
+  mentor: founder
+  target: 10
+  steps:
+    - id: why
+      title: Public by accident
+      say: Nobody meant to publish customer data. They made the bucket public for photos, and then used the same bucket for something private.
+      do: Answer the question.
+      hint: Who can read a bucket that is set to public?
+      ask:
+        question: What does "the bucket is public" actually mean for an attacker?
+        options:
+          - text: Anyone on the internet who knows or guesses the bucket's name can list its contents and download any file in it, with no credentials at all.
+            correct: true
+            reply: >-
+              Yes. Public means public to the whole internet. No login, no
+              exploit — just a request. The danger is that a bucket opened for
+              harmless photos ends up holding something that is not harmless.
+          - text: Only Ikhaya staff on the office network can read it
+            reply: Public storage is reachable from anywhere on the internet, not just the office. That is the whole problem — it was opened for photos and now anyone can read it.
+          - text: You still need the storage account's password
+            reply: A public bucket needs no password; that is what "public" means. Anyone who finds the name can list and download it.
+      done: { answer: correct }
+
+    - id: list
+      title: List the bucket
+      say: Point a plain web request at the bucket's exports folder and see what is sitting in it.
+      do: List the public bucket.
+      hint: "Type `curl https://{ip:media}/exports/` and press Enter."
+      show: { tab: term }
+      done: { command: { did: read, text: exports } }
+      praise: There it is — a loyalty member export, in a bucket that serves product photos. Private data in a public place.
+
+    - id: download
+      title: Take the export
+      say: It is public, so you just download it. This is the proof that 310 000 members' details were readable by anyone.
+      do: Download the loyalty export.
+      hint: "Type `curl -O https://{ip:media}/exports/loyalty-2026-10.csv` and press Enter."
+      show: { tab: term }
+      done: { command: { did: exfil, of: media } }
+      praise: 310 000 loyalty members — names, cellphones, emails, birthdays — off a public bucket, with no login and no exploit. A sample proves it; you do not keep the rest.
+
+    - id: fix
+      title: How this should have gone
+      say: This was avoidable without any clever security. Name the fix.
+      do: Answer the question.
+      hint: What should the default be, and where should photos come from?
+      ask:
+        question: What would have prevented this?
+        options:
+          - text: Buckets private by default, with public access signed off case by case, and photos served through the content network — never private data in a public bucket.
+            correct: true
+            reply: >-
+              Yes. Default-private is the control. Public access should be a
+              deliberate, reviewed exception, photos should come through the
+              content delivery network, and customer data should never share a
+              bucket with public files.
+          - text: A stronger password on the bucket
+            reply: A public bucket has no password to strengthen. The fix is to make it private by default and to keep customer data out of any public store.
+          - text: Nothing; fast photo loading needs a public bucket
+            reply: Photos can load fast through a content delivery network without exposing the bucket. And customer data should never have been in a public store in the first place.
+      done: { answer: correct }
+  outro:
+    title: No login required
+    learned:
+      - A public cloud bucket is readable by anyone on the internet, with no account or exploit.
+      - The real danger is private data ending up in a bucket that was opened for something harmless.
+      - This is the most common cloud breach, and the easiest to prevent.
+      - The fix is private-by-default storage, reviewed exceptions, and keeping customer data out of public buckets.
+    next: "Floor 4: Into a store"
+qcto: [KM-03-KT11, KM-08-KT03, KM-07-KT22, KM-08-KT01, PM-02-PS02, FA3.4]

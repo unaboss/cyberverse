@@ -1,0 +1,86 @@
+id: people
+name: People
+purpose: Hires, pays and looks after 8 000 staff in stores, distribution centres and head office.
+room: { x: 11, y: 0, w: 4, h: 3 }
+
+people:
+  - id: hr-manager
+    role: Head of people
+    kind: human
+    name: Busisiwe Dlamini
+    awareness: 0.6
+  - id: recruiter
+    role: Talent acquisition partner
+    kind: human
+    name: Keegan Adams
+    awareness: 0.5
+
+processes:
+  - id: hr-updates
+    name: Joiners, movers and leavers
+    owner: hr-manager
+    every: 1h
+    hours: work
+    steps:
+      - Capture every joiner, move and leaver the day it happens. IT disables a leaver's accounts on their last day.
+      - Every role has a job profile with its purpose, duties, competencies and who it reports to.
+    activity:
+      - { action: http, system: hr, via: hr-pc, path: /employees }
+
+systems:
+  - id: hr
+    name: HR and payroll system
+    hostname: hr
+    kind: web
+    zone: servers
+    ip: 10.88.32.50
+    os: Windows Server 2022
+    critical: true
+    services:
+      - { port: 443, name: https, product: HR and payroll, version: "11.4" }
+  - id: hr-pc
+    name: People team desktop
+    hostname: hr-pc
+    kind: desktop
+    zone: hq
+    ip: 10.88.31.55
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: staff-records
+    name: Staff records and payroll
+    sensitivity: restricted
+    personalInformation: true
+    system: hr
+    path: hr.employees
+    records: 8000
+    impact: 4000000
+    description: Names, ID numbers, bank accounts, salaries, medical aid and disciplinary records.
+
+connections:
+  - { to: technology, kind: internal, trust: Joiner and leaver forms drive account changes. }
+
+threats: []
+
+controls:
+  - id: screening
+    name: Background checks for positions of trust
+    kind: preventive
+    status: in-place
+    description: Finance, IT and security staff are checked for criminal records and credit before they start.
+  - id: ethics-line
+    name: Anonymous ethics line
+    kind: detective
+    status: in-place
+    description: Anyone can report fraud, theft or misconduct anonymously, by phone or online, to an independent service that reports to the audit and risk committee.
+    policy: Reporting in good faith is protected. Retaliation against a reporter is a dismissable offence.
+
+maturity:
+  1: The owner does the payroll.
+  2: An HR officer and a payroll package.
+  3: An HR system, job profiles and a code of conduct.
+  4: Background checks for positions of trust, an ethics line and protected reporting.
+
+qcto: [KM-04-KT04, KM-04-KT06, KM-09-KT12, PM-08-PS03]

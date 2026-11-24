@@ -1,0 +1,104 @@
+# Advanced attack tower, floor 0. DataQuant's offensive team takes on its biggest
+# client: Ikhaya Stores — an online shop in the cloud, 120 stores on a VPN, and a
+# head-office network with 8 000 staff. This floor sets the scope for a test that
+# spans a cloud account, a public internet surface, and a corporate network, and
+# the extra care that a company this size, with this much customer data, demands.
+
+id: attack-adv-00-engagement
+title: "The engagement at scale"
+status: draft
+role: predator
+org: ikhaya
+startTime: "09:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  Ikhaya Stores is the biggest target you have tested. An online shop and an API
+  in a public cloud account, 1.1 million loyalty members, 120 stores joined to
+  head office over a VPN, and a corporate network behind it all.
+
+  More surface, more data, more care. The scope now spans a cloud account you do
+  not own the hardware for, a live shop that takes real orders every minute, and
+  stores that must keep selling. Today you set the rules for all of it.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: surface
+      title: Three surfaces, one company
+      say: A retailer this size is not one network. It is a cloud account, a public shopfront, store networks, and a corporate core, each reached a different way.
+      do: Answer the question.
+      hint: Where does a modern retailer actually keep the things an attacker wants?
+      ask:
+        question: Where is Ikhaya's attack surface?
+        options:
+          - text: Everywhere at once — the cloud shop and API on the internet, 120 stores on the VPN, and the head-office network behind them, all in scope and all connected.
+            correct: true
+            reply: >-
+              Yes. The crown jewels are spread across a cloud account, a public
+              shopfront and a corporate network, and the stores tie them
+              together. You test the whole chain, because an attacker will.
+          - text: Only the head-office servers, where the important systems live
+            reply: The important data lives in the cloud too — orders, loyalty members, customer accounts. And the stores are a way in. A test of only head office misses most of the risk.
+          - text: Only the public website, since that is all the internet can see
+            reply: The website is one door. The API, the cloud storage, and the internet-facing store devices are others. Modern attacks come through the surface nobody was watching.
+      done: { answer: correct }
+
+    - id: cloud
+      title: Someone else's computer
+      say: Much of Ikhaya runs in a public cloud account. Testing cloud is not quite like testing a server in a room you can point at.
+      do: Answer the question.
+      hint: Whose rules also apply when the systems sit in a cloud provider's account?
+      ask:
+        question: What is different about testing systems in a public cloud account?
+        options:
+          - text: The cloud provider has its own rules for testing, so the authorisation must cover the cloud account, and you test Ikhaya's own resources, not the provider's shared infrastructure.
+            correct: true
+            reply: >-
+              Yes. You attack Ikhaya's buckets, apps and APIs, not the provider's
+              platform. The scope letter names the cloud account, and you stay
+              inside what Ikhaya actually controls.
+          - text: Nothing is different; a cloud server is just a server
+            reply: The techniques rhyme, but the boundary matters. You are a tenant in a provider's account, and testing must stay on Ikhaya's own resources, within the provider's rules.
+          - text: The cloud provider does all the security, so there is nothing to test
+            reply: The provider secures the platform; Ikhaya secures what it puts on it — its buckets, its API, its access rules. That shared responsibility is exactly what you are testing.
+      done: { answer: correct }
+
+    - id: scope
+      title: The scope letter
+      say: With this much reach, the scope letter is your safety line. Read it before you touch anything.
+      do: Read the scope letter.
+      hint: Type `cat scope-letter.pdf` and press Enter.
+      show: { tab: term }
+      done: { command: { did: read, text: scope-letter } }
+      praise: Ikhaya's systems are in scope; nothing else is. And one line matters most here — the shop takes real money every minute, so you prove risk without taking it down.
+
+    - id: data
+      title: A million people's data
+      say: Behind the shop sit 1.1 million loyalty members and millions of orders, with names, numbers and addresses.
+      do: Answer the question.
+      hint: You are proving the data is reachable, not collecting a copy of it.
+      ask:
+        question: You will be able to reach data on millions of customers. How do you handle it?
+        options:
+          - text: Prove you could read it with a tiny sample, kept encrypted and logged, and deleted after the report — never a full copy of millions of people's details.
+            correct: true
+            reply: >-
+              Yes. The finding is "this was reachable", shown with a handful of
+              rows. A full export of a million people sitting on your laptop is
+              the breach you were hired to prevent.
+          - text: Download it all, so the report has complete evidence
+            reply: A few rows prove the point. Millions of customers' details on your machine is a liability you created, and exactly the leak you are testing for. Sample, secure, delete.
+          - text: It is only test data once you have it, so it does not matter
+            reply: It is real people's real data the moment you touch it. Minimal sample, secured, deleted after — the same rule as every engagement, and it matters more at this scale.
+      done: { answer: correct }
+  outro:
+    title: The engagement is set
+    learned:
+      - A large retailer's attack surface spans the cloud, the public internet, store networks and the corporate core — all connected.
+      - Testing cloud means staying on the client's own resources and inside the provider's rules; the scope letter names the account.
+      - A live shop takes real money, so you prove risk without disrupting it.
+      - Reaching millions of customers' data is proven with a minimal, secured sample, never a full copy.
+    next: "Floor 1: The cloud shop"
+qcto: [KM-03-KT01, KM-03-KT02, KM-03-KT04, KM-07-KT22, PM-02-PS01, FA1.3, FA3.4]

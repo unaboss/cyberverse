@@ -1,0 +1,461 @@
+# Advanced defend tower, floor 1. Built on 2026-11-21 from the agreed floor
+# plan.
+#
+# Forty stores, one question: which camera recorders still take the factory
+# password? Too many to log in to by hand. The floor's new desk tool is a
+# script editor with the same script in bash, Python and PowerShell, left half
+# finished by the network engineer. The learner picks the language that fits
+# the job, finishes the loop, the error handling and the check, tests it on
+# one store, runs it on all forty, fixes what it finds and runs it again to
+# prove the fix. Two stores don't answer: unknown is not the same as safe,
+# and one of them is store 47.
+
+id: defend-adv-01-forty-stores
+title: "Forty stores"
+status: draft
+role: prey
+org: ikhaya
+startTime: "09:10"
+durationMin: 0
+speed: 1
+map:
+  rooms: [technology, ecommerce, customer, stores]
+  outside: [internet]
+  perimeter: true
+  note: The stores join the map. All 120 of them reach head office over one VPN.
+briefing: |
+  After yesterday, the CIO wants to know which of the stores' camera
+  recorders still take the factory password, admin/admin. The alarm company
+  installed them in 2021, and nobody's sure they were all changed.
+
+  Lindiwe, the network engineer, started a script to check the 40 stores in
+  the Eastern Cape before she went home sick. Thato asks you to finish it.
+tools:
+  script:
+    host: jump
+    editor: "VS Code over SSH to the jump host · ~/scripts · git: main"
+    list: { file: stores.txt, about: 'The 40 Eastern Cape stores, one "store address" per line' }
+    stores: { from: 41, to: 80, ip: 10.88.33., default: [44, 52, 58, 63, 71], dead: [47, 61] }
+    fix:
+      label: Set a unique vault password on each flagged recorder
+      done: >-
+        Five recorders now have long random passwords, kept in the password
+        vault under each store's number. Now prove it: run the check again.
+    draft: { errors: crash }
+    languages:
+      bash:
+        file: check-recorders.sh
+        run: ./check-recorders.sh stores.txt
+        crash: |-
+          curl: (28) Connection timed out after 5001 milliseconds
+          (the script stops here: set -e ends it at the first command that fails)
+        template: |-
+          #!/usr/bin/env bash
+          # Which store camera recorders still take the factory password?
+          # Usage: ./check-recorders.sh stores.txt   (one "store address" per line)
+          # Authorised under change CHG-2211: our own recorders, from the jump host.
+          set -euo pipefail
+          list="$1"
+          echo "store,result" > results.csv
+          {{loop}}
+            {{errors}}
+            {{verdict}}
+            echo "$store $ip $result"
+            echo "$store,$result" >> results.csv
+          {{/loop}}
+      python:
+        file: check_recorders.py
+        run: python3 check_recorders.py stores.txt
+        crash: |-
+          Traceback (most recent call last):
+            File "/home/lindiwe/scripts/check_recorders.py", line 18, in <module>
+              code = requests.get(f"http://{ip}/", auth=("admin", "admin"), timeout=5).status_code
+          requests.exceptions.ConnectTimeout: HTTPConnectionPool(host='<ip>', port=80): Max retries exceeded with url: / (connect timeout=5)
+        template: |-
+          #!/usr/bin/env python3
+          """Which store camera recorders still take the factory password?
+
+          Usage: python3 check_recorders.py stores.txt   (one "store address" per line)
+          Authorised under change CHG-2211: our own recorders, from the jump host.
+          """
+          import csv
+          import sys
+
+          import requests
+
+          with open(sys.argv[1]) as f, open("results.csv", "w", newline="") as out:
+              results = csv.writer(out)
+              results.writerow(["store", "result"])
+              {{loop}}
+                  store, ip = line.split()
+                  {{errors}}
+                  {{verdict}}
+                  print(store, ip, result)
+                  results.writerow([store, result])
+      powershell:
+        file: Check-Recorders.ps1
+        run: ./Check-Recorders.ps1 -List stores.txt
+        crash: |-
+          Invoke-WebRequest: The request was canceled due to the configured HttpClient.Timeout of 5 seconds elapsing.
+          (the script stops here: -ErrorAction Stop turns the error into the end of the script)
+        template: |-
+          #Requires -Version 7
+          <# Which store camera recorders still take the factory password?
+             Usage: ./Check-Recorders.ps1 -List stores.txt   (one "store address" per line)
+             Authorised under change CHG-2211: our own recorders, from the jump host. #>
+          param([Parameter(Mandatory)][string]$List)
+          $factory = [pscredential]::new('admin', (ConvertTo-SecureString 'admin' -AsPlainText -Force))
+          $results = {{loop}}
+              $store, $ip = $line -split '\s+'
+              {{errors}}
+              {{verdict}}
+              Write-Host "$store $ip $result"
+              [pscustomobject]@{ Store = $store; Result = $result }
+          {{/loop}}
+          $results | Export-Csv results.csv -NoTypeInformation
+    slots:
+      - id: loop
+        label: The loop
+        role: loop
+        options:
+          - id: each
+            correct: true
+            code:
+              bash: while read -r store ip; do
+              python: "for line in f:"
+              powershell: foreach ($line in Get-Content $List) {
+            end: { bash: done < "$list", python: "", powershell: "}" }
+            reply: One pass per line of the file, and it stops when the lines run out.
+          - id: name
+            code:
+              bash: for store in "$list"; do
+              python: "for line in sys.argv[1]:"
+              powershell: foreach ($line in $List) {
+            end: { bash: done, python: "", powershell: "}" }
+            output:
+              bash: |-
+                stores.txt                 refused
+                (one line, and no store: the loop went round once, with the file's name)
+              python: |-
+                Traceback (most recent call last):
+                  File "/home/lindiwe/scripts/check_recorders.py", line 16, in <module>
+                    store, ip = line.split()
+                ValueError: not enough values to unpack (expected 2, got 1)
+              powershell: |-
+                stores.txt                 refused
+                (one line, and no store: the loop went round once, with the file's name)
+            reply:
+              bash: That loops over the file's name, once, not over the lines inside it. Read the file line by line instead.
+              python: That loops over the letters of the file's name. The first letter is "s", which isn't a store. Loop over the open file, f.
+              powershell: That loops over the file's name, once. Get-Content gives you the lines inside it.
+          - id: forever
+            code:
+              bash: |-
+                while true; do
+                  read -r store ip || true
+              python: |-
+                while True:
+                    line = f.readline()
+              powershell: |-
+                while ($true) {
+                    $line = Get-Content $List -TotalCount 1
+            end: { bash: done < "$list", python: "", powershell: "}" }
+            output:
+              bash: |-
+                41   10.88.33.41   refused
+                42   10.88.33.42   refused
+                …
+                80   10.88.33.80   refused
+                80   10.88.33.80   refused
+                80   10.88.33.80   refused
+                … (still running after five minutes: you stopped it with Ctrl+C)
+              python: |-
+                41 10.88.33.41 refused
+                …
+                80 10.88.33.80 refused
+                Traceback (most recent call last):
+                  File "/home/lindiwe/scripts/check_recorders.py", line 17, in <module>
+                    store, ip = line.split()
+                ValueError: not enough values to unpack (expected 2, got 0)
+              powershell: |-
+                41 10.88.33.41 refused
+                41 10.88.33.41 refused
+                41 10.88.33.41 refused
+                … (still running after five minutes: you stopped it with Ctrl+C)
+            reply:
+              bash: It never stops. When the file runs out, read fails, and while true carries on with the last store for ever. Loop over the data, so the loop ends when the data does.
+              python: When the file runs out, readline gives an empty line, and the script crashes on it. Loop over the file itself, so the loop ends when the data does.
+              powershell: It reads the first line again and again, for ever. Loop over the lines with foreach, so the loop ends when the data does.
+      - id: errors
+        label: When a store doesn't answer
+        role: errors
+        options:
+          - id: handled
+            correct: true
+            effect: handled
+            code:
+              bash: code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 -u admin:admin "http://$ip/") || code="none"
+              python: |-
+                try:
+                    code = requests.get(f"http://{ip}/", auth=("admin", "admin"), timeout=5).status_code
+                except requests.RequestException:
+                    code = None
+              powershell: |-
+                try {
+                    $code = (Invoke-WebRequest "http://$ip/" -Credential $factory -AllowUnencryptedAuthentication -TimeoutSec 5 -SkipHttpErrorCheck -ErrorAction Stop).StatusCode
+                } catch { $code = $null }
+            reply: Wait five seconds at most, note that it didn't answer, and carry on with the next store.
+          - id: crash
+            effect: crash
+            code:
+              bash: code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 -u admin:admin "http://$ip/")
+              python: code = requests.get(f"http://{ip}/", auth=("admin", "admin"), timeout=5).status_code
+              powershell: $code = (Invoke-WebRequest "http://$ip/" -Credential $factory -AllowUnencryptedAuthentication -TimeoutSec 5 -SkipHttpErrorCheck -ErrorAction Stop).StatusCode
+            reply: >-
+              The first store that doesn't answer ends the whole script, and
+              every store after it goes unchecked. With 40 stores, one is
+              always down. Catch the error, write it down, and carry on.
+          - id: skip
+            effect: skip
+            code:
+              bash: code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 -u admin:admin "http://$ip/" 2>/dev/null) || continue
+              python: |-
+                try:
+                    code = requests.get(f"http://{ip}/", auth=("admin", "admin"), timeout=5).status_code
+                except Exception:
+                    continue
+              powershell: |-
+                try {
+                    $code = (Invoke-WebRequest "http://$ip/" -Credential $factory -AllowUnencryptedAuthentication -TimeoutSec 5 -SkipHttpErrorCheck -ErrorAction Stop).StatusCode
+                } catch { continue }
+            reply: >-
+              Count the lines: two stores are missing from the results, and
+              nothing says so. An error you swallow becomes a store you think
+              you checked. Write down "no answer" instead.
+      - id: verdict
+        label: Reading the answer
+        role: verdict
+        options:
+          - id: right
+            correct: true
+            effect: right
+            code:
+              bash: |-
+                case "$code" in
+                  200) result="DEFAULT PASSWORD" ;;
+                  401) result="refused" ;;
+                  *)   result="no answer" ;;
+                esac
+              python: |-
+                if code == 200:
+                    result = "DEFAULT PASSWORD"
+                elif code == 401:
+                    result = "refused"
+                else:
+                    result = "no answer"
+              powershell: "$result = switch ($code) { 200 { 'DEFAULT PASSWORD' } 401 { 'refused' } default { 'no answer' } }"
+            reply: 200 means admin/admin let us in. 401 means it was refused. Anything else means we don't know.
+          - id: any
+            effect: any
+            code:
+              bash: if [ -n "$code" ]; then result="DEFAULT PASSWORD"; else result="refused"; fi
+              python: 'result = "DEFAULT PASSWORD" if code else "refused"'
+              powershell: "$result = if ($code) { 'DEFAULT PASSWORD' } else { 'refused' }"
+            reply: >-
+              Every recorder answers something, with or without the right
+              password, so every store comes out as DEFAULT PASSWORD. The
+              answer is in the status code: 200 means admin/admin worked, 401
+              means it was refused.
+          - id: inverted
+            effect: inverted
+            code:
+              bash: if [ "$code" = 401 ]; then result="DEFAULT PASSWORD"; else result="refused"; fi
+              python: 'result = "DEFAULT PASSWORD" if code == 401 else "refused"'
+              powershell: "$result = if ($code -eq 401) { 'DEFAULT PASSWORD' } else { 'refused' }"
+            reply: >-
+              Backwards. 401 Unauthorized means the recorder refused
+              admin/admin: that's the good answer. 200 OK means it let us in.
+guide:
+  mentor: soc-lead
+  target: 20
+  steps:
+    - id: look
+      title: Open the script
+      say: >-
+        Forty stores, one login each, by hand: an afternoon, and a mistake
+        somewhere around store 30. A script does the same thing forty times
+        without getting bored.
+      do: Open the Script editor on your desk.
+      hint: The tool windows sit folded at the top left of the desk. Press the arrow on "Script editor".
+      done: { look: tab, id: script }
+      praise: >-
+        Lindiwe's script, in three languages. Read the comment at the top:
+        it's authorised, under a change number, against our own recorders
+        only. Trying passwords on anyone else's devices is a crime, script or
+        no script.
+
+    - id: language
+      title: Which language?
+      say: >-
+        The tabs show the same script in bash, Python and PowerShell. The
+        jump host runs Ubuntu, and the job is: for each line of a file, call
+        a web address and write down the answer.
+      do: Answer the question.
+      hint: What does each language do best, and what's already on the jump host?
+      ask:
+        question: Which language fits this job best?
+        options:
+          - text: Bash. It's on every Linux box and glues command-line tools like curl together. Python when it grows.
+            correct: true
+            reply: >-
+              Yes, for a small job on a Linux box. Python is the step up when
+              the script grows: real data structures, libraries, tests, and it
+              runs anywhere. PowerShell is the tool for Windows and the
+              directory. Any of the three can do this one, so finish it in the
+              one you read best.
+          - text: PowerShell, because it's the most powerful
+            reply: PowerShell shines on Windows and the directory. It can run on Linux, but it isn't on this jump host, and curl in bash does this job in one line.
+          - text: It doesn't matter at all
+            reply: Any of the three can do it, but they're not the same. Bash is already on the jump host and is made for gluing tools like curl together.
+      done: { answer: correct }
+
+    - id: editor
+      title: Where to edit
+      say: The top of the window shows how Lindiwe set up her editor.
+      do: Answer the question.
+      hint: What happens if you break the script, or Lindiwe wants to see what you changed?
+      ask:
+        question: Why edit it in VS Code over SSH, in a git repository, and not by copying it to your laptop?
+        options:
+          - text: It runs where it lives, git keeps every version and who changed what, and the editor flags mistakes as you type.
+            correct: true
+            reply: >-
+              Yes. An editing environment set up for the job: syntax
+              highlighting and a linter (ShellCheck, for bash) catch typos
+              before they run, and git means any change can be undone.
+          - text: It's faster
+            reply: Maybe, but that's not the point. Git keeps every version, and the editor checks the script as you type.
+          - text: Copying it to a laptop is better, so you can test it at home
+            reply: Then there are two copies that drift apart, and the laptop can't reach the stores. Edit it where it runs, in git.
+      done: { answer: correct }
+
+    - id: write
+      title: Write the loop
+      say: >-
+        Two blocks are empty. The loop goes round once for each line of
+        stores.txt. Reading the answer turns the recorder's status code into
+        a result. Never run a new script on everything at once: test it on
+        one store first.
+      do: Fill in the loop and reading the answer, then press Test on one store.
+      hint: Click an empty block to see its choices. The loop should end when the file does. 200 means the password worked, 401 means it was refused.
+      show: { tab: script }
+      done: { action: script.run, target: one }
+      wrong: Test it on one store first.
+
+    - id: run
+      title: All forty
+      say: >-
+        Store 41 answered and refused. Now the whole list. Some stores will
+        be down: a router reboots, a store loses power.
+      do: Run the script on all 40 stores.
+      hint: If it stops early or the results look short, look at the block for when a store doesn't answer.
+      show: { tab: script }
+      done: { action: script.run, target: all }
+      wrong: Run it on every store, so the results cover all 40.
+      praise: Five recorders on the factory password, and two stores we know nothing about.
+
+    - id: unknown
+      title: No answer
+      say: Stores 47 and 61 didn't answer.
+      do: Answer the question.
+      hint: Does "no answer" mean the recorder has a good password?
+      ask:
+        question: What do we put in the report for stores 47 and 61?
+        options:
+          - text: Unknown, not safe. Ask store support why they're down, and check them when they're back.
+            correct: true
+            reply: >-
+              Yes. A device you couldn't check is a device you know nothing
+              about. Store 61 is closed for a refit. Store 47 in Mthatha
+              should be open.
+          - text: Safe. If we can't reach them, nobody can.
+            reply: We can't reach them from the jump host. That says nothing about who else can. Unknown is not safe.
+          - text: Leave them out of the report
+            reply: Then the report says 38 stores and everybody reads it as 40. Say what you couldn't check.
+      done: { answer: correct }
+
+    - id: fix
+      title: Fix the five
+      say: >-
+        Each flagged recorder needs its own long random password, kept in the
+        vault, so one leaked password doesn't open every store.
+      do: In the Script editor, press "Set a unique vault password on each flagged recorder".
+      hint: The button is under the results.
+      show: { tab: script }
+      done: { action: script.fix, target: recorders }
+
+    - id: prove
+      title: Prove it
+      say: A fix isn't done until you've checked it worked.
+      do: Run the script on all 40 stores again.
+      hint: Same script, same list. Nothing should come out as DEFAULT PASSWORD now.
+      show: { tab: script }
+      done: { action: script.run, target: clean }
+      praise: Nothing on the factory password. Stores 47 and 61 still don't answer, and the script still says so.
+
+    - id: cli
+      title: The other regions
+      say: >-
+        The script takes its list from the command line, so the same script
+        works for any region. Store support keeps a list per region:
+        gauteng.txt, kzn.txt, ec.txt.
+      do: Answer the question.
+      hint: What did you type to run it on stores.txt?
+      ask:
+        question: How do you check the Gauteng stores?
+        options:
+          - text: ./check-recorders.sh gauteng.txt
+            correct: true
+            reply: >-
+              Yes. The list is an argument, $1 in bash, sys.argv[1] in
+              Python, -List in PowerShell, so nobody edits the script to
+              change what it runs on.
+          - text: Copy the script and change stores.txt inside it to gauteng.txt
+            reply: Then there are two scripts to keep right. The list is an argument for exactly this reason.
+          - text: Rename gauteng.txt to stores.txt first
+            reply: It would work, once, until somebody runs the Eastern Cape check on the Gauteng list. Pass the file name as the argument.
+      done: { answer: correct }
+
+    - id: schedule
+      title: Every morning
+      say: Five recorders today. The alarm company installs two new ones a week.
+      do: Answer the question.
+      hint: Is this a one-off job?
+      ask:
+        question: What happens to the script now?
+        options:
+          - text: It runs every morning from the jump host for all 120 stores, and the SOC gets an alert when anything says DEFAULT PASSWORD.
+            correct: true
+            reply: >-
+              Yes. A script you run once is a check. One that runs every
+              morning and raises an alert is a control. The general steps:
+              plan it, write it, test it on one, run it, prove it, then
+              automate it.
+          - text: Delete it. The job's done.
+            reply: The next recorder the alarm company installs will have admin/admin too. Keep it, and run it every day.
+          - text: Email it to the alarm company
+            reply: They should change their default, yes. But we still check, every morning, because trust isn't a control.
+      done: { answer: correct }
+  outro:
+    title: Floor 1 complete
+    learned:
+      - Bash glues command-line tools together on Linux, Python is the step up as a script grows, PowerShell is for Windows and the directory.
+      - Edit scripts where they run, in git, with an editor that checks them as you type.
+      - A loop over the data ends when the data does.
+      - Handle errors so one dead device doesn't stop the run, and never swallow them silently.
+      - Read status codes the right way round. 200 OK, 401 refused.
+      - Test on one, run on all, fix, then run again to prove the fix.
+      - Unknown is not safe. Say what you couldn't check.
+      - A script that runs every day and raises an alert becomes a control.
+    next: "Floor 2: The scraper"
+qcto: [PM-05-PS01, PM-05-PS02, PM-05-PS03, PM-05-PS04, PM-05-PS05, PM-05-PS06, PM-05-PS07, KM-06-KT11, PM-04-PS06, KM-09-KT02]

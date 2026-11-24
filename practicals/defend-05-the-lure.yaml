@@ -1,0 +1,204 @@
+# Defend tower, floor 5. Built on 2026-11-21; the owner asked for floors 3 to
+# 6 to be finished without a design round each.
+#
+# A phishing mail ("Siyakhula tender briefing.docm") reaches Ayanda. The mail
+# filter flags it but still delivers it, and Ayanda opens it. Her laptop has no
+# log agent, so nothing sees the infection itself. What the network sensor
+# does see is her laptop scanning the git server: one of our machines, doing
+# something nobody scheduled. Floor 2's two questions (ours? expected?) give
+# "ours, not expected": real.
+#
+# Isolating unlocks today. The learner isolates the one laptop, not the server
+# it was scanning, decides what comes next, rebuilds the laptop from a clean
+# image, and closes both alerts.
+
+id: defend-05-the-lure
+title: "The lure"
+status: draft
+role: prey
+org: dataquant
+startTime: "09:15"
+durationMin: 0
+speed: 1
+controls: { cloud-ids: on }
+map:
+  rooms: [trust-risk, strategy-leadership, growth, data-insights, operations, offensive-security, academy, solutions-studio]
+  perimeter: true
+  note: Solutions Studio builds for clients and keeps our code. Our partners appear too, because not every threat comes in through the front door.
+briefing: |
+  Your sixth day at DataQuant. Today you can isolate a machine (cut it off
+  from the network), release it, and rebuild it from a clean image.
+
+  Every button is unlocked now. Still no clock.
+guide:
+  mentor: founder
+  hold: [attack-surface-check]
+  steps:
+    - id: lure
+      title: A suspicious attachment
+      say: >-
+        Most attacks don't start with a scanner. They start with an email that
+        looks like work.
+      do: Wait for the alert, then open it.
+      hint: Alerts land in the Alerts tab. This one comes from the mail filter.
+      show: { tab: alerts, alert: mail-malicious-attachment }
+      script:
+        - { after: 4, event: phish, to: founder, src: 10.88.0.166, lure: "Siyakhula tender briefing.docm", opens: 12 }
+      done: { look: alert, rule: mail-malicious-attachment }
+      praise: >-
+        The mail filter thinks that attachment is a lure. It flagged it, but it
+        still delivered it to my inbox. Filters warn. They don't always stop.
+
+    - id: opened
+      title: Did anyone open it?
+      say: >-
+        Oh no. I opened that one a minute ago. It looked like a real tender
+        from Siyakhula, and we've been waiting for one.
+      do: Answer the question.
+      hint: Where does an attachment do its damage? Where it's stored, or where it's opened?
+      ask:
+        question: What should we worry about now?
+        options:
+          - text: "Ayanda's laptop: opening the attachment may have run the attacker's code on it"
+            correct: true
+            reply: >-
+              Yes. A booby-trapped document runs on the machine that opens it.
+              That's my laptop. And my laptop has no log agent, so we can't see
+              inside it.
+          - text: The mail server, because the attachment is stored there
+            reply: >-
+              The mail server only stores it, like a post office holding a
+              parcel. The damage happens where the parcel is opened.
+          - text: Nothing. The mail filter caught it.
+            reply: >-
+              The filter flagged it, but it still arrived, and I opened it.
+              Assume the worst until the evidence says otherwise.
+      done: { answer: correct }
+
+    - id: spreading
+      title: Watch the network
+      say: >-
+        We can't see inside my laptop, but the network sensor sees what it
+        does on our network. If the attacker has it, they'll start looking
+        around.
+      do: Wait for the next alert, then open it.
+      hint: >-
+        Ask floor 2's two questions. Did it come from one of our machines? Was
+        it something we expected?
+      show: { tab: alerts, alert: nids-port-scan }
+      script:
+        - { after: 6, event: scan, system: git, from: founder-laptop }
+      done: { look: alert, rule: nids-port-scan }
+      praise: >-
+        A scan from {ip:founder-laptop}: my laptop. One of ours, but nothing on
+        my laptop scans anything, and I'm not touching it. Ours and not
+        expected means real. The attacker is using my laptop to look for the
+        next machine.
+
+    - id: isolate
+      title: Cut it off
+      say: >-
+        When one machine is infected, cut it off before it spreads. Isolate the
+        machine the attack is coming from, and only that one. The rest of the
+        business keeps working.
+      do: Isolate Ayanda's laptop.
+      hint: >-
+        The scan alert has an "Open where it came from" button. In the
+        laptop's window, press Isolate.
+      show: { host: founder-laptop }
+      done: { action: isolate, target: founder-laptop }
+      wrong: >-
+        That machine isn't where the attack is coming from. Release it, so it
+        can get back to work, and isolate my laptop instead.
+      replies:
+        git: >-
+          The git server is what my laptop was scanning, not the problem. Cutting
+          it off stops the build agent's work and leaves the attacker on my
+          laptop. Release it and isolate my laptop.
+        mail: >-
+          The mail server only delivered the lure. Cutting it off stops
+          everybody's mail and leaves the attacker on my laptop. Release it and
+          isolate my laptop.
+      praise: >-
+        My laptop is off the network. Whatever's on it can't reach anything
+        else now. I'll use my phone for today.
+
+    - id: next
+      title: What now?
+      say: >-
+        Isolation buys time. It doesn't clean anything.
+      do: Answer the question.
+      hint: Can we trust anything on a machine an attacker has had?
+      ask:
+        question: My laptop is cut off. What should happen next?
+        options:
+          - text: Rebuild it from a clean image, then change the passwords that were saved on it.
+            correct: true
+            reply: >-
+              Yes. We can't know everything the attacker changed, so we start
+              from a clean copy. And any password saved on that laptop may be
+              theirs now.
+          - text: Release it. The scan has stopped.
+            reply: >-
+              The scan stopped because you cut it off. Whatever ran it is still
+              on the laptop, waiting for the network to come back.
+          - text: Delete the email and carry on.
+            reply: >-
+              The email already did its job. The attacker's code is on the
+              laptop now, not in the inbox.
+      done: { answer: correct }
+
+    - id: rebuild
+      title: Rebuild the laptop
+      say: >-
+        A rebuild wipes the machine and puts back a clean copy. It takes a few
+        minutes, and anything that wasn't backed up is gone.
+      do: Rebuild Ayanda's laptop from a clean image.
+      hint: In the laptop's window, press "Rebuild from image".
+      show: { host: founder-laptop }
+      done: { action: rebuild, target: founder-laptop }
+      wrong: >-
+        That machine was fine. My laptop is the one to rebuild.
+      praise: >-
+        Rebuilding. It'll be back in a couple of minutes, clean and on the
+        network again.
+
+    - id: close
+      title: Close both alerts
+      say: >-
+        Two alerts, one incident: the lure that came in, and the scan it
+        caused. Record both.
+      do: Close each of the two alerts with the right verdict.
+      hint: Open each alert in the Alerts tab and choose True positive or False positive.
+      show: { tab: alerts }
+      sort:
+        - rule: mail-malicious-attachment
+          src: 10.88.0.166
+          verdict: true-positive
+          right: Right. A real lure from a real attacker, and I fell for it.
+          wrong: >-
+            That lure was real: it infected my laptop. The filter was right
+            about this one, so it's a true positive.
+        - rule: nids-port-scan
+          from: founder-laptop
+          verdict: true-positive
+          right: Right. Our machine, but the attacker's scan.
+          wrong: >-
+            That scan came from one of our machines, but nobody scheduled it:
+            the attacker ran it from my laptop. A true positive.
+      done: { sorted: true }
+      praise: >-
+        Both on record. You found an infection on a laptop nothing was watching,
+        from what it did next.
+      wrong: >-
+        Both of those were real. When one alert leads to the other, they're
+        usually one incident, and they get the same verdict.
+  outro:
+    title: Floor 5 complete
+    learned:
+      - Most attacks start with an email that looks like work.
+      - A lure does its damage on the machine that opens it, not the mail server.
+      - A machine of ours doing something nobody scheduled is real, not harmless.
+      - Isolate the one infected machine, then rebuild it and change the passwords saved on it.
+    next: "Floor 6: What you can't see"
+qcto: [KM-03-KT08, KM-03-KT10, KM-03-KT21, PM-03-PS07, PM-03-PS09, FA3.2, FA4.2, FA5.1]

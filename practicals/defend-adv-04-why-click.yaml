@@ -1,0 +1,337 @@
+# Advanced defend tower, floor 4. Built on 2026-11-21 from the agreed floor
+# plan.
+#
+# Every month the phishing simulation says the same thing: nearly half the
+# store staff click, and almost nobody reports. Two training videos didn't
+# move it. The learner leads a cross-department team through design
+# thinking: empathise (keep what people saw, drop what head office assumes),
+# define the problem from the staff side, ideate wide and then choose,
+# prototype in five stores, test with the next simulation, and go round
+# again when the test shows a new problem.
+#
+# The floor's new desk tool is the design board: the campaign results by
+# group, the team, and the five stages as a wall of sticky notes.
+
+id: defend-adv-04-why-click
+title: "Why do they click?"
+status: draft
+role: prey
+org: ikhaya
+startTime: "13:30"
+durationMin: 0
+speed: 1
+map:
+  rooms: [technology, ecommerce, customer, stores, supply-chain, risk]
+  perimeter: true
+briefing: |
+  Refilwe Molefe, the awareness lead, sends every month's phishing
+  simulation results to the executives. Every month the stores' number is
+  the same: nearly half the staff click the lure, and almost nobody tells
+  anyone.
+
+  Store staff watched a training video in July and another in September.
+  The number didn't move. Rajesh, the CIO, wants it fixed this quarter, and
+  he's asked the SOC to lead.
+controls:
+  report-button: off
+tools:
+  design:
+    challenge: How might we help store staff spot and report a phishing email?
+    team:
+      - { person: awareness-lead, does: Runs the phishing simulations }
+      - { person: store-manager, does: "Manages store 47, Mthatha" }
+      - { person: store-support, does: Visits stores and fixes their PCs }
+      - { person: service-desk, does: Takes the calls when staff report }
+      - { person: hr-manager, does: Owns the disciplinary code }
+    campaign:
+      name: "October simulation: \"Your delivery is waiting\""
+      note: "Stores clicked 44% in July, 47% in August, 45% in September and 46% in October. The training videos went out in July and September."
+      rows:
+        - { group: Stores, sent: 1840, clicked: 846, entered: 412, reported: 37 }
+        - { group: Distribution centre, sent: 310, clicked: 96, entered: 41, reported: 12 }
+        - { group: Customer care, sent: 140, clicked: 34, entered: 12, reported: 9 }
+        - { group: Head office, sent: 620, clicked: 112, entered: 38, reported: 131 }
+        - { group: Technology, sent: 85, clicked: 4, entered: 1, reported: 52 }
+    empathise:
+      cards:
+        - { id: shared, by: store-manager, kind: saw, text: "Whoever is on shift reads the store's one shared mailbox on the back-office PC, standing up, between customers." }
+        - { id: sender, by: store-support, kind: saw, text: "The mail app on the store PC shows only the sender's name. \"Ikhaya Warehouse\" from outside looks exactly like the real one." }
+        - { id: deliveries, by: store-manager, kind: saw, text: "The lures that work look like delivery notes, and they land at 06:30, when the truck is at the back door." }
+        - { id: phone, by: service-desk, kind: saw, text: "To report an odd email, staff phone the service desk. Last month the average wait was 12 minutes." }
+        - { id: warning, by: hr-manager, kind: saw, text: "A cashier who owned up to clicking last year got a written warning. Since then staff delete odd mail and say nothing." }
+        - { id: videos, by: awareness-lead, kind: saw, text: "Store staff watched both training videos. Most watched them on the back-office PC with the sound off, between customers." }
+        - id: careless
+          by: cio
+          kind: assumed
+          text: Store staff just don't care about security.
+          reply: That's a judgement about people, not something anybody saw. Every other note on this wall is a reason they click.
+        - id: phones
+          by: head-stores
+          kind: assumed
+          text: Younger staff click more because they're always on their phones.
+          reply: Nobody measured that. The results don't split by age, and the mail is read on the store PC, not on phones. A guess like this points at the wrong fix.
+    define:
+      options:
+        - id: pov
+          correct: true
+          text: "Store staff, reading one shared mailbox between customers, need to check and report an odd email in seconds and without fear, because the PC hides who really sent it, reporting means a 12-minute phone call, and the last person who owned up was punished."
+          reply: "That's a problem statement from their side: who they are, what they need, and why. Three reasons, and each one is something we can change."
+        - id: training
+          text: Store staff need more security awareness training.
+          reply: That's a solution dressed up as a problem, and it's the one that failed twice. What do they need, and why?
+        - id: stop
+          text: Ikhaya needs to stop phishing.
+          reply: Too big to act on, and it's about us, not about them. Who needs what, and why?
+        - id: careful
+          text: Store staff click on too many links and must be more careful.
+          reply: That blames them, and tells us nothing we can change. The Empathise wall says why they click.
+    ideate:
+      pick: 3
+      ideas:
+        - id: shout
+          by: store-support
+          text: Make the PC shout when mail comes from outside.
+          reply: Built on, it became the banner. On its own, a PC that shouts in a shop gets switched off by lunchtime.
+        - id: banner
+          by: store-support
+          good: true
+          answers: the PC hides who really sent it
+          text: A bright EXTERNAL banner on every mail from outside, with the sender's real address.
+        - id: button
+          by: service-desk
+          good: true
+          answers: reporting means a 12-minute phone call
+          text: "A \"Report phishing\" button in the store PC's mail app: one tap and it's with the SOC."
+        - id: thanks
+          by: hr-manager
+          good: true
+          answers: the last person who owned up was punished
+          text: "No more warnings for clicking. Thank every report within the hour, even \"I clicked, sorry\"."
+        - id: video
+          by: awareness-lead
+          text: A new, longer training video, with a quiz at the end.
+          reply: The same fix a third time. It doesn't touch any reason on the wall.
+        - id: fine
+          by: cio
+          text: Fine anyone who clicks R200.
+          reply: Fear is why they stay quiet now. A fine makes the silence worse, and silence is what lets a real attack run for days.
+        - id: block
+          by: store-manager
+          text: Block all mail from outside to the stores.
+          reply: Real suppliers, the bank and the landlord mail stores every day. It answers the problem by breaking the stores.
+        - id: tablets
+          by: store-manager
+          text: Give every staff member their own tablet and mailbox.
+          reply: "Maybe one day: it's R1.9 million and six months. We want something we can try next week."
+    prototype:
+      options:
+        - id: five
+          correct: true
+          text: "Five stores, two weeks: the banner and the button switched on there, Refilwe thanking every report, and store 47 one of the five."
+          reply: Small, cheap and real. If it fails, we've lost two weeks in five stores, not a year in 120.
+        - id: all
+          text: Roll all three out to all 120 stores on Monday.
+          reply: If it's wrong, it's wrong in 120 stores, and you won't know which idea did what. Prototype small first.
+        - id: spec
+          text: Write a full specification and send it to the board for approval.
+          reply: Months of paper before anyone in a store touches it. A prototype is something real people use next week.
+        - id: survey
+          text: Ask all staff in a survey which idea they like best.
+          reply: What people say they'd like and what they do between customers at 06:30 are different things. Try it, then measure.
+    test:
+      name: "November simulation: \"Your delivery note is attached\""
+      rows:
+        - { group: Trial stores (5), sent: 78, clicked: 9, entered: 2, reported: 41 }
+        - { group: Other stores (115), sent: 1762, clicked: 803, entered: 391, reported: 33 }
+      finding: >-
+        In the five stores, clicks fell from 46% to 12% and reports rose from
+        2% to 53%. But Jaco says the service desk got 214 reports from those
+        five stores in two weeks, and 150 of them were the warehouse's real
+        delivery notes.
+guide:
+  mentor: soc-lead
+  target: 20
+  steps:
+    - id: results
+      title: The same number, every month
+      say: The October results are in. Start where the numbers are worst.
+      do: Open the Design board and answer the question.
+      hint: Press the arrow on "Design board" at the top left of the desk.
+      show: { tab: design }
+      ask:
+        question: Where should the team start?
+        options:
+          - text: "The stores: nearly half clicked and 2% reported, for four months running, training videos or not."
+            correct: true
+            reply: >-
+              Yes. Technology reports 61% and the stores report 2%. Same
+              company, same lure. Something about working in a store is
+              different.
+          - text: "Technology: 4 people there still clicked"
+            reply: 5% is about as low as it gets. The stores are at 46%.
+          - text: "Head office: 112 people clicked"
+            reply: The stores had 846 clicks, and only 37 people told anyone.
+      done: { answer: correct }
+
+    - id: again
+      title: The video, again
+      say: Rajesh has an answer ready. Make the store staff watch the training video again, with a test this time.
+      do: Answer the question.
+      hint: Look at the note under the results. What happened after July and September?
+      ask:
+        question: What do you tell him?
+        options:
+          - text: We've tried that twice and the number didn't move. We don't know why they click yet. Let's find out from them.
+            correct: true
+            reply: >-
+              Yes. That's where design thinking starts: with the people who
+              have the problem, not with a solution. Rajesh gives you a week
+              and a team.
+          - text: Good idea. A longer video and a harder test.
+            reply: July and September say otherwise. The same fix gets the same number.
+          - text: Store staff are a lost cause. Put the effort into head office.
+            reply: 1 840 people in the stores read mail on PCs that reach the POS server. They're the front door.
+      done: { answer: correct }
+
+    - id: team
+      title: Who's in the room?
+      say: Design thinking is done by a team, and the team needs the people who live the problem.
+      do: Answer the question.
+      hint: Who knows what a store looks like at 06:30?
+      ask:
+        question: Who do you bring?
+        options:
+          - text: A store manager, store support, the service desk, HR and the awareness lead. Different jobs see different things.
+            correct: true
+            reply: >-
+              Yes. Zanele knows the 06:30 delivery rush, Andile knows the
+              store PCs, Jaco takes the calls, Busisiwe owns the disciplinary
+              code, and Refilwe runs the simulations. You run the session.
+          - text: "The SOC: we're the experts on phishing"
+            reply: We know phishing. We don't know a store at 06:30. The people who live the problem see what we can't.
+          - text: The executives, so decisions get made fast
+            reply: They decide later. First you need people who know what the problem looks like on the shop floor.
+      done: { answer: correct }
+
+    - id: empathise
+      title: Empathise
+      say: >-
+        The team spent a morning in two stores, watching and asking. Their
+        notes are on the wall, with a couple that came from head office.
+      do: On the Empathise tab, take off every note nobody actually saw or heard, then press Keep.
+      hint: Take off the notes that judge people or guess about them. Look at who wrote each one.
+      show: { tab: design }
+      done: { action: design.empathise, target: observations }
+      praise: Six things people saw. Not one of them says the staff are the problem.
+
+    - id: define
+      title: Define
+      say: Now write the problem from their side. A good one says who they are, what they need, and why.
+      do: On the Define tab, choose the problem statement.
+      hint: Look for the one that names the three reasons on the wall, not a solution.
+      done: { action: design.define, target: problem }
+
+    - id: silly
+      title: A silly idea
+      say: >-
+        Ideation. Andile goes first: "What if the PC just shouted when mail
+        came from outside?" Busisiwe laughs.
+      do: Answer the question.
+      hint: In ideation, is it time to judge yet?
+      ask:
+        question: What do you do?
+        options:
+          - text: "Put it on the wall and build on it. Many ideas first, judge later: \"shout\" might become a warning banner."
+            correct: true
+            reply: >-
+              Yes. Andile's next idea is the banner, and Busisiwe's is the
+              best of the day. Nobody adds ideas to a wall where the first
+              one got laughed at.
+          - text: Move on quickly. There's no time for silly ideas.
+            reply: Then the next silly idea never comes, and neither does the good one after it. In ideation, judge later.
+          - text: Agree it's silly, so the team knows the bar is high
+            reply: A high bar in ideation makes a quiet room. Go for many ideas; choosing comes after.
+      done: { answer: correct }
+
+    - id: ideate
+      title: Ideate
+      say: Eight ideas in twenty minutes. Now choose.
+      do: On the Ideate tab, choose the three ideas that answer the problem you wrote, then press Prototype.
+      hint: "One for each reason: the hidden sender, the 12-minute phone call, and the written warning."
+      done: { action: design.ideate, target: ideas }
+
+    - id: prototype
+      title: Prototype
+      say: How you try an idea matters as much as which idea you try.
+      do: On the Prototype tab, choose how to try the three ideas.
+      hint: Which one could you start next week, and stop cheaply if it's wrong?
+      done: { action: design.prototype, target: trial }
+
+    - id: test
+      title: Test
+      say: Two weeks later, Refilwe sends the next simulation to every store.
+      do: Run the next simulation on the Test tab.
+      hint: It's the last tab on the design board.
+      done: { action: design.test, target: results }
+
+    - id: iterate
+      title: Round two
+      say: It works. But the service desk is drowning in reports of real delivery notes.
+      do: Answer the question.
+      hint: Is design thinking a line or a loop?
+      ask:
+        question: What now?
+        options:
+          - text: "Iterate: mark the warehouse's real mail as internal so it carries no banner, answer every report automatically with \"safe\" or \"thanks, it was bad\", and test again."
+            correct: true
+            reply: >-
+              Yes. Design thinking is a loop: test, learn, change, test
+              again. Round two in the same five stores: 9% click, 48% report,
+              and 20 false reports a week.
+          - text: "Switch the button off: it's too much work for the service desk"
+            reply: Then we're back to 2%. The reports are the win; the false ones are a design problem to fix.
+          - text: Roll it out to all 120 stores as it is
+            reply: 214 reports from five stores is 5 000 from 120. Fix it in the prototype, where it's cheap.
+      done: { answer: correct }
+
+    - id: rollout
+      title: Every store
+      say: Rajesh signs off the roll-out to every store, every PC and every phone.
+      do: Switch on the one-tap report button.
+      hint: It's in Controls, on the SOC console.
+      show: { tab: controls }
+      done: { action: control, target: report-button }
+      wrong: Switch on the one-tap report button.
+      praise: On everywhere. A report now reaches the SOC in seconds, with the mail attached.
+
+    - id: names
+      title: Keep the fear out
+      say: Refilwe wants to keep the momentum. She suggests the monthly report lists the staff who clicked, by name, store by store.
+      do: Answer the question.
+      hint: What did the written warning do?
+      ask:
+        question: What do you say?
+        options:
+          - text: Report by store and department, never by name. Coach people who click in private, and thank the reporters in public.
+            correct: true
+            reply: >-
+              Yes. Naming the people who clicked brings back the fear the
+              team just designed out. Simulations are for learning; people
+              who feel tricked and shamed stop reporting.
+          - text: "Yes: a bit of shame works"
+            reply: Shame is what made staff delete odd mail and stay quiet. That's what the written warning did.
+          - text: Stop the simulations now that the button works
+            reply: Keep measuring, or you won't see it slip. Just don't name people.
+      done: { answer: correct }
+  outro:
+    title: Floor 4 complete
+    learned:
+      - The same fix twice gets the same result. Start with the people, not the solution.
+      - Bring the people who live the problem. Different jobs see different things.
+      - Empathise. Keep what people saw and said; drop what you assume about them.
+      - Define the problem from their side. Who they are, what they need, and why.
+      - Ideate wide and judge later, then choose what answers the problem.
+      - Prototype small and cheap, test with real numbers, and go round again.
+      - Measure phishing by group. Never shame people by name.
+    next: "Floor 5: The insider"
+qcto: [KM-05-KT01, KM-05-KT02, KM-05-KT03, KM-05-KT04, KM-05-KT05, KM-05-KT06, KM-05-KT07, PM-07-PS01, PM-07-PS02, KM-01-KT04, PM-08-PS04, KM-09-KT10, KM-04-KT04]

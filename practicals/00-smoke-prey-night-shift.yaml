@@ -1,0 +1,31 @@
+# PLACEHOLDER. This file only proves the foundation works end to end. The real
+# "Night Shift" practical gets designed together, step by step, before it is
+# written here.
+
+id: smoke-prey-night-shift
+title: "Smoke test: night shift at Siyakhula"
+status: placeholder
+role: prey
+org: siyakhula
+startTime: "02:10"
+durationMin: 15
+speed: 1
+map:
+  perimeter: true
+  note: Eight departments, five networks, and tonight you watch over all of them on your own.
+briefing: |
+  It is 02:10 and you are the junior SOC analyst on duty at Siyakhula Local
+  Municipality. The building is quiet: vending sales, the historian polling the
+  treatment works, backups and DataQuant's nightly data sync.
+
+  Someone out there wants the residents' billing accounts. Watch the alert
+  queue and the floor map, confirm what is real, and stop them before the data
+  leaves. Blocking or isolating the wrong thing costs the municipality money.
+  Before the shift ends, write a short status report.
+attacker:
+  name: Opportunist
+  stealth: 0.2
+  sources: 3
+  objective: siyakhula/customer-accounts
+  pace: 40
+qcto: [PM-03-PS02, PM-03-PS03, PM-03-PS06, PM-03-PS07, FA3.1, FA3.2, FA4.1, FA4.2, FA4.3]

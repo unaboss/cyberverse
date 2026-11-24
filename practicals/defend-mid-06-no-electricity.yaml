@@ -1,0 +1,311 @@
+# Intermediate defend tower, floor 6. Built on 2026-11-21 from the agreed
+# floor plan.
+#
+# Prepaid electricity sales stop: the vending gateway is under a distributed
+# denial of service. The traffic monitor, the floor's new desk tool, shows it
+# live in two layers. Junk packets fill the internet line until the provider's
+# DDoS protection scrubs them; then a flood of real-looking requests to the
+# most expensive page still outruns the gateway, until the learner works out a
+# per-address rate limit (an inequality: high enough for the banks, low enough
+# for the sum). With the noise gone, somebody is trying the gateway's admin
+# page under its cover. Then the people: an angry Municipal Manager, and a
+# notice to residents written a part at a time in the write-up tool.
+
+id: defend-mid-06-no-electricity
+title: "No electricity for sale"
+status: draft
+role: prey
+org: siyakhula
+startTime: "10:05"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+briefing: |
+  Nokuthula, the prepaid vending supervisor, is on the phone: token sales
+  stopped three minutes ago. Shops, banking apps and the kiosk at the civic
+  centre all get errors. It's the end of the month, and people who can't buy
+  a token are sitting in the dark.
+
+  Pieter is with you in the SOC.
+controls:
+  ddos-protection: off
+tools:
+  traffic:
+    system: vend-gw
+    capacity: 2500
+    line: 1
+    since: 3
+    honest:
+      - { name: "Banks' vending aggregator", ip: 10.88.0.30, rate: 25, path: /api/vend }
+      - { name: "Shops' vending terminals", addresses: 125, rate: 3, path: /api/vend }
+    junk: { addresses: 220, gbps: 9.4, control: ddos-protection }
+    flood: { name: flood, addresses: 40, rate: 100, path: /vend/meter-lookup }
+    sneak: { name: sneak, ip: 10.88.0.77, rate: 2, path: /admin/login, status: 401 }
+  compose:
+    heading: Notice to residents
+    to: Residents, on the municipal website, Facebook page and WhatsApp channel
+    send: Publish the notice
+    done: >-
+      Published. Plain words, what to do now, a warning about the scams that
+      always follow, and nothing you'll have to take back.
+    parts:
+      - id: headline
+        label: Headline
+        options:
+          - id: plain
+            text: Prepaid electricity sales were interrupted this morning
+            correct: true
+            reply: Plain, and it says what residents noticed.
+          - id: jargon
+            text: "Vending gateway DDoS incident: layer 7 mitigation in progress"
+            reply: Residents don't know what a gateway or layer 7 is. Say what they noticed.
+          - id: alarm
+            text: Siyakhula hacked! Cyber criminals attack the municipality
+            reply: Alarming, and not what happened. Nobody broke in. It feeds the rumour you're trying to stop.
+      - id: what
+        label: What happened
+        options:
+          - id: plain
+            text: For about fifteen minutes, a flood of internet traffic stopped shops, banks and apps from selling prepaid electricity tokens.
+            correct: true
+            reply: What happened, how long, and who it affected, in words anyone can follow.
+          - id: jargon
+            text: Our vending gateway experienced a volumetric and application-layer DDoS from a botnet.
+            reply: True, and useless to a resident. Say what it did to them.
+          - id: guess
+            text: Criminals stole residents' bank details and meter numbers.
+            reply: Nothing shows that, and saying it starts a panic. Say only what you know.
+      - id: now
+        label: What to do now
+        options:
+          - id: plain
+            text: "Sales are working again. If you paid for a token that didn't arrive, keep your receipt: the token will be sent to your phone by 14:00, or call 0800 000 123."
+            correct: true
+            reply: Tells people what works, and what happens to money they already paid.
+          - id: stop
+            text: Please do not buy tokens until further notice.
+            reply: Sales work again. Telling people to stop leaves them in the dark for nothing.
+          - id: again
+            text: If your purchase failed, simply buy again. Failed payments will be refunded.
+            reply: People pay twice, and refunds take weeks. Tell them what happens to the token they already paid for.
+      - id: scam
+        label: Warning
+        options:
+          - id: plain
+            text: "The municipality will never phone or WhatsApp you for your bank details or a \"reconnection fee\". Report such messages to 0800 000 123."
+            correct: true
+            reply: Scammers always follow an outage. Warning people first is part of the response.
+          - id: safe
+            text: Your data is completely safe.
+            reply: You can't promise that yet, and "completely" is what the next headline quotes.
+          - id: none
+            text: The municipality will make no further comment.
+            reply: That reads as hiding something, and leaves the rumour to fill the silence.
+      - id: sorry
+        label: Closing
+        options:
+          - id: plain
+            text: We're sorry for the trouble this caused. Updates will follow on the municipal website and our Facebook page.
+            correct: true
+            reply: A real apology, and where to look next.
+          - id: inconvenience
+            text: We apologise for any inconvenience caused.
+            reply: '"Any inconvenience" is what people write when they don''t mean it. Residents sat in the dark: say sorry for that, plainly.'
+          - id: blame
+            text: The interruption was caused by our internet provider's network, not ours.
+            reply: It isn't true, and blaming a partner in public costs you the partner. Anyone can be flooded.
+guide:
+  mentor: ict-manager
+  target: 15
+  steps:
+    - id: look
+      title: Look at the gateway
+      say: >-
+        Sales go through the vending gateway in the DMZ. The traffic monitor
+        shows everything reaching it, live.
+      do: Open the Traffic monitor on your desk.
+      hint: The tool windows sit folded at the top left of the desk. Press the arrow on "Traffic monitor".
+      done: { look: tab, id: traffic }
+      praise: >-
+        Blue is honest traffic, the same as every morning. The red is new,
+        and the shaded part is where the line itself was full.
+
+    - id: what
+      title: What is it?
+      say: Read the monitor before you touch anything. Who is sending, and how many of them?
+      do: Answer the question.
+      hint: Look at "Who is sending". How many addresses send the junk, and how many the requests?
+      ask:
+        question: What is happening to the gateway?
+        options:
+          - text: A DDoS. Hundreds of addresses flood it at once, so blocking them one by one can't keep up.
+            correct: true
+            reply: >-
+              Yes. A denial of service stops a service by overwhelming it.
+              Distributed means from many machines at once, usually a botnet of
+              hijacked PCs, routers and cameras. Block one and the rest carry
+              on, and some of those addresses are residents' own infected PCs.
+          - text: A fault. The gateway broke this morning.
+            reply: >-
+              Honest traffic looks the same as always. The red on the graph is
+              new, and it comes from hundreds of addresses.
+          - text: A DoS from one address. Block it and we're done.
+            reply: >-
+              One address can't fill a line nine times over. Look at who is
+              sending: 220 addresses for the junk and 40 for the requests.
+      done: { answer: correct }
+
+    - id: scrub
+      title: Clear the line
+      say: >-
+        The junk packets fill our 1 Gbit/s internet line more than nine times
+        over. Nothing we do inside the building can help when the pipe itself
+        is full: the internet provider has to drop the junk before it reaches
+        us.
+      do: In Controls, switch on DDoS protection from the internet provider.
+      hint: Look for "DDoS protection from the internet provider".
+      show: { tab: controls }
+      done: { action: control, target: ddos-protection }
+      wrong: That won't empty the line. Look for the DDoS protection control.
+      praise: >-
+        The line is clear. Now look at the graph: the gateway is still over
+        what it can answer.
+
+    - id: page
+      title: Why that page?
+      say: >-
+        The scrubbing caught the junk. What's left looks like real requests,
+        so it sails through. Look at what they ask for.
+      do: Answer the question.
+      hint: What does the gateway have to do to answer a meter lookup?
+      ask:
+        question: Why does the flood ask for /vend/meter-lookup, over and over?
+        options:
+          - text: Every lookup makes the gateway search the database. A cheap request costs it a lot of work.
+            correct: true
+            reply: >-
+              Right. An application-layer flood picks the most expensive page,
+              so 40 machines can do what would otherwise take thousands. It
+              looks like real requests, which is why the scrubbing let it
+              through.
+          - text: The page is broken, so it gets retried
+            reply: >-
+              It answers fine for honest residents. The flood asks for it on
+              purpose, 4 000 times a second.
+          - text: It's a random page; any page would do
+            reply: >-
+              Any page would slow it down; this one does it fastest. Each
+              lookup makes the gateway search the database.
+      done: { answer: correct }
+
+    - id: limit
+      title: Set a rate limit
+      say: >-
+        A rate limit caps every address at so many requests a second. Too low
+        cuts honest senders; too high and the flood still fits. The gateway
+        answers 2 500 a second. Honest traffic is 400 a second, and the
+        busiest honest sender is the banks' aggregator, 25 a second from one
+        address. The flood is 40 addresses at 100 a second each.
+      do: Work out a per-address limit that works, and set it in the Traffic monitor.
+      hint: "The limit L must be 25 or more, and 40 × L + 400 must be 2 500 or less."
+      show: { tab: traffic }
+      done: { action: traffic.limit, target: limit }
+      wrong: Set the limit in the Traffic monitor.
+      praise: Under what it can answer, with every bank and shop still in. Sales are flowing.
+
+    - id: sneak
+      title: Somebody at the door
+      say: >-
+        Now it's quiet enough to read. One address isn't part of the flood:
+        10.88.0.77 keeps asking for /admin/login, the gateway's admin page,
+        and getting 401, wrong password.
+      do: Block 10.88.0.77 in the SOC console.
+      hint: In the Blocks tab, type 10.88.0.77 and press Block.
+      show: { tab: blocks }
+      done: { action: block, target: 10.88.0.77 }
+      wrong: That isn't the address trying the admin page. It's 10.88.0.77.
+      praise: >-
+        Blocked. A flood is often cover: while everyone watches the graph,
+        somebody quietly tries the door.
+
+    - id: admin
+      title: Why could they try?
+      say: Somebody on the internet could reach the gateway's admin page at all.
+      do: Answer the question.
+      hint: Who needs the admin page, and where do they sit?
+      ask:
+        question: What's the lesson about the gateway's admin page?
+        options:
+          - text: Admin pages never face the internet. Put them on the admin network, reachable only through the VPN.
+            correct: true
+            reply: >-
+              Yes. Attacks on web servers start with what the server shows the
+              world: admin pages, default passwords, version banners, old
+              software. Show the internet only what residents need, and the
+              admin page isn't one of those.
+          - text: Give the admin account a longer password
+            reply: >-
+              A longer password helps. Better that nobody on the internet can
+              try at all.
+          - text: Hide the gateway's version number
+            reply: >-
+              Version banners do help an attacker pick an exploit, but this was
+              the admin page itself, open to anyone.
+      done: { answer: correct }
+
+    - id: calm
+      title: The phone rings
+      say: >-
+        The Municipal Manager calls, angry. Residents are sitting in the dark,
+        the local radio has the story, and he wants to know whose fault it is.
+        You've had a hard twenty minutes yourself.
+      do: Answer the question.
+      hint: What does he need from you, and what do you need to keep doing?
+      ask:
+        question: What do you do?
+        options:
+          - text: Take a breath, tell him what you know, what you're doing and when he'll hear next, and get back to work.
+            correct: true
+            reply: >-
+              Yes. Notice your own stress, then put it aside until later.
+              Calm facts and a time for the next update are what he can pass
+              on. Blame waits for the review, and it rarely belongs to one
+              person.
+          - text: Tell him it's the internet provider's fault
+            reply: >-
+              It isn't, and blame now helps nobody fix anything. Any
+              organisation on the internet can be flooded.
+          - text: Promise it will never happen again
+            reply: >-
+              A promise you can't keep costs you his trust next time. Tell him
+              what you know and when he'll hear more.
+      done: { answer: correct }
+
+    - id: notice
+      title: Tell residents
+      say: >-
+        The call centre is swamped, and somebody on Facebook says the
+        municipality was hacked and bank details stolen. Customer care needs a
+        notice for the website, Facebook and WhatsApp in the next ten minutes.
+      do: In the Notice to residents, choose a line for each part, then publish it.
+      hint: Plain words, what residents can do now, no guessing, and nothing you can't promise.
+      show: { tab: compose }
+      done: { action: compose.publish, target: draft }
+      wrong: Publish the notice.
+      praise: >-
+        Within the hour, calls to customer care drop by half. Read the notice
+        again later: every line in it is still true.
+  outro:
+    title: Floor 6 complete
+    learned:
+      - A DDoS floods a service from many machines at once. Blocking addresses one by one can't keep up.
+      - When the line itself is full, only the internet provider can help. Arrange DDoS protection before you need it.
+      - An application-layer flood looks like real requests and picks the most expensive page.
+      - A rate limit must let the biggest honest sender through and keep the sum under capacity.
+      - A flood is often cover. Read the log for whatever else is going on.
+      - Admin pages never face the internet.
+      - Under pressure, give calm facts and the time of the next update. Blame waits.
+      - Tell residents in plain words what happened, what to do now, and how to spot the scams that follow.
+    next: "Floor 7: Ransomware"
+qcto: [KM-03-KT11, KM-03-KT14, KM-09-KT06, KM-09-KT07, KM-09-KT08, KM-09-KT13]

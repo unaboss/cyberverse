@@ -1,0 +1,197 @@
+# Defend tower, floor 6. Built on 2026-11-21; the owner asked for floors 3 to
+# 6 to be finished without a design round each.
+#
+# A client phones Ayanda: somebody emailed them a sample of their own customer
+# data. That data only lives in DataQuant's client data room, and there is no
+# alert. The data room's bucket can be read without logging in
+# ("dataroom-anonymous-read"), and nothing records who reads it: storage access
+# logging is only planned at level 1. The network sensor from floor 2 sees a
+# download as an ordinary web visit.
+#
+# The learner checks the data room's log (logins only), works out why there was
+# no alert, switches on storage access logging, watches the thief come back and
+# get caught, closes the hole by making buckets private ("private-buckets", in
+# the manual but off in the lab), and says who has to be told under POPIA.
+# The theft itself is backstory: nothing in the round records it, which is the
+# point.
+
+id: defend-06-what-you-cant-see
+title: "What you can't see"
+status: draft
+role: prey
+org: dataquant
+startTime: "14:30"
+durationMin: 0
+speed: 1
+controls: { cloud-ids: on }
+map:
+  perimeter: true
+  note: The whole of DataQuant, every room. Some of what happens in it, none of our sensors can see yet.
+briefing: |
+  Your seventh day at DataQuant. A quiet afternoon, no alerts all day.
+
+  Then Ayanda puts the phone down and walks over to your desk. Everything is
+  unlocked. Still no clock.
+guide:
+  mentor: founder
+  hold: [attack-surface-check]
+  steps:
+    - id: no-alert
+      title: No alert, but something happened
+      say: >-
+        That was a client. Somebody emailed them a sample of their own customer
+        data and asked for money to keep quiet. That data only lives in one
+        place: our client data room. And we didn't get a single alert.
+      do: Open the client data room and read its log.
+      hint: The data room is in the Data & Insights room on the floor.
+      show: { host: dataroom }
+      done: { look: host, id: dataroom }
+      praise: >-
+        Nothing in its log about anybody taking files. At most our own agents
+        logging in, as they do every day.
+
+    - id: why
+      title: Why no alert?
+      say: >-
+        The data room sends logs to the SOC, and the network sensor watches the
+        cloud. So how did somebody take files without us seeing anything?
+      do: Look at the data room's facts and the Controls tab, then answer.
+      hint: >-
+        A log agent records logins and programs. Who records each file somebody
+        reads? Look for a control that is off.
+      show: { tab: controls }
+      ask:
+        question: Why was there no alert?
+        options:
+          - text: >-
+              The bucket let them read files without logging in, and nothing
+              records who reads files. To the network sensor a download looks
+              like any other web visit.
+            correct: true
+            reply: >-
+              That's it. No login, so nothing in the login log. And "Storage
+              access logging" is off, so nobody writes down who reads what. No
+              sensor watched that door.
+          - text: The attacker switched our sensors off.
+            reply: >-
+              Every control in the Controls tab is as we left it. Nothing was
+              switched off: the one we needed was never on.
+          - text: The client made it up.
+            reply: >-
+              It's their own customer data, and it only lives with us. Treat it
+              as real until the evidence says otherwise.
+      done: { answer: correct }
+
+    - id: sensor
+      title: Switch the sensor on
+      say: >-
+        No alert doesn't mean nothing happened. It can mean nothing was
+        watching. Let's start watching.
+      do: Switch on the control that records who reads files in the data room.
+      hint: In the Controls tab, look for storage access logging.
+      show: { tab: controls }
+      done: { action: control, target: storage-access-logs }
+      wrong: >-
+        That control doesn't watch the data room. Look for storage access
+        logging.
+      replies:
+        private-buckets: >-
+          That closes the hole, which we'll need. But then we'd never see
+          whether they come back, or from where. Switch on storage access
+          logging as well.
+      praise: >-
+        Storage access logging is on. From now on every read is written down,
+        and reading without logging in raises an alert.
+
+    - id: back
+      title: Watch the door
+      say: >-
+        Somebody who got data that easily usually comes back for more. This
+        time we'll see them.
+      do: Wait for an alert from the data room, then open it.
+      hint: The new alert comes from the storage logs. It lands in the Alerts tab.
+      show: { tab: alerts, alert: weblog-anonymous-listing }
+      script:
+        - { after: 8, event: download, system: dataroom, src: 10.88.0.58, path: /client-datasets/, port: 9000 }
+        - { after: 10, event: download, system: dataroom, src: 10.88.0.58, path: /client-datasets/siyakhula/latest.parquet, port: 9000 }
+      done: { look: alert, rule: weblog-anonymous-listing }
+      praise: >-
+        There they are: 10.88.0.58, listing the bucket without logging in. Same
+        trick as before, and this time it's on record.
+
+    - id: for-good
+      title: Stop it for good
+      say: >-
+        Seeing it is half the job. The bucket is still open to anybody who
+        finds it.
+      do: Answer the question.
+      hint: What would stop the next person, from any address?
+      ask:
+        question: What stops this from happening again?
+        options:
+          - text: Make the bucket private, so nobody can read it without logging in.
+            correct: true
+            reply: >-
+              Yes. Then it doesn't matter who finds it or where they come from.
+              Our manual already says buckets are private. Somebody opened this
+              one for a client demo and never closed it.
+          - text: Block 10.88.0.58.
+            reply: >-
+              Do that too. But it only stops one address. The next person who
+              finds the bucket walks in from another.
+          - text: Delete the data room.
+            reply: >-
+              The data room is how we deliver work to clients. Lock the door;
+              don't burn the house down.
+      done: { answer: correct }
+
+    - id: close-bucket
+      title: Close the hole
+      say: Now do it.
+      do: Switch on the control that makes every bucket private.
+      hint: In the Controls tab, look for "Buckets private by default".
+      show: { tab: controls }
+      done: { action: control, target: private-buckets }
+      wrong: >-
+        That control won't close the bucket. Look for "Buckets private by
+        default".
+      praise: >-
+        Every bucket is private again. Reading the data room now needs a login,
+        and every read is on record.
+
+    - id: tell
+      title: Who needs to know?
+      say: >-
+        Client data with people's names and account numbers left our hands.
+        That isn't only a security problem. It's a legal one.
+      do: Answer the question.
+      hint: Whose information was it, and what does POPIA say about a breach?
+      ask:
+        question: Who do we have to tell?
+        options:
+          - text: The client, and the Information Regulator, as soon as we reasonably can
+            correct: true
+            reply: >-
+              Yes. Under POPIA section 22, when personal information is
+              accessed by somebody who shouldn't have it, we tell the
+              Information Regulator and the people it belongs to. Our client
+              tells their customers. Our incident plan has the steps.
+          - text: Nobody. We fixed it.
+            reply: >-
+              Fixing it doesn't undo it. The data is out, and POPIA says the
+              Regulator and the people affected must be told.
+          - text: Only the client, quietly, so it doesn't hurt our name
+            reply: >-
+              Hiding a breach is worse for our name than reporting it, and it
+              breaks the law. POPIA says the Information Regulator must be told
+              too.
+      done: { answer: correct }
+  outro:
+    title: Floor 6 complete
+    learned:
+      - No alert doesn't mean nothing happened. It can mean nothing was watching.
+      - Know what each sensor records. A login log doesn't see who reads files.
+      - Seeing an attack and stopping it are two different controls. You need both.
+      - When personal information leaks, POPIA says you tell the Information Regulator and the people affected.
+    next: "Floor 7: Night shift"
+qcto: [KM-02-KT04, KM-03-KT19, KM-04-KT02, KM-08-KT01, KM-08-KT03, PM-01-PS01, PM-03-PS01, FA2.5, FA4.2, FA4.4]

@@ -1,0 +1,151 @@
+id: community
+name: Community Services
+purpose: Faces the public. Customer care and the call centre, traffic and vehicle licensing, and the public libraries.
+room: { x: 6, y: 3, w: 4, h: 5 }
+
+people:
+  - id: customer-care
+    role: Customer care agent
+    kind: human
+    name: Mpho Radebe
+    awareness: 0.4
+  - id: licensing-officer
+    role: Licensing officer
+    kind: human
+    name: Andile Zwane
+    awareness: 0.5
+  - id: librarian
+    role: Librarian
+    kind: human
+    name: Elsabe Fourie
+    awareness: 0.5
+
+processes:
+  - id: account-queries
+    name: Resident account queries
+    owner: customer-care
+    every: 10m
+    hours: work
+    steps:
+      - Verify the caller's identity before discussing any account.
+      - Look up the account and log the query.
+    activity:
+      - { action: login, system: billing, via: callcentre-pc, typo: 0.08 }
+      - { action: http, system: billing, via: callcentre-pc, path: /accounts/search }
+  - id: licence-renewals
+    name: Vehicle licence renewals
+    owner: licensing-officer
+    every: 15m
+    hours: work
+    steps:
+      - Capture renewals and verify identity documents at the counter.
+    activity:
+      - { action: login, system: licensing, via: licensing-pc }
+  - id: library-sessions
+    name: Public PC sessions
+    owner: librarian
+    every: 30m
+    hours: work
+    steps:
+      - Book residents onto the public PCs and wipe each session afterwards.
+    activity:
+      - { action: http, system: eservices, via: library-pcs, path: /index.php }
+
+systems:
+  - id: licensing
+    name: Vehicle licensing system
+    hostname: licensing
+    kind: web
+    zone: servers
+    ip: 10.88.22.40
+    os: Windows Server 2016
+    services:
+      - { port: 443, name: https, product: Vehicle licensing system, version: "3.0" }
+      - { port: 1433, name: ms-sql-s, product: Microsoft SQL Server, version: "2016" }
+  - id: callcentre-pc
+    name: Call centre desktop
+    hostname: cc-pc
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.50
+    os: Windows 10 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+  - id: licensing-pc
+    name: Licensing counter desktop
+    hostname: lic-pc
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.51
+    os: Windows 10 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+  - id: library-pcs
+    name: Public library PCs
+    hostname: lib-pc
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.60
+    os: Windows 10 Pro (public kiosk)
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+    weaknesses:
+      - id: library-on-corporate
+        name: Public PCs on the staff network
+        kind: misconfiguration
+        grants: user
+        description: The library's public PCs were plugged into the same network as the staff. Anyone who books a session is inside.
+
+data:
+  - id: licensing-records
+    name: Driver and vehicle records
+    sensitivity: restricted
+    personalInformation: true
+    system: licensing
+    path: LicensingDB.dbo.Owners
+    records: 130000
+    impact: 2000000
+
+connections:
+  - { to: treasury, kind: internal, trust: Customer care reads billing accounts to answer queries. }
+  - { to: external:residents, kind: walk-in, trust: The public uses the library PCs and the licensing counter. }
+
+threats:
+  - id: library-pivot
+    name: From a library PC into the staff network
+    attack: T1021
+    stage: lateral-movement
+    target: library-pcs
+    uses: library-on-corporate
+    description: A "resident" on a library PC scans the staff network and reaches every server from there.
+    qcto: [KM-01-KT01, KM-02-KT03]
+  - id: identity-records-theft
+    name: Stealing licensing records for identity fraud
+    attack: T1005
+    stage: collection
+    target: licensing
+    description: Driver records with ID numbers are exactly what identity thieves want.
+    qcto: [KM-01-KT03, KM-08-KT01]
+
+controls:
+  - id: guest-network
+    name: Separate network for public PCs
+    kind: preventive
+    status: planned
+    from: 4
+    fixes: [library-on-corporate]
+    description: Public PCs move to their own network with internet access only.
+  - id: caller-verification
+    name: Caller identity verification
+    kind: preventive
+    status: in-place
+    description: Customer care verifies identity before discussing any account.
+    policy: No account details are given out until the caller is verified.
+
+maturity:
+  1: Counter services on paper.
+  2: A call centre and licensing system.
+  3: Public PCs in libraries and online queries.
+  4: Separated public networks and a customer portal with verified identities.
+
+qcto: [KM-01-KT01, KM-01-KT03, KM-01-KT05, KM-01-KT06, KM-09-KT14]

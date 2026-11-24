@@ -1,0 +1,132 @@
+id: corporate-services
+name: Corporate Services
+purpose: People, legal and records. Human resources, payroll, labour relations, legal services and the records office.
+room: { x: 5, y: 0, w: 5, h: 3 }
+
+people:
+  - id: hr-officer
+    role: HR officer
+    kind: human
+    name: Refilwe Moloi
+    awareness: 0.5
+  - id: payroll-officer
+    role: Payroll officer
+    kind: human
+    name: Sello Mabena
+    awareness: 0.5
+
+processes:
+  - id: hr-files
+    name: Personnel files
+    owner: hr-officer
+    every: 30m
+    hours: work
+    steps:
+      - Update personnel files on the HR share. Files are kept for the periods set in the records policy.
+    activity:
+      - { action: file, system: fs01, via: hr-pc, path: /srv/hr/personnel/ }
+  - id: payroll-run
+    name: Payroll processing
+    owner: payroll-officer
+    every: 2h
+    cadence: monthly, with a mid-month check
+    hours: work
+    steps:
+      - Capture changes and run payroll; a second person approves every run.
+    activity:
+      - { action: login, system: payroll, via: hr-pc, typo: 0.05 }
+
+systems:
+  - id: fs01
+    name: HR file server (legacy)
+    hostname: fs01
+    kind: file
+    zone: servers
+    ip: 10.88.22.11
+    os: Ubuntu 8.04 LTS
+    services:
+      - { port: 139, name: netbios-ssn, product: Samba smbd, version: 3.0.20-Debian }
+      - { port: 445, name: netbios-ssn, product: Samba smbd, version: 3.0.20-Debian }
+    weaknesses:
+      - id: samba-usermap
+        name: Samba "username map script" command injection
+        kind: vulnerable-service
+        port: 445
+        module: exploit/multi/samba/usermap_script
+        cve: CVE-2007-2447
+        grants: root
+        description: A file server nobody dared to upgrade. Its Samba version runs commands hidden in a username.
+    live: { image: "tleemcjr/metasploitable2:latest" }
+  - id: payroll
+    name: Payroll system
+    hostname: payroll
+    kind: web
+    zone: servers
+    ip: 10.88.22.12
+    os: Windows Server 2016
+    critical: true
+    services:
+      - { port: 443, name: https, product: Payroll system, version: "9.4" }
+  - id: hr-pc
+    name: HR desktop
+    hostname: hr-pc
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.30
+    os: Windows 10 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: hr-files
+    name: Personnel files
+    sensitivity: restricted
+    personalInformation: true
+    system: fs01
+    path: /srv/hr/personnel
+    records: 1400
+    impact: 900000
+    description: ID numbers, medical certificates, disciplinary records and bank details for every employee.
+  - id: payroll-records
+    name: Payroll records
+    sensitivity: restricted
+    personalInformation: true
+    system: payroll
+    path: D:/Payroll/Data
+    records: 1400
+    impact: 1200000
+
+connections:
+  - { to: ict, kind: internal, trust: Joiners, movers and leavers drive account changes. }
+  - { to: treasury, kind: internal, trust: Payroll feeds the general ledger. }
+
+threats:
+  - id: fileserver-exploit
+    name: Exploiting the legacy file server
+    attack: T1210
+    stage: lateral-movement
+    target: fs01
+    uses: samba-usermap
+    description: From anywhere on the staff network, one crafted username gives root on the HR file server, which sends no logs.
+    qcto: [KM-03-KT07, KM-03-KT06, PM-02-PS02]
+
+controls:
+  - id: retire-legacy-fs
+    name: Retire the legacy file server
+    kind: preventive
+    status: planned
+    fixes: [samba-usermap]
+    description: Move the HR share to the supported file platform and switch the old server off.
+  - id: records-policy
+    name: Records management policy
+    kind: corrective
+    status: in-place
+    description: How long each kind of record is kept and how it is destroyed, in line with POPIA and the National Archives Act.
+
+maturity:
+  1: Paper personnel files.
+  2: Shared drives on a file server.
+  3: An HR system and payroll with approvals, plus the old file server nobody has retired.
+  4: Records digitised with retention enforced automatically.
+
+qcto: [KM-04-KT02, PM-01-PS01, KM-08-KT03, PM-03-PS01]

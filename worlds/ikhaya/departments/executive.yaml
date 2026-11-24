@@ -1,0 +1,86 @@
+id: executive
+name: Executive office
+purpose: The chief executive, the board's company secretary and the board's audit and risk committee, who decide what the company spends on security and answer for it.
+room: { x: 0, y: 0, w: 5, h: 3 }
+
+people:
+  - id: ceo
+    role: Chief executive officer
+    kind: human
+    name: Nandi Khumalo
+    awareness: 0.6
+  - id: arc-chair
+    role: Chair of the board's audit and risk committee
+    kind: human
+    name: Dr Ruth Mokoena
+    awareness: 0.8
+    description: An independent non-executive director. Security reports to the board go through her committee.
+  - id: company-secretary
+    role: Company secretary
+    kind: human
+    name: Palesa Sithole
+    awareness: 0.7
+
+processes:
+  - id: board-pack
+    name: Board and committee packs
+    owner: company-secretary
+    every: 2h
+    cadence: quarterly
+    hours: work
+    steps:
+      - Collect the reports for each board and committee meeting, send the pack a week ahead, and keep the minutes.
+      - Every committee has terms of reference, a quorum and an agenda. Decisions and actions go into the minutes with an owner and a date.
+    activity:
+      - { action: file, system: files, via: ceo-laptop, path: /board/2026-11-audit-risk-pack.pdf }
+
+systems:
+  - id: ceo-laptop
+    name: Chief executive's laptop
+    hostname: ceo-lt
+    kind: laptop
+    zone: hq
+    ip: 10.88.31.10
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: board-papers
+    name: Board and committee papers
+    sensitivity: restricted
+    personalInformation: false
+    system: files
+    path: /board
+    records: 400
+    impact: 5000000
+    description: Strategy, results before they are published, acquisitions and the risk register.
+
+connections:
+  - { to: risk, kind: internal, trust: The chief risk officer reports to the audit and risk committee every quarter. }
+  - { to: finance, kind: internal, trust: The budget is approved by the board on the CFO's recommendation. }
+
+threats:
+  - id: ceo-voice-fraud
+    name: A deepfaked voice note from the CEO
+    attack: T1656
+    stage: initial-access
+    target: ceo-laptop
+    description: A cloned voice asks finance to pay an urgent invoice. AI makes the old CEO-fraud trick sound real.
+    qcto: [KM-09-KT01, KM-09-KT04]
+
+controls:
+  - id: board-oversight
+    name: Board oversight of information risk
+    kind: preventive
+    status: in-place
+    description: The audit and risk committee reviews the information security report every quarter and approves the security budget.
+    policy: The board is accountable for information risk. Management runs it; the committee checks it is run well.
+
+maturity:
+  1: A founder who decides everything.
+  2: An executive team and an annual audit.
+  3: A board with an audit committee that hears about security once a year.
+  4: An audit and risk committee with quarterly security reporting and a security budget it signs off.
+
+qcto: [KM-04-KT01, KM-04-KT07, KM-04-KT09, KM-09-KT09, KM-09-KT11, PM-08-PS01, PM-08-PS05]

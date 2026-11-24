@@ -1,0 +1,146 @@
+id: data-insights
+name: Data & Insights
+purpose: Turns client data into answers. Analytics, dashboards and data science, with agents doing the cleaning, modelling and first drafts.
+room: { x: 0, y: 3, w: 4, h: 4 }
+
+people:
+  - id: analyst-agent
+    role: Analyst agent
+    kind: agent
+    name: Analyst agent
+    permissions: [read:dataroom, write:dashboards, write:drafts]
+    description: Cleans client data, builds models and drafts insight reports for review.
+  - id: data-scientist
+    role: Data scientist
+    kind: human
+    name: Musa Cele
+    awareness: 0.6
+    from: 3
+
+processes:
+  - id: refresh-dashboards
+    name: Refresh client dashboards
+    owner: analyst-agent
+    every: 1h
+    hours: always
+    steps:
+      - Pull the latest client data from the data room, rebuild the dashboards and flag anything unusual.
+      - Only de-identified data leaves the data room.
+    activity:
+      - { action: http, system: dataroom, via: notebooks, path: /client-datasets/siyakhula/latest.parquet }
+      - { action: file, system: notebooks, path: /home/jovyan/work/refresh.ipynb }
+
+systems:
+  - id: dataroom
+    name: Client data room
+    hostname: dataroom
+    kind: storage
+    zone: cloud
+    ip: 10.88.10.30
+    os: Ubuntu 24.04
+    critical: true
+    services:
+      - { port: 9000, name: http, product: MinIO S3 API, version: RELEASE.2024-01-16 }
+      - { port: 9001, name: http, product: MinIO Console, version: RELEASE.2024-01-16 }
+    accounts:
+      - { user: dq-agents, password: "agents-7Qm2-key", role: service, service: https }
+    weaknesses:
+      - id: dataroom-anonymous-read
+        name: Client bucket readable without logging in
+        kind: misconfiguration
+        port: 9000
+        module: minio-anonymous-list
+        exposes: [client-datasets]
+        description: A bucket policy set for a quick client demo allows anonymous listing and downloads.
+    live: { image: "minio/minio:RELEASE.2024-01-16T16-07-38Z", command: "server /data --console-address :9001" }
+  - id: notebooks
+    name: Notebook server
+    hostname: jupyter
+    kind: server
+    zone: cloud
+    ip: 10.88.10.31
+    os: Ubuntu 22.04
+    services:
+      - { port: 8888, name: http, product: Jupyter Notebook, version: 6.5.4 }
+    weaknesses:
+      - id: jupyter-no-token
+        name: Notebook server with no password or token
+        kind: vulnerable-service
+        port: 8888
+        module: exploit/multi/http/jupyter_notebook_rce
+        grants: user
+        description: The notebook server was started with authentication switched off "just for today". Anyone who reaches it can run code.
+    live: { image: "jupyter/base-notebook:notebook-6.5.4", command: "start-notebook.sh --NotebookApp.token=''" }
+
+data:
+  - id: client-datasets
+    name: Client datasets
+    sensitivity: restricted
+    personalInformation: true
+    system: dataroom
+    path: /data/client-datasets
+    records: 85000
+    impact: 2500000
+    description: Municipal billing and customer records loaded for analysis. DataQuant is the operator under POPIA; the client is the responsible party.
+  - id: analysis-notebooks
+    name: Analysis notebooks
+    sensitivity: confidential
+    personalInformation: false
+    system: notebooks
+    path: /home/jovyan/work
+    records: 120
+    impact: 80000
+
+connections:
+  - { to: solutions-studio, kind: internal, trust: Pipelines fill the data room. }
+  - { to: ai-operations, kind: internal, trust: The analyst agent works through the agent gateway. }
+  - { to: external:clients, kind: portal, trust: Clients see dashboards, never raw data. }
+
+threats:
+  - id: public-dataroom
+    name: Downloading the client bucket anonymously
+    attack: T1530
+    stage: collection
+    target: dataroom
+    uses: dataroom-anonymous-read
+    description: The attacker lists the open bucket and downloads the municipality's customer data without ever logging in. A POPIA breach for DataQuant and its client.
+    qcto: [KM-08-KT01, KM-03-KT19, PM-03-PS01]
+  - id: notebook-takeover
+    name: Running code on the open notebook server
+    attack: T1190
+    stage: initial-access
+    target: notebooks
+    uses: jupyter-no-token
+    description: With no token, the notebook server runs whatever it is given, with the analyst agent's access to the data room.
+    qcto: [KM-03-KT14, PM-02-PS02]
+
+controls:
+  - id: private-buckets
+    name: Buckets private by default
+    kind: preventive
+    status: in-place
+    lab: off
+    fixes: [dataroom-anonymous-read]
+    description: Every bucket is private. Sharing uses short-lived signed links.
+    policy: Client data never sits in a public bucket, not even for a demo.
+  - id: notebook-auth
+    name: Notebooks behind login and VPN
+    kind: preventive
+    status: planned
+    fixes: [jupyter-no-token]
+    description: Notebook servers require a login and are reachable only through the VPN.
+  - id: storage-access-logs
+    name: Storage access logging
+    kind: detective
+    status: planned
+    sensor: { type: weblog, covers: [dataroom] }
+    rules: [weblog-anonymous-listing]
+    description: Every bucket read is logged and anonymous listings raise an alert.
+
+maturity:
+  1: The analyst agent does the work; the founder reviews every client deliverable.
+  2: An associate analyst reviews agent output.
+  3: A data scientist leads modelling and quality.
+  4: A full insights team with a data governance owner.
+
+qcto: [KM-08-KT01, KM-08-KT02, KM-08-KT05, KM-08-KT06, PM-06-PS01, PM-06-PS10, PM-03-PS01]

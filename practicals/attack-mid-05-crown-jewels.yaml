@@ -1,0 +1,72 @@
+# Intermediate attack tower, floor 5. The crown jewels. The learner reaches the
+# data the whole engagement is about — 95 000 residents' meter and token records
+# on the vending server. The lesson is proof, not hoarding: take a minimal,
+# secured sample and handle it the way the engagement rules demand.
+
+id: attack-mid-05-crown-jewels
+title: "The crown jewels"
+status: draft
+role: predator
+org: siyakhula
+startTime: "11:30"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+foothold: vending
+briefing: |
+  This is what the engagement was really about. The vending server holds
+  /opt/vending/data — meter and token records for 95 000 residents, names and
+  all.
+
+  You prove you can reach it. That means taking a small, secured sample as
+  evidence, not a copy of everyone's details. How you handle their data is part
+  of the test, and the client is trusting you with it.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: enter
+      title: Back into the server
+      say: Step into your foothold on the vending server again, so you can reach its files.
+      do: Interact with your session.
+      hint: "Type `sessions -i 1` and press Enter."
+      show: { tab: term }
+      done: { command: { did: read, text: sessions } }
+
+    - id: exfil
+      title: Prove you can read it
+      say: Pull a copy of the records to your machine. This is the proof that the data was reachable — the finding the client needs to see.
+      do: Download the vending records from the server.
+      hint: "Type `download /opt/vending/data` and press Enter."
+      show: { tab: term }
+      done: { command: { did: exfil, of: vending } }
+      praise: There it is — 95 000 residents' records, reachable from a foothold two hops off the internet. That is the finding that makes the risk undeniable.
+
+    - id: handle
+      title: Their data is theirs
+      say: You can reach it. That does not make it yours to keep.
+      do: Answer the question.
+      hint: You are proving the risk, not building a collection.
+      ask:
+        question: You just pulled 95 000 residents' records. How do you handle them?
+        options:
+          - text: Keep only a small sample as proof, encrypted, record exactly what you accessed, and delete it once the report is signed off.
+            correct: true
+            reply: >-
+              Yes. You prove you could read it, you do not hoard it. A minimal
+              sample, stored securely and deleted after, is proof enough. You
+              are the person they trusted with this, so you act like it.
+          - text: Keep the full copy; the more evidence the stronger the report
+            reply: The report needs proof, not 95 000 residents' details sitting on your laptop. A sample makes the point; the rest is a liability you created.
+          - text: Share it with the client's IT team to show them what leaked
+            reply: Spreading the data further, even to the client, is the opposite of handling it well. Keep a minimal sample secured, and describe the exposure in the report instead.
+      done: { answer: correct }
+  outro:
+    title: You reached the crown jewels
+    learned:
+      - The point of the whole engagement is reaching the data that matters, and proving it.
+      - Proof is a minimal, secured sample — not a full copy of the client's records.
+      - Record exactly what you accessed, keep it encrypted, and delete it once the report is done.
+      - How you handle the client's data is itself part of the test.
+    next: "Floor 6: The water plant"
+qcto: [KM-03-KT11, KM-03-KT12, KM-03-KT04, PM-02-PS02, PM-02-PS04, FA3.4]

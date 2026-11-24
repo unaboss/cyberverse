@@ -1,0 +1,119 @@
+# Intermediate attack tower, floor 7. The last floor ties the engagement
+# together and names the techniques the terminal did not act out — lateral
+# movement across the network, sniffing and session hijacking on a flat LAN, and
+# wireless (evil-twin) attacks — then lands on the deliverable the client pays
+# for: the report. Answer-only, because this is the "step back and see the whole
+# attack" floor.
+
+id: attack-mid-07-report
+title: "Lateral movement and the report"
+status: draft
+role: predator
+org: siyakhula
+startTime: "13:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  You went from the internet to a foothold, across to the internal servers, into
+  the vending server as root, through its credentials, onto the crown-jewel data,
+  and up to the water plant. Step back and see the shape of it.
+
+  This floor names the moves that stitch an internal test together — spreading
+  from box to box, listening on the wire, and attacking the staff Wi-Fi — and
+  then the thing the client actually pays for: the report.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: lateral
+      title: From one box to many
+      say: You cracked a password and dumped hashes on the vending server. That is not the end; it is the fuel for the next move.
+      do: Answer the question.
+      hint: How does an attacker turn one shell into ten?
+      ask:
+        question: What is lateral movement, and what drives it?
+        options:
+          - text: Using credentials and trust from one machine to reach the next, box by box, mapping the network until you stand on what matters.
+            correct: true
+            reply: >-
+              Yes. Each box gives you logins, keys, and trusted paths to the
+              next. You rarely exploit your way across a network; you log in
+              across it, with what the last machine gave you. That is lateral
+              movement.
+          - text: Scanning the whole network again from the start
+            reply: Scanning maps the ground, but lateral movement is about reach — reusing credentials and trust to log into the next machine, not re-scanning from zero.
+          - text: Attacking every machine with the same exploit at once
+            reply: Real movement is quieter and smarter than that. You use the logins and trust you already harvested to step to the next box, which rarely needs a fresh exploit.
+      done: { answer: correct }
+
+    - id: sniff
+      title: Listening on the wire
+      say: Much of Siyakhula's internal network is flat — machines share a segment and can see each other's traffic.
+      do: Answer the question.
+      hint: What travels across a network that an attacker would love to catch?
+      ask:
+        question: On a flat internal network, what can an attacker do just by listening?
+        options:
+          - text: Capture traffic that is not encrypted, including login details and session tokens, then ride a live session with a stolen token — no password needed.
+            correct: true
+            reply: >-
+              Yes. Sniffing picks up anything sent in the clear, and a captured
+              session token lets you hijack a logged-in session without ever
+              knowing the password. Flat networks and plaintext make it easy.
+          - text: Nothing — traffic between other machines is invisible to you
+            reply: Not on a flat segment. Without segmentation and encryption, you can see traffic that is not yours, and plaintext logins and tokens are there for the taking.
+          - text: Only see which machines are online, like a scan
+            reply: Far more than that. Listening on a flat network exposes the contents of unencrypted traffic — credentials and session tokens included — not just who is up.
+      done: { answer: correct }
+
+    - id: wireless
+      title: The staff Wi-Fi
+      say: The municipal offices run staff Wi-Fi. That radio signal leaves the building, and it is an attack surface of its own.
+      do: Answer the question.
+      hint: What happens if your fake network looks exactly like the real one?
+      ask:
+        question: How might an attacker abuse the staff Wi-Fi?
+        options:
+          - text: Stand up an evil-twin access point with the same network name, so staff devices connect to it, and capture the credentials and traffic that flow through.
+            correct: true
+            reply: >-
+              Yes. An evil twin copies the real network's name; devices that
+              trust it connect automatically, and everything they send runs
+              through the attacker. Wireless extends the perimeter past the
+              walls, which is why it has to be secured like any other.
+          - text: Wi-Fi cannot be attacked once it has a password
+            reply: A password helps, but an evil twin with the same name can still lure devices, and weak or reused Wi-Fi keys are crackable. Wireless is a real attack surface, not a solved one.
+          - text: Only by standing inside the building with a cable
+            reply: The opposite — the signal reaches outside the walls, so an attacker in the car park can run an evil twin or capture handshakes without ever plugging in.
+      done: { answer: correct }
+
+    - id: report
+      title: The thing they pay for
+      say: You proved real risk across the whole network. None of it helps the client until it is written down right.
+      do: Answer the question.
+      hint: What makes a report worth more than the access it describes?
+      ask:
+        question: The technical work is done. What turns it into value for Siyakhula?
+        options:
+          - text: A report that ranks findings by real risk, proves impact with evidence, and gives clear, specific fixes the team can actually act on.
+            correct: true
+            reply: >-
+              Yes. The report is the deliverable. Ranked by risk so they fix the
+              right things first, evidenced so they believe it, and specific
+              enough to act on. A brilliant hack with a vague write-up helps no
+              one.
+          - text: A list of every command you ran, in order
+            reply: A raw command log is not a report. The client needs findings ranked by risk, the impact proven, and fixes they can act on — not a transcript to decode.
+          - text: Proof that you reached the most systems possible
+            reply: Reach is the evidence, not the point. The value is helping them fix what matters most, which means ranking by risk and writing fixes they can actually use.
+      done: { answer: correct }
+  outro:
+    title: The engagement is done
+    learned:
+      - Lateral movement reuses credentials and trust to step from one machine to the next, not fresh exploits each time.
+      - On a flat network, sniffing captures plaintext credentials and session tokens, and a stolen token hijacks a live session.
+      - Wireless is an attack surface — an evil-twin access point lures staff devices past the perimeter.
+      - "The report is the deliverable: findings ranked by risk, impact proven, and fixes clear and specific."
+    next: "Advanced attack tower"
+qcto: [KM-03-KT10, KM-03-KT12, KM-03-KT13, KM-03-KT14, PM-02-PS02, PM-06-PS01, FA3.4]

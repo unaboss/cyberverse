@@ -1,0 +1,450 @@
+# Intermediate defend tower, floor 7, the last. Built on 2026-11-21 from the
+# agreed floor plan.
+#
+# Ransomware on the legacy HR file server, still encrypting when the round
+# starts. The learner follows the disaster recovery plan in the recovery
+# console, which ticks itself off: contain, keep the evidence in the evidence
+# locker (fingerprinted, with a chain of custody) before anything is cleaned,
+# find the way in from the evidence and close it, work out what was stolen
+# and what POPIA asks, restore the right copy (the offline one) to the right
+# place (never the infected server), with two sums while it runs: how long
+# the restore takes and how much work is lost. Then the risk register meets
+# the incident, and the close-out report is written from the evidence.
+
+id: defend-mid-07-ransomware
+title: "Ransomware"
+status: draft
+role: prey
+org: siyakhula
+startTime: "07:20"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+briefing: |
+  Refilwe in HR called at seven: she can't open a single personnel file.
+  Every file on the HR share ends in .siyalock, and every folder has a new
+  file in it called README_RESTORE.txt.
+
+  Pieter has the disaster recovery plan open. This is what it's for.
+tools:
+  recovery:
+    spread: { system: fs01, files: 1400, done: 1312, perMinute: 30 }
+    rto: 8 hours
+    plan:
+      - { id: contain, text: "Contain: cut the infected machines off the network", when: { action: isolate, target: fs01 } }
+      - { id: evidence, text: Keep the evidence before anything is cleaned, when: { action: evidence.seal } }
+      - { id: way-in, text: Find the way in and close it, when: { action: isolate, target: hr-pc } }
+      - { id: restore, text: "Restore from a clean, offline copy onto a clean server", when: { action: recovery.restored } }
+      - { id: register, text: Check the risk register against the incident, when: { action: risk.link } }
+      - { id: report, text: Write the close-out report, when: { action: compose.publish } }
+    sets:
+      - id: nightly
+        name: Nightly backup, 21 Nov 02:00
+        where: Backup server, online
+        clean: false
+        reply: >-
+          Read the backup server's sign-in log: svc_backup signed in from fs01
+          at 03:40 and overwrote last night's backup with encrypted files. An
+          online backup is just another share to ransomware.
+      - id: snapshots
+        name: Snapshots on fs01
+        where: On the infected server itself
+        clean: false
+        reply: >-
+          Deleted at 03:44. Ransomware removes snapshots first, because it
+          knows that's what you'll reach for.
+      - id: offline
+        name: Weekly offline copy, 18 Nov 18:00
+        where: USB disk in the ICT safe, unplugged since
+        clean: true
+        reply: Clean. It was unplugged when they came.
+    targets:
+      - id: fs01
+        name: fs01, the HR file server
+        ok: false
+        reply: >-
+          fs01 is isolated, compromised and still runs Samba 3.0.20. Restore
+          onto it and the files go straight back to the attacker's door.
+      - id: fs02
+        name: fs02, a new server built from the supported image
+        ok: true
+    restore: { what: The personnel and payroll folders, gb: 40, mbps: 160 }
+    done: >-
+      Refilwe opens twenty files at random: every one opens. HR is working
+      again, well inside the eight hours the plan allows.
+  evidence:
+    custodian: you, SOC
+    items:
+      - id: note
+        name: Ransom note
+        from: fs01
+        detail: "README_RESTORE.txt in every folder: about R2.4 million in bitcoin by the 23rd, or the files are published. Contact by a Tor address."
+        relevant: true
+      - id: sample
+        name: An encrypted file and its original
+        from: fs01
+        detail: "personnel/2019/E-0412.pdf.siyalock, and the same file from the offline copy. Together they identify the ransomware family, and whether a free decryptor exists."
+        relevant: true
+      - id: image
+        name: Disk and memory image of fs01
+        from: fs01
+        volatile: true
+        detail: "Taken over the network to the forensic share. Memory holds the running encryptor, and sometimes its key."
+        relevant: true
+      - id: samba
+        name: fs01's Samba log
+        from: fs01
+        detail: "18 Nov 21:05:12 session from 10.88.21.30, username \"/=`nohup sh -c …`\": the username map script flaw, CVE-2007-2447."
+        relevant: true
+      - id: phish
+        name: The email on the HR desktop
+        from: hr-pc
+        detail: "18 Nov 16:42, from \"SARS eFiling\": \"Tax directive for employee E-0412.zip\". Opened at 16:47; the zip started a loader."
+        relevant: true
+      - id: exfil
+        name: Network sensor record
+        from: ids
+        detail: "21 Nov 03:12 to 03:31, fs01 (10.88.22.11) to 10.88.0.143:443, 2.1 GB out."
+        relevant: true
+      - id: backup-log
+        name: Backup server sign-in log
+        from: backup
+        detail: "21 Nov 03:40, svc_backup signed in from 10.88.22.11 and overwrote the nightly backup."
+        relevant: true
+      - id: calendar
+        name: HR's leave calendar
+        from: fs01
+        detail: "leave-2026.xlsx.siyalock, on the encrypted share."
+        relevant: false
+        reply: It was on the share, but it proves nothing about how, who or what was taken. One encrypted sample is enough.
+      - id: whatsapp
+        name: Screenshots of the staff WhatsApp group
+        from: hr-pc
+        detail: "Staff guessing who clicked what."
+        relevant: false
+        reply: Gossip isn't evidence, and those are staff's private messages. Keep what the machines recorded.
+  risk:
+    risks:
+      - id: fileserver-exploit
+        name: The legacy HR file server is broken into
+        asset: fs01
+        owner: hr-officer
+        description: Samba 3.0.20, which nobody dared to upgrade, and no log agent.
+        expect: { likelihood: [3, 4], impact: [4, 4] }
+        why:
+          likelihood: The exploit is public and the server is reachable from every desk.
+          impact: 1 400 personnel files with ID numbers and medical certificates.
+        given: { likelihood: 3, impact: 4 }
+      - id: webmail-spray
+        name: Password spraying gets into a webmail account
+        asset: mail
+        owner: ict-manager
+        description: Webmail faces the internet with a password alone, and several staff use seasonal passwords.
+        expect: { likelihood: [4, 5], impact: [3, 4] }
+        why:
+          likelihood: Webmail is on the internet for anyone to try.
+          impact: One mailbox is the start of fake invoices.
+        given: { likelihood: 4, impact: 3 }
+    incidents:
+      - id: ransomware
+        name: 21 Nov, ransomware on the HR file server
+        report: A phishing email on the HR desktop, then the Samba flaw on fs01. Personnel files copied out and encrypted, and the online backup overwritten.
+        risk: fileserver-exploit
+        why: The register said 3 out of 5 for a public exploit on a server every desk can reach.
+  compose:
+    heading: Incident close-out report
+    to: The Municipal Manager, the audit committee and the CSIRT, with the sealed evidence locker
+    send: Send the report
+    done: >-
+      Sent. Every line in it points at something in the evidence locker, and
+      every lesson has an owner. That's a report people can act on.
+    parts:
+      - id: summary
+        label: Summary
+        options:
+          - id: plain
+            text: On 21 November ransomware encrypted the HR file server. The files were restored from the offline copy the same morning. Before encrypting, the attackers copied 2.1 GB of personnel files.
+            correct: true
+            reply: What happened, what we did, and the worst of it, in three sentences.
+          - id: vague
+            text: An IT issue affected some HR files and has been resolved.
+            reply: It hides what happened and that data was stolen. The audit committee will find out anyway, and then trust nothing else in it.
+          - id: blame
+            text: Refilwe in HR opened a phishing email and caused a ransomware attack.
+            reply: Blaming one person teaches everyone to hide their mistakes. The report is about what failed, not who.
+      - id: cause
+        label: How they got in
+        options:
+          - id: plain
+            text: A phishing email gave them the HR desktop on the 18th. From there they used a 2007 flaw in fs01's Samba (no updates, no logging), then the backup account's 2019 password.
+            correct: true
+            reply: The whole chain, each link backed by the evidence.
+          - id: vague
+            text: Sophisticated hackers bypassed our security.
+            reply: Nothing here was sophisticated, and "bypassed our security" names nothing anyone can fix.
+          - id: antivirus
+            text: The antivirus failed to stop the ransomware.
+            reply: The evidence shows a phishing email, an unpatched server and an old password. Antivirus is the last of those problems, not the cause.
+      - id: impact
+        label: What was lost
+        options:
+          - id: plain
+            text: 1 400 personnel files encrypted, and 2.1 GB copied out. Changes since 18 November 18:00 are lost. The Information Regulator and staff have been told.
+            correct: true
+            reply: Encrypted, stolen and lost are three different things, and the report says all three.
+          - id: none
+            text: No data was lost, because we had backups.
+            reply: The backup brought the files back. It didn't take them back from the people who copied them, and two days of changes are gone.
+          - id: maybe
+            text: Some files may have been affected.
+            reply: You know exactly how many, and what happened to them. Say it.
+      - id: done
+        label: What we did
+        options:
+          - id: plain
+            text: Isolated fs01 and the HR desktop, kept and sealed the evidence, and restored the files to a new server from the offline copy in about four minutes, against an eight-hour target.
+            correct: true
+            reply: In the plan's order, with the times that show it worked.
+          - id: hero
+            text: The SOC worked tirelessly through the morning and saved the day.
+            reply: Nice to read, and no use to anyone checking what was done. Say what, and when.
+          - id: paid
+            text: We considered paying the ransom but decided to restore instead.
+            reply: Not wrong, but not what the reader needs. Say what you did, in order.
+      - id: lessons
+        label: What changes, and who owns it
+        options:
+          - id: plain
+            text: Retire fs01 (HR, this quarter). A daily offline backup (ICT, this month). New service account passwords (ICT, this week). A report button for suspicious email, with training (ICT and HR).
+            correct: true
+            reply: Each lesson is a change with an owner and a date. That's what gets done.
+          - id: antivirus
+            text: Buy a better antivirus.
+            reply: It fixes none of the three things that actually failed.
+          - id: policy
+            text: Make every staff member sign a promise not to click links.
+            reply: People will still click. Make reporting easy and make clicking cost less.
+guide:
+  mentor: ict-manager
+  target: 20
+  steps:
+    - id: contain
+      title: Cut it off
+      say: >-
+        It's still going: look at the count in the recovery console.
+        Ransomware encrypts everything it can reach, so step one of the plan
+        is to cut the infected machine off.
+      do: Isolate fs01, the HR file server.
+      hint: Open fs01 in Corporate Services and press Isolate.
+      show: { host: fs01 }
+      done: { action: isolate, target: fs01 }
+      wrong: That isn't the server being encrypted. It's fs01, the HR file server.
+      praise: >-
+        Cut off, and the count stopped. The recovery console ticks off the
+        plan as you go: keep an eye on it.
+
+    - id: pay
+      title: The note
+      say: >-
+        README_RESTORE.txt asks for about R2.4 million in bitcoin by the
+        23rd, or the files are published.
+      do: Answer the question.
+      hint: What does paying buy you, and what doesn't it?
+      ask:
+        question: Do we pay?
+        options:
+          - text: No. We follow the plan and restore from a clean copy. Paying funds the next attack and buys no guarantees.
+            correct: true
+            reply: >-
+              Right. Many who pay get a key that's slow or broken, files they
+              copied stay copied, and paying marks you as someone who pays.
+              With a clean offline copy, we don't need them at all.
+          - text: Yes, it's quicker than restoring
+            reply: >-
+              Decryptors are often slow and buggy, and paying doesn't un-copy
+              the 2.1 GB they took. Our offline copy is quicker and certain.
+          - text: Negotiate them down first
+            reply: >-
+              That's still paying, just less. Read the recovery console: we
+              have a copy they never touched.
+      done: { answer: correct }
+
+    - id: evidence
+      title: Keep the evidence
+      say: >-
+        Before anybody cleans anything: evidence. It shows how they got in,
+        which tells us what else to close, and it's what the police and the
+        Information Regulator will ask for.
+      do: >-
+        In the Evidence locker, bag everything that shows what happened, how
+        they got in and what was taken. Then seal it.
+      hint: Seven of the nine are evidence. Leave out what proves nothing about how, who or what was taken.
+      show: { tab: evidence }
+      done: { action: evidence.seal, target: locker }
+      wrong: Seal the locker once everything that matters is in it.
+      praise: >-
+        Every item has a fingerprint and a line saying who took it when. That
+        chain of custody is what makes it evidence and not just files.
+
+    - id: way-in
+      title: Close the way in
+      say: >-
+        Read the Samba log in the locker: the attack on fs01 came from
+        10.88.21.30. And the phishing email sat on that same machine.
+      do: Isolate the machine at 10.88.21.30.
+      hint: 10.88.21.30 is the HR desktop in Corporate Services.
+      show: { host: hr-pc }
+      done: { action: isolate, target: hr-pc }
+      wrong: That isn't 10.88.21.30. Find the HR desktop.
+      praise: >-
+        The HR desktop: the way in. Refilwe opened "Tax directive for employee
+        E-0412.zip" three days ago, and they've been on it since. It gets
+        imaged, then rebuilt.
+
+    - id: stolen
+      title: What did they take?
+      say: >-
+        The network sensor saw 2.1 GB leave fs01 for 10.88.0.143, twenty
+        minutes before the encryption started.
+      do: Answer the question.
+      hint: What's on the HR share, and what does POPIA say about it?
+      ask:
+        question: What does the 2.1 GB mean?
+        options:
+          - text: They copied the personnel files first. That's personal information of 1 400 people, so we tell the Information Regulator and the staff as soon as reasonably possible.
+            correct: true
+            reply: >-
+              Yes. Copy, then encrypt, then threaten to publish: double
+              extortion. Under POPIA section 22 a breach of personal
+              information is reported to the Regulator and to the people it
+              belongs to, so they can protect themselves.
+          - text: Nothing. We have a backup.
+            reply: >-
+              A backup brings the files back. It doesn't take them back from
+              whoever copied them.
+          - text: Wait and see whether they publish it
+            reply: >-
+              The duty to tell starts when you know, not when it's published.
+              And staff need to watch for fraud with their ID numbers now.
+      done: { answer: correct }
+
+    - id: restore
+      title: Restore
+      say: >-
+        Three copies exist: last night's backup on the backup server,
+        snapshots on fs01 itself, and the weekly copy on a USB disk in the
+        ICT safe, unplugged since the 18th. And two places to put them: fs01,
+        or fs02, a new server built from the supported image.
+      do: In the recovery console, choose what to restore and where to, then press Restore.
+      hint: Which copy could the attackers not reach? And which server is still theirs?
+      show: { tab: recovery }
+      done: { action: recovery.restore, target: fs02 }
+      wrong: Choose the copy they couldn't reach, and a clean server to put it on.
+      praise: Restoring. It'll take a few minutes.
+
+    - id: how-long
+      title: How long?
+      say: The personnel and payroll folders come back first, 40 GB at 160 MB/s.
+      do: Answer the question.
+      hint: 1 GB is 1 000 MB. Divide the size by the speed to get seconds.
+      ask:
+        question: How long does the restore take?
+        options:
+          - text: 4 minutes 10 seconds
+            correct: true
+            reply: >-
+              40 GB is 40 000 MB. 40 000 / 160 = 250 seconds: 250 div 60 = 4
+              minutes, 250 mod 60 = 10 seconds. Well inside the plan's eight
+              hours.
+          - text: 25 seconds
+            reply: >-
+              40 / 160 × 100 isn't the sum. Turn GB into MB first: 40 GB is
+              40 000 MB, and 40 000 / 160 = 250 seconds.
+          - text: 4 hours 10 minutes
+            reply: >-
+              250 is seconds, not minutes: 40 000 MB / 160 MB per second. 250
+              seconds is 4 minutes 10 seconds.
+      done: { answer: correct }
+
+    - id: lost
+      title: What's lost?
+      say: >-
+        The offline copy was taken on the 18th at 18:00. The encryption
+        started today, the 21st, at 03:50. Whatever changed in between exists
+        nowhere else.
+      do: Answer the question.
+      hint: From the 18th at 18:00 to the 21st at 18:00 is three days. Now go back to 03:50.
+      ask:
+        question: How much work is lost?
+        options:
+          - text: 57 hours 50 minutes of changes
+            correct: true
+            reply: >-
+              Two days (48 hours) from the 18th at 18:00 to the 20th at 18:00,
+              then 9 hours 50 minutes to 03:50: 57 h 50 min. That's the
+              recovery point. A weekly offline copy can cost a week; a daily
+              one would have cost a day.
+          - text: 9 hours 50 minutes
+            reply: >-
+              That's from 18:00 to 03:50 on one night. The copy is from the
+              18th: add the two days in between.
+          - text: None. We restored the backup.
+            reply: >-
+              The backup is from the 18th. Everything HR did on the 19th and
+              20th was only on fs01.
+      done: { answer: correct }
+
+    - id: restored
+      title: Back
+      say: The restore is running.
+      do: Wait for the restore to finish.
+      hint: It takes about four lab minutes. Press Skip ahead to run the clock faster.
+      show: { tab: recovery }
+      wait: 250
+      done: { action: recovery.restored, target: fs02 }
+      wrong: Wait for the restore to finish.
+      praise: HR is working again. The plan's eight hours took us under an hour.
+
+    - id: register
+      title: The register knew
+      say: >-
+        Floor 0's risk register had this one: "The legacy HR file server is
+        broken into", likelihood 3. An incident is the register being checked
+        against reality.
+      do: In the Risk register, link today's incident to the risk it proves.
+      hint: Choose the incident, then the risk about the HR file server.
+      show: { tab: risk }
+      done: { action: risk.link, target: ransomware }
+      wrong: Link it to the risk it proves.
+      praise: >-
+        Likelihood 5 now: it happened. 5 x 4 = 20, critical, and the register
+        now argues for retiring fs01 better than anything we could write.
+
+    - id: report
+      title: Close it out
+      say: >-
+        Last thing: the close-out report for the Municipal Manager, the audit
+        committee and the CSIRT, with the sealed locker attached.
+      do: In the Incident close-out report, choose a line for each part, then send it.
+      hint: Facts from the evidence, no blame, no vagueness, and every lesson with an owner.
+      show: { tab: compose }
+      done: { action: compose.publish, target: draft }
+      wrong: Send the report.
+      praise: >-
+        That's the tower. You've run a municipality's SOC: risk, scans,
+        traps, power, people, Wi-Fi, floods, and now the worst day, handled.
+  outro:
+    title: Intermediate tower complete
+    learned:
+      - "Ransomware: contain first. Cut off what's being encrypted."
+      - Don't pay. It funds the next attack and doesn't un-copy what was taken.
+      - Keep evidence before cleaning, with fingerprints and a chain of custody.
+      - The evidence shows the way in. Close it, or they come back.
+      - Stolen personal information means telling the Information Regulator and the people affected.
+      - Only an offline copy is safe from ransomware. Restore it onto a clean server, never the infected one.
+      - Restore time is size over speed. The recovery point is how far back your last good copy is.
+      - Check the risk register against every incident.
+      - A close-out report is facts, the cause chain, what was lost, and lessons with owners.
+    next: "The advanced tower: Ikhaya Stores"
+qcto: [FA5.1, FA5.2, FA5.4, PM-03-PS05, FA1.6, KM-07-KT21, KM-09-KT08]

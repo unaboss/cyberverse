@@ -1,0 +1,737 @@
+{
+  "id": "qcto-cybersecurity-analyst-modules",
+  "title": "QCTO Occupational Certificate: Cybersecurity Analyst — curriculum modules",
+  "examCode": "252901001",
+  "provider": "QCTO (DQP/AQP: MICT SETA)",
+  "version": "Curriculum 252901001, SAQA ID 118986, NQF 5",
+  "sourceUrl": "https://www.qcto.org.za/",
+  "domains": [
+    {
+      "code": "KM-01",
+      "name": "Introduction to Cybersecurity (NQF 4, 8 credits)",
+      "weightPercent": 6.61,
+      "objectives": [
+        {
+          "id": "KM-01-KT01",
+          "text": "Introduction to computer and mobile device security"
+        },
+        {
+          "id": "KM-01-KT02",
+          "text": "Various computer and network security threats"
+        },
+        {
+          "id": "KM-01-KT03",
+          "text": "Identity theft"
+        },
+        {
+          "id": "KM-01-KT04",
+          "text": "Adopting good cybersecurity practices"
+        },
+        {
+          "id": "KM-01-KT05",
+          "text": "Safeguard mobile, media and social networking profiles as user"
+        },
+        {
+          "id": "KM-01-KT06",
+          "text": "Protecting computers, accounts and data as user"
+        },
+        {
+          "id": "KM-01-KT07",
+          "text": "Understand security incidents and reporting"
+        }
+      ]
+    },
+    {
+      "code": "KM-02",
+      "name": "Fundamentals of Network Security and Defence (Network Defender) (NQF 5, 12 credits)",
+      "weightPercent": 9.92,
+      "objectives": [
+        {
+          "id": "KM-02-KT01",
+          "text": "Introduction to network security"
+        },
+        {
+          "id": "KM-02-KT02",
+          "text": "Network risk and vulnerability management"
+        },
+        {
+          "id": "KM-02-KT03",
+          "text": "Network defense fundamentals"
+        },
+        {
+          "id": "KM-02-KT04",
+          "text": "Monitoring for breaches and attacks"
+        },
+        {
+          "id": "KM-02-KT05",
+          "text": "Network incident response and management"
+        }
+      ]
+    },
+    {
+      "code": "KM-03",
+      "name": "Cybersecurity and Cyber Threats and Attacks (Ethical Hacking) (NQF 5, 12 credits)",
+      "weightPercent": 9.92,
+      "objectives": [
+        {
+          "id": "KM-03-KT01",
+          "text": "Information security Governance and compliance"
+        },
+        {
+          "id": "KM-03-KT02",
+          "text": "Information security"
+        },
+        {
+          "id": "KM-03-KT03",
+          "text": "Footprinting and Reconnaissance"
+        },
+        {
+          "id": "KM-03-KT04",
+          "text": "Scanning Networks"
+        },
+        {
+          "id": "KM-03-KT05",
+          "text": "Enumeration"
+        },
+        {
+          "id": "KM-03-KT06",
+          "text": "Vulnerability Analysis"
+        },
+        {
+          "id": "KM-03-KT07",
+          "text": "System Hacking"
+        },
+        {
+          "id": "KM-03-KT08",
+          "text": "Malware Threats"
+        },
+        {
+          "id": "KM-03-KT09",
+          "text": "Sniffing"
+        },
+        {
+          "id": "KM-03-KT10",
+          "text": "Social Engineering"
+        },
+        {
+          "id": "KM-03-KT11",
+          "text": "Denial-of-Service"
+        },
+        {
+          "id": "KM-03-KT12",
+          "text": "Session Hijacking"
+        },
+        {
+          "id": "KM-03-KT13",
+          "text": "Evading IDS, Firewalls, and Honeypots"
+        },
+        {
+          "id": "KM-03-KT14",
+          "text": "Hacking Web Servers"
+        },
+        {
+          "id": "KM-03-KT15",
+          "text": "SQL Injection"
+        },
+        {
+          "id": "KM-03-KT16",
+          "text": "Hacking Wireless Networks"
+        },
+        {
+          "id": "KM-03-KT17",
+          "text": "Hacking Mobile Platforms"
+        },
+        {
+          "id": "KM-03-KT18",
+          "text": "IoT Hacking"
+        },
+        {
+          "id": "KM-03-KT19",
+          "text": "Cloud Computing"
+        },
+        {
+          "id": "KM-03-KT20",
+          "text": "Cryptography"
+        },
+        {
+          "id": "KM-03-KT21",
+          "text": "Cyber incident response and management"
+        }
+      ]
+    },
+    {
+      "code": "KM-04",
+      "name": "Introduction to Cybersecurity Governance, Legislation and Ethics (NQF 4, 4 credits)",
+      "weightPercent": 3.31,
+      "objectives": [
+        {
+          "id": "KM-04-KT01",
+          "text": "Governance"
+        },
+        {
+          "id": "KM-04-KT02",
+          "text": "Legislation governing workplaces"
+        },
+        {
+          "id": "KM-04-KT03",
+          "text": "Introduction to ethics and security"
+        },
+        {
+          "id": "KM-04-KT04",
+          "text": "Ethics at work"
+        },
+        {
+          "id": "KM-04-KT05",
+          "text": "Security"
+        },
+        {
+          "id": "KM-04-KT06",
+          "text": "Performance management"
+        },
+        {
+          "id": "KM-04-KT07",
+          "text": "Business planning"
+        },
+        {
+          "id": "KM-04-KT08",
+          "text": "Costing of products"
+        },
+        {
+          "id": "KM-04-KT09",
+          "text": "Resources"
+        }
+      ]
+    },
+    {
+      "code": "KM-05",
+      "name": "Fundamentals of Design Thinking and Innovation (NQF 4, 1 credits)",
+      "weightPercent": 0.83,
+      "objectives": [
+        {
+          "id": "KM-05-KT01",
+          "text": "Introduction to design thinking"
+        },
+        {
+          "id": "KM-05-KT02",
+          "text": "The human element"
+        },
+        {
+          "id": "KM-05-KT03",
+          "text": "Creativity"
+        },
+        {
+          "id": "KM-05-KT04",
+          "text": "Innovation"
+        },
+        {
+          "id": "KM-05-KT05",
+          "text": "Design"
+        },
+        {
+          "id": "KM-05-KT06",
+          "text": "Design thinking methodology"
+        },
+        {
+          "id": "KM-05-KT07",
+          "text": "Application of design thinking"
+        }
+      ]
+    },
+    {
+      "code": "KM-06",
+      "name": "Refresher: Logical Thinking and Basic Calculations (NQF 4, 3 credits)",
+      "weightPercent": 2.48,
+      "objectives": [
+        {
+          "id": "KM-06-KT01",
+          "text": "Mathematical thinking skills for problem solving"
+        },
+        {
+          "id": "KM-06-KT02",
+          "text": "Basic math"
+        },
+        {
+          "id": "KM-06-KT03",
+          "text": "Conversion between decimal and binary systems"
+        },
+        {
+          "id": "KM-06-KT04",
+          "text": "Express size and magnitude"
+        },
+        {
+          "id": "KM-06-KT05",
+          "text": "Error in calculations"
+        },
+        {
+          "id": "KM-06-KT06",
+          "text": "Cartesian coordinate system"
+        },
+        {
+          "id": "KM-06-KT07",
+          "text": "Pythagorean theorem for finding the distance between two points"
+        },
+        {
+          "id": "KM-06-KT08",
+          "text": "Operator precedence"
+        },
+        {
+          "id": "KM-06-KT09",
+          "text": "Integer division"
+        },
+        {
+          "id": "KM-06-KT10",
+          "text": "Modulus"
+        },
+        {
+          "id": "KM-06-KT11",
+          "text": "Increments"
+        }
+      ]
+    },
+    {
+      "code": "KM-07",
+      "name": "Computers, Devices and Computing Systems (NQF 4, 6 credits)",
+      "weightPercent": 4.96,
+      "objectives": [
+        {
+          "id": "KM-07-KT01",
+          "text": "Problem solving skills for IT Professionals"
+        },
+        {
+          "id": "KM-07-KT02",
+          "text": "Techniques for safety"
+        },
+        {
+          "id": "KM-07-KT03",
+          "text": "System components"
+        },
+        {
+          "id": "KM-07-KT04",
+          "text": "Motherboards"
+        },
+        {
+          "id": "KM-07-KT05",
+          "text": "Processors"
+        },
+        {
+          "id": "KM-07-KT06",
+          "text": "Memory"
+        },
+        {
+          "id": "KM-07-KT07",
+          "text": "BIOS and CMOS"
+        },
+        {
+          "id": "KM-07-KT08",
+          "text": "Hard drives and storage devices"
+        },
+        {
+          "id": "KM-07-KT09",
+          "text": "Power supplies and voltage"
+        },
+        {
+          "id": "KM-07-KT10",
+          "text": "Ports, cables, and connectors"
+        },
+        {
+          "id": "KM-07-KT11",
+          "text": "Input and output devices"
+        },
+        {
+          "id": "KM-07-KT12",
+          "text": "Installing and managing printers"
+        },
+        {
+          "id": "KM-07-KT13",
+          "text": "Mobile devices, multimedia, and laptop computers"
+        },
+        {
+          "id": "KM-07-KT14",
+          "text": "Preventative maintenance"
+        },
+        {
+          "id": "KM-07-KT15",
+          "text": "Troubleshooting procedures"
+        },
+        {
+          "id": "KM-07-KT16",
+          "text": "Operating systems"
+        },
+        {
+          "id": "KM-07-KT17",
+          "text": "Managing files"
+        },
+        {
+          "id": "KM-07-KT18",
+          "text": "Applications utility, troubleshooting, and optimization"
+        },
+        {
+          "id": "KM-07-KT19",
+          "text": "Configuring device drivers"
+        },
+        {
+          "id": "KM-07-KT20",
+          "text": "Networking and wireless connections"
+        },
+        {
+          "id": "KM-07-KT21",
+          "text": "Recovery"
+        },
+        {
+          "id": "KM-07-KT22",
+          "text": "Cloud computing"
+        },
+        {
+          "id": "KM-07-KT23",
+          "text": "Security fundamentals"
+        },
+        {
+          "id": "KM-07-KT24",
+          "text": "Introduction to applications"
+        }
+      ]
+    },
+    {
+      "code": "KM-08",
+      "name": "Data and Databases Vulnerabilities (NQF 4, 3 credits)",
+      "weightPercent": 2.48,
+      "objectives": [
+        {
+          "id": "KM-08-KT01",
+          "text": "Data vulnerability and security"
+        },
+        {
+          "id": "KM-08-KT02",
+          "text": "Data and data processing"
+        },
+        {
+          "id": "KM-08-KT03",
+          "text": "Databases, data storage and access to data"
+        },
+        {
+          "id": "KM-08-KT04",
+          "text": "Structured query language (SQL)"
+        },
+        {
+          "id": "KM-08-KT05",
+          "text": "Data scraping"
+        },
+        {
+          "id": "KM-08-KT06",
+          "text": "Software for analysing and visualising data"
+        }
+      ]
+    },
+    {
+      "code": "KM-09",
+      "name": "Introduction to 4IR and Future Skills (NQF 4, 4 credits)",
+      "weightPercent": 3.31,
+      "objectives": [
+        {
+          "id": "KM-09-KT01",
+          "text": "4 IR emerging trends"
+        },
+        {
+          "id": "KM-09-KT02",
+          "text": "Computing Knowledge"
+        },
+        {
+          "id": "KM-09-KT03",
+          "text": "Future skills and competencies (4IR)"
+        },
+        {
+          "id": "KM-09-KT04",
+          "text": "4 IR trends affecting businesses"
+        },
+        {
+          "id": "KM-09-KT05",
+          "text": "Interpersonal skills"
+        },
+        {
+          "id": "KM-09-KT06",
+          "text": "Intrapersonal skills"
+        },
+        {
+          "id": "KM-09-KT07",
+          "text": "Communication principles and methods"
+        },
+        {
+          "id": "KM-09-KT08",
+          "text": "Written business communication"
+        },
+        {
+          "id": "KM-09-KT09",
+          "text": "Presentation skills"
+        },
+        {
+          "id": "KM-09-KT10",
+          "text": "Teamwork in the workplace"
+        },
+        {
+          "id": "KM-09-KT11",
+          "text": "Committees and meetings"
+        },
+        {
+          "id": "KM-09-KT12",
+          "text": "Job descriptions and profiles"
+        },
+        {
+          "id": "KM-09-KT13",
+          "text": "Customers and stakeholders"
+        },
+        {
+          "id": "KM-09-KT14",
+          "text": "Customer service"
+        }
+      ]
+    },
+    {
+      "code": "PM-01",
+      "name": "Ensure Compliance in terms of Legal Cybersecurity Requirements and National and International Standards (NQF 5, 4 credits)",
+      "weightPercent": 3.31,
+      "objectives": [
+        {
+          "id": "PM-01-PS01",
+          "text": "Ensure compliance of computer systems, networks and data with legal cybersecurity requirements and national and international standards"
+        },
+        {
+          "id": "PM-01-PS02",
+          "text": "Apply basic computing and IT infrastructure procedures to ensure secure computer use"
+        },
+        {
+          "id": "PM-01-PS03",
+          "text": "Set up computer systems and networks applying applicable cybersecurity protocols"
+        },
+        {
+          "id": "PM-01-PS04",
+          "text": "Protect, detect, and respond to network attacks as first line defence"
+        }
+      ]
+    },
+    {
+      "code": "PM-02",
+      "name": "Assess Risks and Vulnerabilities and Evaluate Current Security Measures (NQF 5, 20 credits)",
+      "weightPercent": 16.53,
+      "objectives": [
+        {
+          "id": "PM-02-PS01",
+          "text": "Apply and use functions of a suitable toolset for cybersecurity purposes"
+        },
+        {
+          "id": "PM-02-PS02",
+          "text": "Scan systems for and identify vulnerabilities and potential security threats to information systems and analyse their consequences"
+        },
+        {
+          "id": "PM-02-PS03",
+          "text": "Evaluate the level of risk in an IT system using standard security models and apply appropriate countermeasures"
+        },
+        {
+          "id": "PM-02-PS04",
+          "text": "Use appropriate tools to assess the security posture of an organisation"
+        }
+      ]
+    },
+    {
+      "code": "PM-03",
+      "name": "Implement Protection, Prevention and Detection Measures to Mitigate Risk, Violations and Vulnerabilities (NQF 5, 20 credits)",
+      "weightPercent": 16.53,
+      "objectives": [
+        {
+          "id": "PM-03-PS01",
+          "text": "Protect all company data, particularly sensitive data, from both internal and external threats"
+        },
+        {
+          "id": "PM-03-PS02",
+          "text": "Provide security monitoring in alignment with cybersecurity’s mission to protect digital assets to a level of confidentiality, integrity and availability"
+        },
+        {
+          "id": "PM-03-PS03",
+          "text": "Detect warning signs which may indicate security breaches"
+        },
+        {
+          "id": "PM-03-PS04",
+          "text": "Assist with incidence response in case of a cybersecurity violations"
+        },
+        {
+          "id": "PM-03-PS05",
+          "text": "Understand and comply with the disaster recovery plan"
+        },
+        {
+          "id": "PM-03-PS06",
+          "text": "Effectively respond to security incidents by detecting and identification"
+        },
+        {
+          "id": "PM-03-PS07",
+          "text": "Act immediately to mitigate the impact of an incident"
+        },
+        {
+          "id": "PM-03-PS08",
+          "text": "Execute measures to remediate cybersecurity incidents"
+        },
+        {
+          "id": "PM-03-PS09",
+          "text": "Execute measures to recover from cybersecurity incidents"
+        },
+        {
+          "id": "PM-03-PS10",
+          "text": "Assess and learn lessons from the event ensuring continuous improvement"
+        }
+      ]
+    },
+    {
+      "code": "PM-04",
+      "name": "Apply Logical Thinking and Maths (NQF 4, 6 credits)",
+      "weightPercent": 4.96,
+      "objectives": [
+        {
+          "id": "PM-04-PS01",
+          "text": "Number bases and measurement units"
+        },
+        {
+          "id": "PM-04-PS02",
+          "text": "Basic math"
+        },
+        {
+          "id": "PM-04-PS03",
+          "text": "Operator precedence"
+        },
+        {
+          "id": "PM-04-PS04",
+          "text": "Integer division"
+        },
+        {
+          "id": "PM-04-PS05",
+          "text": "Modulus"
+        },
+        {
+          "id": "PM-04-PS06",
+          "text": "Increments"
+        }
+      ]
+    },
+    {
+      "code": "PM-05",
+      "name": "Apply Basic Scriptwriting for Cybersecurity Toolsets (NQF 4, 4 credits)",
+      "weightPercent": 3.31,
+      "objectives": [
+        {
+          "id": "PM-05-PS01",
+          "text": "Source and compare at least three software toolkits/platforms/ languages used in your field of studies"
+        },
+        {
+          "id": "PM-05-PS02",
+          "text": "Set up an editing environment (tailored to a specific tool or platform)"
+        },
+        {
+          "id": "PM-05-PS03",
+          "text": "Write a script using a Command Line Interface/Terminal sessions for giving instructions for use of a toolset"
+        },
+        {
+          "id": "PM-05-PS04",
+          "text": "Script write loops (tailored to a specific tool or platform)"
+        },
+        {
+          "id": "PM-05-PS05",
+          "text": "Handle errors (tailored to a specific tool or platform)"
+        },
+        {
+          "id": "PM-05-PS06",
+          "text": "Apply general steps for writing script (tailored to a specific tool or platform)"
+        },
+        {
+          "id": "PM-05-PS07",
+          "text": "Practical exercise using the specified product set"
+        }
+      ]
+    },
+    {
+      "code": "PM-06",
+      "name": "Access and Visualise Structured Data Using Spreadsheets (NQF 4, 5 credits)",
+      "weightPercent": 4.13,
+      "objectives": [
+        {
+          "id": "PM-06-PS01",
+          "text": "Report data"
+        },
+        {
+          "id": "PM-06-PS02",
+          "text": "Summarise and format data using tables"
+        },
+        {
+          "id": "PM-06-PS03",
+          "text": "Create, use and edit pivot tables and pivot charts"
+        },
+        {
+          "id": "PM-06-PS04",
+          "text": "Create, use and edit dashboards"
+        },
+        {
+          "id": "PM-06-PS05",
+          "text": "Create and configure hierarchies and time data"
+        },
+        {
+          "id": "PM-06-PS06",
+          "text": "Apply a data model"
+        },
+        {
+          "id": "PM-06-PS07",
+          "text": "Import data from files"
+        },
+        {
+          "id": "PM-06-PS08",
+          "text": "Import data from databases"
+        },
+        {
+          "id": "PM-06-PS09",
+          "text": "Import data from reports"
+        },
+        {
+          "id": "PM-06-PS10",
+          "text": "Visualize data"
+        }
+      ]
+    },
+    {
+      "code": "PM-07",
+      "name": "Applying Design Thinking Methodologies (NQF 4, 4 credits)",
+      "weightPercent": 3.31,
+      "objectives": [
+        {
+          "id": "PM-07-PS01",
+          "text": "Collaborate with team members to apply innovative and problem solving strategies"
+        },
+        {
+          "id": "PM-07-PS02",
+          "text": "Apply design thinking process to solve a problem creatively and innovatively"
+        }
+      ]
+    },
+    {
+      "code": "PM-08",
+      "name": "Function Ethically and Effectively as a Member of a Multidisciplinary Team (NQF 4, 5 credits)",
+      "weightPercent": 4.13,
+      "objectives": [
+        {
+          "id": "PM-08-PS01",
+          "text": "Present information to an audience"
+        },
+        {
+          "id": "PM-08-PS02",
+          "text": "Conduct basic research (gather and explore data and information) on 4IR skills and application opportunities in the workplace"
+        },
+        {
+          "id": "PM-08-PS03",
+          "text": "Ensure compliance with the code of conduct and governance in the workplace"
+        },
+        {
+          "id": "PM-08-PS04",
+          "text": "Collaborate with team members in the workplace"
+        },
+        {
+          "id": "PM-08-PS05",
+          "text": "Attend and participate in meetings"
+        }
+      ]
+    }
+  ]
+}

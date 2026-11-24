@@ -1,0 +1,137 @@
+{
+  "id": "qcto-cybersecurity-analyst-eas",
+  "title": "QCTO Occupational Certificate: Cybersecurity Analyst — external assessment",
+  "examCode": "252901001-EISA",
+  "provider": "QCTO (AQP: MICT SETA)",
+  "version": "External Assessment Specification, edited 2021-03-29",
+  "sourceUrl": "https://www.qcto.org.za/",
+  "domains": [
+    {
+      "code": "FA1",
+      "name": "Analyse and solve security risks and vulnerabilities to safeguard information system assets",
+      "weightPercent": 30,
+      "objectives": [
+        {
+          "id": "FA1.1",
+          "text": "Check security practices against company policy and legal and regulatory requirements"
+        },
+        {
+          "id": "FA1.2",
+          "text": "Identify critical systems and critical information system assets"
+        },
+        {
+          "id": "FA1.3",
+          "text": "Run vulnerability tests on hardware, software and IT infrastructure"
+        },
+        {
+          "id": "FA1.4",
+          "text": "Collect data on current security measures for risk analysis and status reports"
+        },
+        {
+          "id": "FA1.5",
+          "text": "Choose the best way to secure the IT infrastructure and information assets"
+        },
+        {
+          "id": "FA1.6",
+          "text": "Maintain a risk catalogue and check it against incident reports"
+        }
+      ]
+    },
+    {
+      "code": "FA2",
+      "name": "Protect digital assets by maintaining attack mitigation and incident response capability",
+      "weightPercent": 30,
+      "objectives": [
+        {
+          "id": "FA2.1",
+          "text": "Analyse and implement anti-virus, firewall and defensive protocol updates"
+        },
+        {
+          "id": "FA2.2",
+          "text": "Safeguard information assets by finding and solving security problems"
+        },
+        {
+          "id": "FA2.3",
+          "text": "Grant credentials to authorised users, monitor access and check for unregistered changes"
+        },
+        {
+          "id": "FA2.4",
+          "text": "Implement security improvements from trend, risk and threat analysis"
+        },
+        {
+          "id": "FA2.5",
+          "text": "Implement and automate intrusion detection and prevention and its response protocols"
+        }
+      ]
+    },
+    {
+      "code": "FA3",
+      "name": "Run ethical security monitoring in line with policy to protect confidentiality, integrity and availability",
+      "weightPercent": 15,
+      "objectives": [
+        {
+          "id": "FA3.1",
+          "text": "Use monitoring and incident response toolsets to detect and trace intrusions"
+        },
+        {
+          "id": "FA3.2",
+          "text": "Detect incidents by analysing abnormalities, and report violations"
+        },
+        {
+          "id": "FA3.3",
+          "text": "Run periodic checks and tests, and update defensive protocols with the team"
+        },
+        {
+          "id": "FA3.4",
+          "text": "Apply ethics and a moral compass to cybersecurity work"
+        }
+      ]
+    },
+    {
+      "code": "FA4",
+      "name": "Run response procedures to mitigate attacks and secure assets, intellectual property and systems",
+      "weightPercent": 15,
+      "objectives": [
+        {
+          "id": "FA4.1",
+          "text": "Monitor and respond to identified attacks, apply defensive protocols and report incidents"
+        },
+        {
+          "id": "FA4.2",
+          "text": "Contain the event, close the vulnerability and resolve the incident"
+        },
+        {
+          "id": "FA4.3",
+          "text": "Collect security-measure data for risk analysis and write status reports"
+        },
+        {
+          "id": "FA4.4",
+          "text": "Investigate network intrusions and other breaches"
+        }
+      ]
+    },
+    {
+      "code": "FA5",
+      "name": "Run recovery procedures to restore data and assets affected by incidents",
+      "weightPercent": 10,
+      "objectives": [
+        {
+          "id": "FA5.1",
+          "text": "Find the breach vector and quarantine affected servers, devices and systems"
+        },
+        {
+          "id": "FA5.2",
+          "text": "Identify lost or stolen information, analyse impact and start remediation"
+        },
+        {
+          "id": "FA5.3",
+          "text": "Develop improvements from lessons learned and reviews of existing measures"
+        },
+        {
+          "id": "FA5.4",
+          "text": "Produce an incident close-out report with logs and supporting evidence"
+        }
+      ]
+    }
+  ]
+}

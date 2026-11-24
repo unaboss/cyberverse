@@ -1,0 +1,201 @@
+# Defend tower, floor 1. Designed with the owner on 2026-11-21.
+#
+# The first real alert. Somebody on the internet guesses passwords for the
+# CRM's admin account, and every guess fails. The learner reads the alert,
+# checks the log, works out who, from where and whether anyone got in, closes
+# the alert as a true positive, and reports it to Ayanda. The lesson: an attack
+# that failed is still a real attack.
+#
+# Still guided, still no clock, and nothing that could hurt the business is
+# unlocked. The card helps less than on floor 0: it says what to do, and the
+# learner has to read the evidence to answer.
+#
+# The guesses are scripted, so the floor plays the same way every time. They
+# come from 10.88.0.77, an address in the miniverse's stand-in for the
+# internet, and none of them is the account's real password.
+
+id: defend-01-first-alert
+title: "Your first alert"
+status: draft
+role: prey
+org: dataquant
+startTime: "10:15"
+durationMin: 0
+speed: 1
+map:
+  rooms: [trust-risk, strategy-leadership, growth, data-insights]
+  outside: [internet]
+  note: Past our walls is the internet. Anyone out there can knock on our doors, and today somebody does.
+briefing: |
+  Your second day at DataQuant. Yesterday Ayanda showed you round and you
+  handled a practice alert. Today the triage agent passes you real ones.
+
+  There's still no clock, and anything that could hurt the business stays
+  locked. Follow the card. If you get stuck, press "Show me".
+guide:
+  mentor: founder
+  locked: { block: 3, unblock: 3, lock: 4, reset: 4, control: 4, isolate: 5, release: 5, rebuild: 5 }
+  steps:
+    - id: wait-alert
+      title: Wait for an alert
+      say: >-
+        Most mornings are quiet. When the triage agent sees something it can't
+        explain, it raises an alert and passes it to you.
+      do: Wait for an alert to arrive, then click it to open it.
+      hint: Alerts land in the Alerts tab on the right, with a sound. Click the alert's name to open it.
+      show: { tab: alerts, alert: hids-login-bruteforce }
+      script:
+        - { after: 4, event: guess, system: crm, user: admin, src: 10.88.0.77, tries: 10, every: 2 }
+      done: { look: alert, rule: hids-login-bruteforce }
+      praise: >-
+        That one's real, not a drill. "Repeated failed logins" means somebody
+        typed a wrong password on the CRM, again and again. Your job is to find
+        out who, and why.
+
+    - id: open-log
+      title: Check the evidence
+      say: >-
+        An alert is only a summary. The log is the evidence. Always read the
+        log before you decide anything.
+      do: Open the CRM and look at its Logs box.
+      hint: The alert has an "Open machine" button. You can also click the CRM in the Growth room.
+      show: { host: crm }
+      done: { look: host, id: crm }
+      praise: Each "login failed" line in the log is one wrong guess.
+
+    - id: which-account
+      title: Which account?
+      say: >-
+        Start with the account. In each failed line, the name after
+        "login failed for" is the account somebody tried to get into.
+      do: Read the failed lines in the CRM's log, then answer.
+      hint: The Logs box is on the right of the machine panel. Look for "login failed for".
+      show: { host: crm }
+      ask:
+        question: Which account was somebody trying to get into?
+        options:
+          - text: admin
+            correct: true
+            reply: >-
+              Right. admin is the account the CRM came with when it was set up.
+              Attackers try it first, because it can do everything.
+          - text: ayanda
+            reply: >-
+              Not this time. My login worked fine yesterday. Read the name after
+              "login failed for".
+          - text: crm
+            reply: >-
+              crm is the machine, not an account. Read the name after
+              "login failed for".
+      done: { answer: correct }
+
+    - id: from-where
+      title: From where?
+      say: >-
+        Now the address. Our own machines all start with 10.88.10 (the cloud)
+        or 10.88.11 (our laptops). Anything else comes from outside DataQuant.
+      do: Find the address in the failed lines, then answer.
+      hint: The address comes after the word "from" in each failed line.
+      show: { host: crm }
+      ask:
+        question: Where did the failed logins come from?
+        options:
+          - text: "10.88.0.77, a computer on the internet"
+            correct: true
+            reply: >-
+              Yes. 10.88.0.77 isn't one of ours, so it's somebody outside the
+              company. In this lab, addresses starting 10.88.0 stand in for the
+              internet.
+          - text: "{ip:founder-laptop}, Ayanda's laptop"
+            reply: >-
+              That's my laptop, and it wasn't me. Look at the address after
+              "from" in the failed lines.
+          - text: The CRM itself
+            reply: >-
+              The CRM is where the logins landed, not where they came from. The
+              address after "from" is the one they came from.
+      done: { answer: correct }
+
+    - id: got-in
+      title: Did anyone get in?
+      say: >-
+        This is the question that matters most. A failed login is a door that
+        held. A login that worked means somebody is inside.
+      do: Check whether any login from 10.88.0.77 worked, then answer.
+      hint: A login that worked says "login ok". A failed one says "login failed".
+      show: { host: crm }
+      ask:
+        question: Did any of the logins from 10.88.0.77 work?
+        options:
+          - text: No. Every line from that address says "login failed".
+            correct: true
+            reply: >-
+              Correct. Every guess failed, so the door held, this time.
+          - text: Yes, the last one worked.
+            reply: >-
+              Look again. A login that worked would say "login ok". Every line
+              from 10.88.0.77 says "login failed".
+          - text: You can't tell from the log.
+            reply: >-
+              You can. A login that worked says "login ok". Every line from
+              10.88.0.77 says "login failed".
+      done: { answer: correct }
+
+    - id: close-alert
+      title: Close the alert
+      say: >-
+        Time to decide. True positive means it really was an attack. False
+        positive means the alarm went off, but nothing bad was going on.
+      do: Pick up the alert, then close it with the verdict you think is right.
+      hint: >-
+        Open the alert in the Alerts tab. Press "Pick it up" first, then
+        "True positive" or "False positive".
+      show: { alert: hids-login-bruteforce }
+      done: { alert: closed, rule: hids-login-bruteforce, verdict: true-positive }
+      praise: >-
+        True positive. Somebody really did try to break in. It doesn't matter
+        that they failed: it was a real attack, and now it's on record.
+      wrong: >-
+        You closed it as a false positive, but this was a real attack: somebody
+        outside guessed passwords on purpose. An attack that fails is still an
+        attack, so it's a true positive.
+
+    - id: report
+      title: Tell Ayanda
+      say: >-
+        Last thing. When something real happens, the people in charge need to
+        hear about it. Keep it short: what happened, where, and whether any harm
+        was done.
+      do: Choose the report you would send me.
+      hint: >-
+        A good report says what happened and whether anybody got in. It doesn't
+        make things sound better, or worse, than they were.
+      ask:
+        question: Which report would you send to Ayanda?
+        options:
+          - text: >-
+              Somebody at 10.88.0.77 on the internet guessed passwords for the
+              CRM's admin account. Every guess failed. I closed the alert as a
+              true positive.
+            correct: true
+            reply: >-
+              That's a good report: what happened, where, and no harm done. I
+              know what to worry about, and what not to.
+          - text: We've been hacked! Somebody broke into the CRM.
+            reply: >-
+              Careful: nobody got in. A report that's scarier than the truth
+              wastes people's time, and they stop trusting alerts.
+          - text: Nothing to report. It was just some failed logins.
+            reply: >-
+              It was more than that: somebody outside really tried to get in. If
+              attacks aren't reported, nobody notices when they start adding up.
+      done: { answer: correct }
+  outro:
+    title: Floor 1 complete
+    learned:
+      - An alert is a summary. The log is the evidence, so read it before you decide.
+      - Which account, from where, and did it work. Those three answers tell you most of what you need to know.
+      - An attack that fails is still a real attack, so the verdict is true positive.
+      - Report what happened, no bigger and no smaller than it was.
+    next: "Floor 2: Real or not?"
+qcto: [KM-01-KT07, KM-03-KT21, PM-03-PS03, PM-03-PS04, PM-03-PS06, FA3.1, FA3.2]

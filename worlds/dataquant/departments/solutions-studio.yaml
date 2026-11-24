@@ -1,0 +1,161 @@
+id: solutions-studio
+name: Solutions Studio
+purpose: Builds whatever clients ask for, from data pipelines and automations to apps and AI agents. Agents write most of the code; people design, review and own it.
+room: { x: 8, y: 0, w: 5, h: 4 }
+
+people:
+  - id: build-agent
+    role: Build agent
+    kind: agent
+    name: Build agent
+    permissions: [write:git, run:ci, read:client-specs]
+    description: Writes code, tests and documentation from specs. Every change is reviewed by a person before it merges.
+  - id: test-agent
+    role: Test agent
+    kind: agent
+    name: Test agent
+    permissions: [read:git, run:ci]
+  - id: data-engineer
+    role: Data engineer (associate)
+    kind: human
+    name: Priya Naidoo
+    awareness: 0.6
+    from: 2
+
+processes:
+  - id: nightly-build
+    name: Build and test
+    owner: build-agent
+    every: 1h
+    cadence: nightly, and on every change
+    hours: always
+    steps:
+      - Pull the latest specs, build, run the tests and open a change for review.
+      - A person approves every merge.
+    activity:
+      - { action: login, system: git, account: build-agent }
+      - { action: http, system: git, path: /api/v1/repos/dataquant/client-pipelines }
+  - id: client-sync
+    name: Client data sync
+    owner: build-agent
+    every: 15m
+    hours: always
+    steps:
+      - The integration runner loads each client's data into the warehouse built for them, over that client's VPN.
+      - Each client gets its own credential, stored in the secrets vault, never in code.
+    activity:
+      - { action: login, system: siyakhula/dwh, via: etl, account: dq_etl }
+      - { action: transfer, system: siyakhula/dwh, via: etl, bytes: 4000000 }
+
+  - id: ai-front-desk
+    name: AI Front Desk for guesthouses (first offer)
+    proposed: true
+    owner: build-agent
+    every: 4h
+    cadence: once per client, then monthly tuning
+    hours: work
+    steps:
+      - Build an AI concierge that answers guest questions instantly on the guesthouse's website and WhatsApp.
+      - Hand guests over to the guesthouse's existing booking engine (in Cape Town that is usually NightsBridge) instead of replacing it.
+      - A person reviews the answers and the hand-over before it goes live for a client.
+    activity:
+      - { action: http, system: git, path: /api/v1/repos/dataquant/ai-front-desk }
+
+systems:
+  - id: git
+    name: Git server
+    hostname: git
+    kind: git
+    zone: cloud
+    ip: 10.88.10.20
+    os: Debian 12
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 9.2p1 }
+      - { port: 3000, name: http, product: Gitea, version: 1.21.4 }
+    accounts:
+      - { user: build-agent, password: "Kf8#q2Lr9!vZ", role: service, service: https }
+      - { user: ayanda, password: Dataquant2026, role: admin, person: founder, service: https }
+    weaknesses:
+      - id: git-public-repo-secret
+        name: Warehouse password committed to a public repository
+        kind: exposed-secret
+        port: 3000
+        path: /dataquant/client-pipelines/src/branch/main/config/siyakhula.env
+        reveals: siyakhula/dwh:dq_etl
+        description: An early commit of the client pipelines repo hard-coded the municipality warehouse password, and the repo was made public for a demo.
+    live: { image: "gitea/gitea:1.21.4" }
+  - id: etl
+    name: Integration runner
+    hostname: etl
+    kind: server
+    zone: cloud
+    ip: 10.88.10.21
+    os: Ubuntu 22.04
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 8.9p1 }
+    accounts:
+      - { user: deploy, password: DataQuant1, role: admin, service: ssh }
+    weaknesses:
+      - id: etl-weak-password
+        name: Deploy account with a guessable password
+        kind: weak-password
+        port: 22
+        account: deploy
+        grants: root
+        description: The deploy account's password is the company name and a digit, and SSH accepts passwords from anywhere.
+
+data:
+  - id: source-code
+    name: Client pipeline and app source code
+    sensitivity: confidential
+    personalInformation: false
+    system: git
+    path: /data/git/repositories
+    records: 60
+    impact: 400000
+
+connections:
+  - { to: data-insights, kind: internal, trust: Delivers pipelines that fill the client data room. }
+  - { to: ai-operations, kind: internal, trust: Uses agents through the agent gateway only. }
+  - { to: org:siyakhula, kind: vpn, trust: The integration runner reaches the municipality's warehouse over a site-to-site VPN. }
+
+threats:
+  - id: leaked-warehouse-password
+    name: Warehouse password found in a public repo
+    attack: T1552.001
+    stage: credential-access
+    target: git
+    uses: git-public-repo-secret
+    description: The attacker browses the public repo, finds the municipality warehouse password and logs in through DataQuant's VPN path.
+    qcto: [KM-03-KT03, KM-03-KT19, KM-08-KT03]
+  - id: runner-ssh-guess
+    name: Guessing the runner's deploy password
+    attack: T1110.001
+    stage: initial-access
+    target: etl
+    uses: etl-weak-password
+    description: SSH is open to the internet and the deploy password is in every wordlist. From the runner, the VPN leads straight into the client.
+    qcto: [KM-03-KT07, PM-02-PS02]
+
+controls:
+  - id: secret-scanning
+    name: Secret scanning on every commit
+    kind: preventive
+    status: planned
+    fixes: [git-public-repo-secret]
+    description: Commits containing passwords or keys are blocked, and old history is scanned and cleaned.
+    policy: Secrets live in the secrets vault. A secret found in code is rotated the same day.
+  - id: ssh-keys-only
+    name: SSH keys only, no passwords
+    kind: preventive
+    status: planned
+    fixes: [etl-weak-password]
+    description: Servers accept SSH keys only, and SSH is reachable through the VPN, not the internet.
+
+maturity:
+  1: Agents build, the founder reviews and merges.
+  2: An associate data engineer reviews and owns client pipelines.
+  3: A small studio with a tech lead, CI with security checks and a secrets vault.
+  4: Product teams per service line, with platform engineering.
+
+qcto: [PM-05-PS03, PM-05-PS04, PM-05-PS05, KM-08-KT03, KM-03-KT19, PM-01-PS03]

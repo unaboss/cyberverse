@@ -1,0 +1,133 @@
+id: finance
+name: Finance and procurement
+purpose: Pays 3 200 suppliers, runs the budget and buys everything the stores sell. The ERP is where the money moves.
+room: { x: 5, y: 0, w: 6, h: 3 }
+
+people:
+  - id: cfo
+    role: Chief financial officer
+    kind: human
+    name: Anton Pretorius
+    awareness: 0.6
+  - id: payments-clerk
+    role: Payments clerk
+    kind: human
+    name: Precious Mahlangu
+    awareness: 0.7
+  - id: procurement-manager
+    role: Procurement manager
+    kind: human
+    name: Yusuf Cassim
+    awareness: 0.6
+
+processes:
+  - id: payment-run
+    name: Weekly supplier payment run
+    owner: payments-clerk
+    every: 1h
+    cadence: weekly, on Thursdays
+    hours: work
+    steps:
+      - Build the payment run from approved invoices, check it against the bank details on file, and release it after the CFO approves.
+      - A change of a supplier's bank details needs the supplier's signed letter, a call-back to a number already on file, and a second person to approve it.
+    activity:
+      - { action: login, system: erp, via: pay-pc }
+      - { action: http, system: erp, via: pay-pc, path: /payments/run }
+  - id: purchasing
+    name: Purchase orders
+    owner: procurement-manager
+    every: 30m
+    hours: work
+    steps:
+      - Raise purchase orders against contracts. New suppliers are vetted before they are loaded.
+    activity:
+      - { action: http, system: erp, via: fin-pc, path: /purchasing/orders }
+
+systems:
+  - id: erp
+    name: ERP (finance and procurement)
+    hostname: erp
+    kind: server
+    zone: servers
+    ip: 10.88.32.40
+    os: SUSE Linux Enterprise 15
+    critical: true
+    services:
+      - { port: 443, name: https, product: ERP web client, version: "2023 FPS02" }
+      - { port: 30015, name: sql, product: ERP database, version: "2.0 SPS07" }
+    accounts:
+      - { user: precious, password: "Pm#Ikhaya-2026", role: user, person: payments-clerk, service: https }
+      - { user: yusuf, password: "Yc#Ikhaya-2026", role: user, person: procurement-manager, service: https }
+      - { user: anton, password: "Ap#Ikhaya-2026", role: admin, person: cfo, service: https }
+    weaknesses:
+      - id: erp-one-person
+        name: One person can change and approve a supplier's bank details
+        kind: misconfiguration
+        port: 443
+        description: The procurement role was given the approver right during a busy month and never lost it. Nobody else sees the change.
+  - id: fin-pc
+    name: Procurement desktop
+    hostname: fin-pc
+    kind: desktop
+    zone: hq
+    ip: 10.88.31.50
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+  - id: pay-pc
+    name: Payments desktop
+    hostname: pay-pc
+    kind: desktop
+    zone: hq
+    ip: 10.88.31.51
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: supplier-master
+    name: Supplier master data
+    sensitivity: confidential
+    personalInformation: false
+    system: erp
+    path: erp.suppliers
+    records: 3200
+    impact: 2000000
+    description: Every supplier's company details, contacts and bank account.
+
+connections:
+  - { to: executive, kind: internal, trust: The board approves the budget. }
+  - { to: supply-chain, kind: internal, trust: Goods received at the distribution centres release supplier invoices. }
+  - { to: external:bank, kind: supplier, trust: Payment files go to the bank through its host-to-host link. }
+
+threats:
+  - id: bank-detail-fraud
+    name: Changing a supplier's bank details from inside
+    attack: T1565.001
+    stage: impact
+    target: erp
+    uses: erp-one-person
+    description: An insider changes a supplier's account to one they control and approves the change themselves. The next payment run pays them.
+    qcto: [KM-04-KT04, KM-03-KT01]
+
+controls:
+  - id: two-person-bank
+    name: Two-person approval for bank detail changes
+    kind: preventive
+    status: planned
+    fixes: [erp-one-person]
+    description: Whoever changes a supplier's bank details can never approve the change. A second person in finance calls the supplier back first.
+    policy: No one person can both make and approve a change to where money goes.
+  - id: erp-audit-trail
+    name: ERP audit trail to the SOC
+    kind: detective
+    status: in-place
+    description: Every change to supplier master data is logged with who, when and from where, and kept for seven years.
+
+maturity:
+  1: A bookkeeper and a bank login.
+  2: An accounting package and a monthly close.
+  3: An ERP with roles, purchase orders and a weekly payment run.
+  4: Segregation of duties enforced in the ERP, call-backs on every bank change and continuous audit.
+
+qcto: [KM-04-KT01, KM-04-KT04, KM-04-KT08, PM-08-PS03, KM-03-KT01]

@@ -1,0 +1,29 @@
+// Cyberverse on Cloudflare. Deploy steps: docs/hosting-cloudflare.md.
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "cyberverse",
+  "main": "worker.ts",
+  "compatibility_date": "2026-10-15",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // No *.workers.dev address and no preview links: the lab is reached only
+  // through your own domain, where Cloudflare Access asks learners to sign in.
+  "workers_dev": false,
+  "preview_urls": false,
+
+  // Your domain. Uncomment and change it before the first deploy.
+  // "routes": [{ "pattern": "lab.example.co.za", "custom_domain": true }],
+
+  // The screens, served before the Worker runs. Built by `npm run cf:build`.
+  "assets": { "directory": "dist/public" },
+
+  // One Durable Object per round.
+  "durable_objects": { "bindings": [{ "name": "ROUNDS", "class_name": "Round" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Round"] }],
+
+  // From your Cloudflare Access application (see the deploy steps). Until both
+  // are set, the lab refuses every API call.
+  "vars": { "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUD": "" },
+
+  "observability": { "enabled": true }
+}

@@ -1,0 +1,338 @@
+# Advanced defend tower, floor 5. Built on 2026-11-21 from the agreed floor
+# plan.
+#
+# An anonymous report on the ethics line: someone in procurement changes
+# suppliers' bank details at night and changes them back. Today's payment
+# run, at 16:00, pays R2.4 million to one of them. The learner works the ERP
+# audit trail in SQL (comparing two columns to find self-approved changes,
+# and adding up what was already paid), holds the one payment, calls the
+# supplier back on the number we already had, keeps the evidence, locks the
+# account as HR meets him, and fixes the finance roles so no one person can
+# change and approve where money goes. The ethics run through it: protect
+# the reporter, facts not guilt, confidentiality, and the duty to report.
+#
+# The floor's new desk tool is payments and approvals: today's run with a
+# hold on each payment, the call-back, and the finance roles as a grid of
+# rights with the pairs one person must never hold.
+
+id: defend-adv-05-insider
+title: "The insider"
+status: draft
+role: prey
+org: ikhaya
+startTime: "14:20"
+durationMin: 0
+speed: 1
+map:
+  rooms: [technology, ecommerce, customer, stores, supply-chain, risk, finance, people]
+  perimeter: true
+briefing: |
+  Ayesha Ebrahim, the chief risk officer, forwards a report from the
+  anonymous ethics line, received at 13:55:
+
+  "Someone in procurement changes suppliers' bank details at night and
+  changes them back after the money goes. Look at Mvelo Packaging."
+
+  Today's supplier payment run releases at 16:00. It pays R2 412 000 to
+  Mvelo Packaging. Ayesha wants the facts, quietly.
+controls:
+  two-person-bank: off
+tools:
+  sql:
+    source: ERP audit trail
+    start: SELECT * FROM erp_audit LIMIT 20
+    tables:
+      erp_audit:
+        dataset: erp
+        about: "Every change in the finance system since 3 August: who, when, from which address, and who approved it."
+      payments:
+        dataset: payments
+        about: Every supplier payment the Friday runs have released since August.
+    findings:
+      - { id: who, check: { value: yusuf.c, uses: mvelo } }
+      - { id: self, check: { each: self-suppliers } }
+      - { id: lost, check: { value: 277150 } }
+  approvals:
+    run: { name: Weekly supplier payment run, when: "today at 16:00", count: 342, total: 18640000 }
+    holdAll: >-
+      Stop. That holds 341 honest payments too, including small suppliers
+      who need Friday's money to pay their own staff. Hold the one payment
+      that's wrong.
+    payments:
+      - { id: karoo, supplier: Karoo Fresh Produce, invoice: INV-46892, amount: 3184500, account: "Coastal Bank 5521 0874 16", changed: March 2019 }
+      - id: mvelo
+        supplier: Mvelo Packaging
+        invoice: INV-46871
+        amount: 2412000
+        account: "Ubuntu Mutual 6201 9344 71"
+        changed: "Mon 16 Nov, 21:47"
+        fraud: true
+        callback:
+          letter:
+            number: "071 555 0193"
+            says: A man answers "Mvelo accounts" and confirms the new account at once, without asking which invoice it's about.
+          contract:
+            number: "031 555 0140"
+            says: >-
+              Mvelo's finance manager, Mrs Dube: "We've banked with Sizwe
+              Bank for eleven years. We never sent any letter." She emails a
+              stamped confirmation of the real account.
+      - { id: bayside, supplier: Bayside Bakeries, invoice: INV-46902, amount: 1206300, account: "Highveld Bank 2290 4418 03", changed: July 2021 }
+      - { id: dairy, supplier: Highveld Dairy, invoice: INV-46855, amount: 986450, account: "Protea Bank 7714 0032 58", changed: January 2020 }
+      - id: umoya
+        supplier: Umoya Refrigeration
+        invoice: INV-46913
+        amount: 412800
+        account: "Sizwe Bank 3306 9921 47"
+        changed: "Tue 3 Nov, 10:12"
+        reply: >-
+          Umoya's change on 3 November was captured by Thembi from the
+          supplier's letter, and Anton approved it after calling Umoya back.
+          That's the process working. Holding it punishes an honest supplier.
+      - { id: zenzele, supplier: Zenzele Uniforms, invoice: INV-46877, amount: 168200, account: "Coastal Bank 9035 1167 22", changed: May 2022 }
+    rights:
+      - { id: supplier, name: Add or edit a supplier }
+      - { id: bank, name: Change bank details }
+      - { id: approve, name: Approve a bank change }
+      - { id: invoice, name: Capture an invoice }
+      - { id: prepare, name: Prepare the payment run }
+      - { id: release, name: Release the payment run }
+    roles:
+      - { id: procurement, name: Procurement manager, person: procurement-manager, rights: [supplier, bank, approve] }
+      - { id: clerk, name: Payments clerk, person: payments-clerk, rights: [invoice, prepare] }
+      - { id: cfo, name: CFO, person: cfo, rights: [approve, release] }
+    conflicts:
+      - { a: bank, b: approve, why: "That's exactly what happened: change where money goes, then approve it yourself." }
+      - { a: supplier, b: approve, why: Whoever adds a supplier could add a fake one and approve its account. }
+      - { a: invoice, b: release, why: "Capture a fake invoice and release the payment, and nobody else ever sees it." }
+      - { a: prepare, b: release, why: One person would decide who gets paid and send the money. }
+      - { a: approve, b: prepare, why: "Approve a new account, then put it in the run you prepare." }
+    control: two-person-bank
+  evidence:
+    custodian: you, SOC
+    items:
+      - id: audit
+        name: ERP audit trail, the five self-approved bank changes
+        from: erp
+        detail: "Exported with its hash: who, when, from which address, the old and new account, and who approved each one."
+        relevant: true
+      - id: letter
+        name: The "bank confirmation letter" on Mvelo's change
+        from: erp
+        detail: "A PDF on an old Mvelo letterhead with the phone number 071 555 0193, which isn't Mvelo's. Created on 16 November at 21:39."
+        relevant: true
+      - id: vpn
+        name: VPN sign-ins on the three nights
+        from: vpn
+        detail: "yusuf signed in from a home internet address at 21:05, 21:22 and 21:41 on 19 August, 23 September and 16 November, his phone approving each one."
+        relevant: true
+      - id: paid
+        name: Payments into Ubuntu Mutual 6201 9344 71
+        from: erp
+        detail: "R182 400 on 21 August (Kgosi Cleaning Supplies) and R94 750 on 25 September (Lindani Signs), released in the Friday runs."
+        relevant: true
+      - id: social
+        name: Yusuf's personal social media
+        from: mail
+        relevant: false
+        detail: His public profiles.
+        reply: His private life isn't ours to search, and it proves nothing about the ERP. Keep to company records you're allowed to use.
+      - id: mailbox
+        name: Every email Yusuf has sent this year
+        from: mail
+        relevant: false
+        detail: About 9 000 messages.
+        reply: Far wider than the facts need, and reading a person's mailbox needs legal sign-off first. HR and legal decide that, not the SOC.
+guide:
+  mentor: soc-lead
+  target: 25
+  steps:
+    - id: tip
+      title: A report on the ethics line
+      say: The ethics line is anonymous on purpose. Whoever called took a risk.
+      do: Answer the question.
+      hint: Who could get hurt if this gets out, and who must not hear about it yet?
+      ask:
+        question: How do you handle the report?
+        options:
+          - text: Quietly, from the records. Don't ask around, don't tell procurement, and don't try to find out who reported it.
+            correct: true
+            reply: >-
+              Yes. A good-faith report is protected by law, and by Ikhaya's
+              policy: hunting for the reporter is retaliation. And asking
+              around warns whoever did it. The ERP audit trail already knows
+              who did what.
+          - text: Ask the procurement team who's been changing bank details
+            reply: That warns whoever did it, and makes everyone in procurement feel accused. Start with the records.
+          - text: Find out who made the report, to check they're credible
+            reply: That's how reporters get hurt, and why people stop reporting. The facts in the records will say whether it's true.
+      done: { answer: correct }
+
+    - id: who
+      title: Who changed Mvelo?
+      say: The ERP keeps every change to supplier details, with who made it and who approved it.
+      do: In the Query console, find the change to Mvelo Packaging's bank details.
+      hint: "Try: SELECT * FROM erp_audit WHERE supplier = 'Mvelo Packaging' AND action = 'supplier.bank_change'"
+      show: { tab: sql }
+      done: { action: sql.query, target: who }
+      praise: >-
+        Monday 21:47, from 10.88.32.5, the VPN: somebody working from home at
+        night. Changed by yusuf.c, Yusuf Cassim, the procurement manager. And
+        approved by yusuf.c.
+
+    - id: duties
+      title: Changed and approved
+      say: Every other bank change in the trail was approved by Anton, the CFO.
+      do: Answer the question.
+      hint: How many people did it take?
+      ask:
+        question: What does the approval tell you?
+        options:
+          - text: One person changed where money goes and approved it himself. The control that should need two people needed one.
+            correct: true
+            reply: >-
+              Yes. That's segregation of duties: no one person should both
+              make and approve a change to where money goes. Procurement was
+              given the approver right "for a busy month" in 2024 and never
+              lost it.
+          - text: Nothing. He's a manager, so he's allowed to approve.
+            reply: Being allowed to by the system isn't the same as it being right. Approving your own change isn't an approval.
+          - text: The ERP has a bug
+            reply: The ERP did what its roles allowed. The roles are the problem.
+      done: { answer: correct }
+
+    - id: self
+      title: Has it happened before?
+      say: The report said "changes them back after the money goes". That means more than once.
+      do: Find every bank change where the person who made it also approved it.
+      hint: "You can compare two columns: WHERE user = approved_by"
+      done: { action: sql.query, target: self }
+      praise: >-
+        Five changes, three suppliers, one account: Ubuntu Mutual 6201 9344
+        71. Kgosi in August, Lindani in September, each changed back on the
+        Monday after the Friday run. All at night, all from the VPN.
+
+    - id: lost
+      title: How much has gone?
+      say: The payments table shows where every Friday run sent the money.
+      do: Add up everything paid into Ubuntu Mutual 6201 9344 71.
+      hint: "SUM(amount) FROM payments WHERE paid_to = '…'"
+      done: { action: sql.query, target: lost }
+      praise: R277 150 gone already. Today's run would add R2 412 000.
+
+    - id: hold
+      title: Stop today's payment
+      say: The run goes at 16:00. Stop the loss, and only the loss.
+      do: Hold the Mvelo Packaging payment in Payments and approvals.
+      hint: Open Payments and approvals and press Hold on Mvelo's row.
+      show: { tab: approvals }
+      done: { action: approvals.hold, target: mvelo }
+
+    - id: callback
+      title: Call them back
+      say: Before Mvelo is paid at all, make sure of its real account.
+      do: Call Mvelo back.
+      hint: Which number do you trust, the one on the letter or the one you already had?
+      done: { action: approvals.call, target: mvelo }
+
+    - id: facts
+      title: Facts, not guilt
+      say: Ayesha asks you straight out. Did Yusuf do it?
+      do: Answer the question.
+      hint: What can the records prove, and what can't they?
+      ask:
+        question: What do you tell her?
+        options:
+          - text: "The facts: his account, from his VPN session, approved on his phone, three times, to one account. Whether it was him is for the investigation to put to him."
+            correct: true
+            reply: >-
+              Yes. You report what the evidence shows, not a verdict. His
+              password could have been stolen; the investigation and Yusuf's
+              own answer decide that. Facts protect him and Ikhaya both.
+          - text: Yes, it's him. The audit trail proves it.
+            reply: It proves his account did it. Who sat at the keyboard is what the investigation finds out, with his side heard.
+          - text: Can't say anything until we're certain
+            reply: She needs the facts now, to decide what to do by 16:00. Give her what the records show, clearly labelled as that.
+      done: { answer: correct }
+
+    - id: evidence
+      title: Keep it so it holds up
+      say: This may end in a disciplinary hearing and a court. Keep what proves it, and nothing you've no right to.
+      do: Bag the evidence, then seal the locker.
+      hint: Four items are company records that prove what happened. Two aren't yours to take.
+      show: { tab: evidence }
+      done: { action: evidence.seal, target: locker }
+
+    - id: lock
+      title: At the meeting
+      say: >-
+        At 15:30 Busisiwe, the HR manager, and Ayesha meet Yusuf and suspend
+        him on full pay while it's investigated. His access goes at the same
+        moment, not before, so he isn't tipped off, and not after.
+      do: Lock Yusuf's ERP account.
+      hint: Open the ERP server on the floor plan, type yusuf in the account box and press Lock, or lock erp:yusuf.
+      done: { action: lock, target: "erp:yusuf" }
+      wrong: Lock Yusuf's account on the ERP, not someone else's.
+      praise: Locked at 15:30. Suspension isn't a finding of guilt; it keeps the evidence and the money safe while the facts are tested.
+
+    - id: roles
+      title: Two people, always
+      say: The hole wasn't Yusuf. It was a role that let one person do both. Fix it for everyone.
+      do: In Payments and approvals, change the finance roles so no one holds a pair that conflicts, then apply them.
+      hint: Take "Approve a bank change" away from the procurement manager. The CFO already has it.
+      show: { tab: approvals }
+      done: { action: approvals.roles, target: roles }
+
+    - id: friend
+      title: A friend asks
+      say: Precious, the payments clerk, catches you at the coffee machine. "Yusuf's my friend. Why was he called in? Is he in trouble?"
+      do: Answer the question.
+      hint: Whose information is it to share?
+      ask:
+        question: What do you say?
+        options:
+          - text: "\"I can't talk about it. If you're worried, Ayesha's door is open.\""
+            correct: true
+            reply: >-
+              Yes. Investigations are confidential, for Yusuf's sake as much
+              as Ikhaya's: if it turns out his password was stolen, a rumour
+              would still have done its damage.
+          - text: Tell her, quietly. She's in finance, she'll find out anyway.
+            reply: Then it's a rumour by lunchtime, and you've broken confidentiality on a man who hasn't been heard yet.
+          - text: Tell her you're not sure but it looks like fraud
+            reply: That's a guess, about a person, to his friend. It's not yours to share, and it isn't even a fact.
+      done: { answer: correct }
+
+    - id: report
+      title: Who must hear about it
+      say: R277 150 is gone, and R2.4 million nearly went.
+      do: Answer the question.
+      hint: There's a law about fraud over R100 000, and a board committee for exactly this.
+      ask:
+        question: Who must Ayesha tell?
+        options:
+          - text: The board's audit and risk committee, and the police. Anyone in authority who knows of fraud of R100 000 or more must report it to the police.
+            correct: true
+            reply: >-
+              Yes. The Prevention and Combating of Corrupt Activities Act
+              (section 34) makes reporting fraud of R100 000 or more to the
+              police a duty, not a choice. And the audit and risk committee
+              oversees exactly this for the board.
+          - text: Nobody outside finance. It's embarrassing, and the money's mostly safe.
+            reply: Hiding it breaks the law and the board's trust. R277 150 is gone, and the duty to report starts at R100 000.
+          - text: Just the bank, to get the money back
+            reply: Tell the bank too, today, to freeze what's left. But the police and the board's committee must hear as well.
+      done: { answer: correct }
+  outro:
+    title: Floor 5 complete
+    learned:
+      - Protect whoever reports. Never hunt for them, and never warn the person they named.
+      - The audit trail says who did what. Compare columns to find what one person did alone.
+      - Stop the loss, and only the loss. Hold one payment, not 342.
+      - Call back on the number you already had, never the one in the change request.
+      - Report facts, not guilt. The investigation decides who.
+      - Lock access at the moment HR acts, not before and not after.
+      - No one person should both change and approve where money goes.
+      - Fraud of R100 000 or more must be reported to the police.
+    next: "Floor 6: The monthly report"
+qcto: [KM-04-KT01, KM-04-KT02, KM-04-KT03, KM-04-KT04, KM-03-KT01, PM-08-PS03, KM-08-KT02, KM-08-KT04]

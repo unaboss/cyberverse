@@ -1,0 +1,279 @@
+# Intermediate defend tower, floor 2. Built on 2026-11-21 from the agreed
+# floor plan.
+#
+# A warning says a group is scanning municipal server networks for file
+# shares, slowly enough that no threshold rule notices. The learner works out
+# why the sensor stays quiet and how long such a scan takes (integer division
+# and modulus), puts up a honeypot, the floor's new desk tool, and predicts
+# which probe will reach it. When it bites, the source is not on the internet:
+# it is a public library PC on the staff network. The learner finds it,
+# isolates it, closes the alert, and moves the public PCs to their own network.
+# The clock starts on this floor.
+
+id: defend-mid-02-slow-scan
+title: "The slow scan"
+status: draft
+role: prey
+org: siyakhula
+startTime: "09:40"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+briefing: |
+  A warning came in from the local government CSIRT this morning: a group is
+  scanning municipal server networks for file shares. Slowly. Slowly enough
+  that sensors don't notice.
+
+  Our sensor has been quiet all week. Pieter wants to know whether that's
+  because nobody is there, or because they are good at it. From this floor
+  there is a target time. Running over never fails a floor.
+controls:
+  guest-network: off
+tools:
+  honeypot:
+    spots:
+      - { id: servers, name: "Server network, beside the HR file server", zone: servers, ip: 10.88.22.13, room: corporate-services }
+      - { id: dmz, name: "Public services (DMZ), beside the tender portal", zone: dmz, ip: 10.88.20.40, room: treasury }
+      - { id: soc, name: "Security network, beside the SOC", zone: security, ip: 10.88.24.20, room: ict }
+    personas:
+      - id: hr-archive
+        name: HR archive
+        hostname: hr-archive
+        os: Ubuntu 20.04 (Samba)
+        services:
+          - { port: 139, name: netbios-ssn, product: Samba smbd, version: 4.11.6 }
+          - { port: 445, name: microsoft-ds, product: Samba smbd, version: 4.11.6 }
+      - id: printer
+        name: Network printer
+        hostname: prn-2f
+        os: Printer firmware
+        services:
+          - { port: 80, name: http, product: Printer web admin, version: "2.4" }
+          - { port: 9100, name: jetdirect, product: Raw print, version: "1" }
+      - id: test-web
+        name: Old test website
+        hostname: web-test
+        os: Ubuntu 18.04
+        services:
+          - { port: 80, name: http, product: nginx, version: 1.14.0 }
+    expect: { spot: servers, persona: hr-archive }
+    why:
+      spot: The warning says they sweep server networks. A honeypot only catches what passes by, so stand it where they look.
+      persona: They hunt file shares on port 445. Dress the decoy as something they want, like an HR archive, not as a printer they'd skip.
+guide:
+  mentor: ict-manager
+  target: 15
+  hold: [vulnerability-scan]
+  steps:
+    - id: quiet
+      title: Why so quiet?
+      say: >-
+        Our network sensor raises a port scan alert at 25 different ports
+        from one address within 20 seconds. The warning says this group sends
+        one probe every 15 seconds.
+      do: Answer the question.
+      hint: How many probes can fit into 20 seconds, one every 15 seconds?
+      ask:
+        question: Why would our sensor say nothing about their scan?
+        options:
+          - text: At most 2 probes land in any 20 seconds, nowhere near 25
+            correct: true
+            reply: >-
+              Right. That's evasion: going slower than the rule's window. A
+              threshold rule only sees bursts, so a patient scanner never
+              makes one.
+          - text: The sensor can't see the server network
+            reply: >-
+              It covers the DMZ and the server network. It sees every probe.
+              It just never sees enough of them at once.
+          - text: Scans are only dangerous if they're fast
+            reply: >-
+              A slow scan finds the same open doors. It takes longer, which
+              suits somebody who isn't in a hurry.
+      done: { answer: correct }
+
+    - id: how-long
+      title: How long does it take?
+      say: >-
+        Two ports on each of our 254 server addresses, one probe every 15
+        seconds: 254 x 2 x 15 = 7 620 seconds. Computers count seconds, so we
+        turn seconds into hours with two operations: div keeps the whole part
+        of a division and mod keeps what's left over.
+      do: Answer the question.
+      hint: An hour is 3 600 seconds. 7 620 div 3 600 is the hours; 7 620 mod 3 600 is the seconds left over.
+      ask:
+        question: How long is 7 620 seconds in hours and minutes?
+        options:
+          - text: 2 hours 7 minutes
+            correct: true
+            reply: >-
+              7 620 div 3 600 = 2 whole hours. 7 620 mod 3 600 = 420 seconds
+              left over, and 420 div 60 = 7 minutes. A whole server network,
+              every morning, without one alert.
+          - text: 2 hours 11 minutes
+            reply: >-
+              That's 7 620 / 3 600 = 2.116 read as 2 hours and 11 minutes.
+              Decimal hours aren't minutes. Use div for the hours and mod for
+              the seconds left over.
+          - text: 127 hours
+            reply: >-
+              7 620 div 60 = 127 is minutes, not hours. 127 minutes is 2 hours
+              and 7 minutes.
+      done: { answer: correct }
+
+    - id: deploy
+      title: Set a trap
+      say: >-
+        A honeypot is a decoy machine. Nobody at Siyakhula uses it or even
+        knows its name, so nothing legitimate ever touches it. Anything that
+        does is somebody looking around, however slowly.
+      do: Open the Honeypot. Choose where it stands and what it pretends to be, then put it up.
+      hint: Read the warning again. Which network are they sweeping, and what are they looking for?
+      show: { tab: honeypot }
+      done: { action: honeypot.deploy }
+      wrong: Think about where they look and what they look for, then move it.
+      praise: >-
+        An "HR archive" with file sharing on, in the server network. Exactly
+        what they're hunting for, in exactly the place they hunt.
+
+    - id: when
+      title: When will they find it?
+      say: >-
+        The warning says their scanner counts probes from 0 and works through
+        the addresses in order, from .1, both ports on each: probe n goes to
+        address n div 2 + 1, port 445 when n mod 2 is 0 and port 3389 when it
+        is 1. Our honeypot is .13.
+      do: Answer the question.
+      hint: Work out n div 2 + 1 and n mod 2 for each option.
+      ask:
+        question: Which probe reaches our honeypot on port 3389?
+        options:
+          - text: Probe 25
+            correct: true
+            reply: >-
+              25 div 2 = 12, plus 1 is .13: the honeypot. 25 mod 2 = 1, the
+              second port, 3389. Probe 24 gets there first, on 445. At one
+              every 15 seconds, that's six minutes after they start.
+          - text: Probe 13
+            reply: >-
+              13 div 2 = 6, plus 1 is .7, not .13. Each address takes two
+              probes, so the honeypot is further along.
+          - text: Probe 26
+            reply: >-
+              26 div 2 = 13, plus 1 is .14, one address too far. And 26 mod 2
+              = 0 is port 445, not 3389.
+      done: { answer: correct }
+
+    - id: bite
+      title: Wait for a bite
+      say: >-
+        The warning says they start about now. Our network sensor will stay
+        quiet. The honeypot won't.
+      do: Wait for the honeypot alert, then open it.
+      hint: It can take a few lab minutes. Press Skip ahead to run the clock faster until something happens.
+      show: { tab: alerts, alert: decoy-touched }
+      script:
+        - { after: 2, event: sweep, from: library-pcs, zone: servers, ports: [445, 3389], every: 15, for: 2400 }
+      done: { look: alert, rule: decoy-touched }
+      praise: >-
+        Got one. Look at the source: 10.88.21.60. That's not the internet.
+        That's our own staff network.
+
+    - id: who
+      title: Who is it?
+      say: >-
+        Addresses that start 10.88.21 are on the staff network, inside the
+        building. Find out which machine 10.88.21.60 is.
+      do: Find the machine at 10.88.21.60 on the floor and open it.
+      hint: The honeypot's log names it too. Look in Community Services.
+      show: { room: community }
+      done: { look: host, id: library-pcs }
+      praise: >-
+        The public library PCs. Anybody who books a session at the library
+        sits on the same network as our servers. That's how a "resident" got
+        inside.
+
+    - id: isolate
+      title: Cut it off
+      say: >-
+        Blocking at the perimeter won't help: this traffic never crosses it.
+        We stop it at the machine.
+      do: Isolate the library PCs.
+      hint: In the machine's panel, press Isolate.
+      show: { host: library-pcs }
+      done: { action: isolate, target: library-pcs }
+      wrong: That's not the machine the probes come from. Release it, then isolate the library PCs.
+      praise: >-
+        Isolated. Watch the honeypot's log: nothing new arrives. The librarian
+        loses the public PCs for the morning, which is the price.
+
+    - id: close
+      title: Close it
+      say: >-
+        Write it down properly. Was this a real attack, or something harmless
+        that looked like one?
+      do: Close the honeypot alert with the right verdict.
+      hint: Open the alert and choose real or false alarm.
+      show: { tab: alerts, alert: decoy-touched }
+      done: { alert: closed, rule: decoy-touched, verdict: true-positive }
+      wrong: >-
+        Nothing legitimate touches a honeypot, and this one was probed again
+        and again. That's real.
+      praise: Real, and closed with the reason. That's the record the CSIRT will ask for.
+
+    - id: fix
+      title: Fix the cause
+      say: >-
+        Isolating the PCs stopped this one person. Tomorrow somebody else
+        books a session. The cause is that public PCs sit on the staff network
+        at all.
+      do: In Controls, switch on the control that separates the public PCs.
+      hint: Look for "Separate network for public PCs".
+      show: { tab: controls }
+      done: { action: control, target: guest-network }
+      wrong: >-
+        Useful, but the library PCs would still sit beside our servers. Look
+        for the control about public PCs.
+      praise: >-
+        The public PCs move to their own network with internet access only. A
+        resident can still browse. They can't reach a single server.
+
+    - id: trust
+      title: Why trust it?
+      say: >-
+        Last thing. Most alerts need a second look before you believe them.
+        The honeypot's alert is different.
+      do: Answer the question.
+      hint: Who has any reason to touch a machine nobody uses?
+      ask:
+        question: Why can we trust a honeypot alert more than most?
+        options:
+          - text: Nothing legitimate has a reason to touch it, so almost every touch is somebody looking
+            correct: true
+            reply: >-
+              Yes. Almost no false alarms. The catch: skilled attackers look
+              for signs of a honeypot, like a machine that is too empty, so
+              keep it believable and never let it be the only sensor.
+          - text: Honeypots can't be fooled
+            reply: >-
+              They can. Skilled attackers look for decoys that are too empty or
+              too perfect and steer around them. A honeypot is one sensor,
+              not the only one.
+          - text: It blocks the attacker automatically
+            reply: >-
+              A honeypot only watches. You still decide what to do, as you did
+              with the library PCs.
+      done: { answer: correct }
+  outro:
+    title: Floor 2 complete
+    learned:
+      - Threshold rules see bursts. A scan slower than the rule's window never trips it.
+      - Div keeps the whole part of a division and mod keeps the remainder. 7 620 seconds is 2 hours and 7 minutes.
+      - A honeypot is a decoy nobody uses, so anything that touches it is worth a look.
+      - Put a honeypot where the attacker looks, dressed as what they want.
+      - Internal traffic never crosses the perimeter. Isolate the machine instead.
+      - Public PCs belong on their own network, never beside your servers.
+      - Skilled attackers look for honeypots. Keep it believable and never your only sensor.
+    next: "Floor 3: Load shedding"
+qcto: [KM-03-KT13, KM-06-KT09, KM-06-KT10, PM-04-PS04, PM-04-PS05, FA3.3, KM-01-KT01, KM-02-KT03]

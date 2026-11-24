@@ -1,0 +1,84 @@
+# Advanced attack tower, floor 4. Into a store. The cloud was reachable from the
+# internet by design. The surprise is that the stores are too: each store router
+# port-forwards the camera recorder for the alarm company's remote viewing, and
+# that recorder still has its factory admin/admin login. The learner turns an
+# internet-facing camera box into a shell inside a store's network.
+
+id: attack-adv-04-store-foothold
+title: "Into a store"
+status: draft
+role: predator
+org: ikhaya
+startTime: "11:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  Head office is well defended. The stores are not. Each store's router forwards
+  a port to the camera recorder so the alarm company can watch the cameras
+  remotely — which means that recorder is reachable from the internet.
+
+  It was installed in 2021 with the password admin/admin, and never touched since.
+  Its firmware is just as old. You turn that forgotten box into a shell inside the
+  store's network, and your way onto the company's VPN.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: exposed
+      title: The forgotten device
+      say: Nobody thinks of a camera recorder as a computer. It is one — an old Linux box, on the store network, reachable from the internet.
+      do: Answer the question.
+      hint: Why is an internet-facing device with a factory password such a prize?
+      ask:
+        question: Why is the store camera recorder a serious way in?
+        options:
+          - text: It is an internet-reachable computer with a default password and old firmware, sitting inside the store's network — so taking it puts you on the inside.
+            correct: true
+            reply: >-
+              Yes. It is not "just a camera". It is a Linux computer on the store
+              LAN, exposed to the internet, with admin/admin. Own it and you are
+              inside a store, which is joined to head office.
+          - text: It lets you watch the store's cameras, and that is the whole risk
+            reply: Watching the cameras is the least of it. The recorder is a computer on the store network, so owning it is a foothold inside the company, not just a view of the shop floor.
+          - text: It is harmless, because a camera cannot run attacker code
+            reply: This one runs embedded Linux and has a web admin with a default login. It very much can run your code — and then it is your box inside the store.
+      done: { answer: correct }
+
+    - id: exploit
+      title: Take the recorder
+      say: Metasploit has a module for these recorders that uses the default login to run commands on them. Point it at the store's recorder and run it.
+      do: Exploit the store camera recorder.
+      hint: "`msfconsole`, then `use exploit/linux/http/nvr_web_rce`, then `set RHOSTS {ip:cctv}`, then `run`. The factory admin login is used for you."
+      show: { tab: term }
+      done: { command: { did: shell, of: cctv } }
+      praise: Root on the recorder — a machine inside store 47's network, taken from the internet in one step. This is your foothold, and the store sits on the company VPN.
+
+    - id: inside
+      title: Where you landed
+      say: You have a shell on a device in one store. Before you go on, understand what that store is connected to.
+      do: Answer the question.
+      hint: How is a store joined to the rest of Ikhaya?
+      ask:
+        question: You own a device in store 47. What does that give you?
+        options:
+          - text: A position on the store network, which is joined to head office over the VPN — so from here you can reach systems far beyond this one shop.
+            correct: true
+            reply: >-
+              Yes. The store is not an island; it is tunnelled into head office
+              over the VPN. Your foothold in a camera recorder is a foothold on
+              the company network. Next you see how far that reaches.
+          - text: Control of store 47 only, and nothing beyond it
+            reply: The store is joined to head office over the VPN, so a foothold here reaches much further than one shop. That reach is the next floor.
+          - text: Access to the cloud shop you tested earlier
+            reply: Different path. This foothold leads inward over the store VPN toward head office, not back to the public cloud shop. That internal reach is what matters now.
+      done: { answer: correct }
+  outro:
+    title: You are inside a store
+    learned:
+      - Internet-facing store devices — camera recorders, routers — are a way into a retailer's network.
+      - A default password and old firmware on an exposed device is a direct route to a shell.
+      - A camera recorder is a real computer on the store LAN, not a harmless appliance.
+      - A store foothold matters because the store is joined to head office over the VPN.
+    next: "Floor 5: The flat VPN"
+qcto: [KM-03-KT09, KM-03-KT10, KM-03-KT18, KM-02-KT02, PM-02-PS02, PM-02-PS04, FA3.4]

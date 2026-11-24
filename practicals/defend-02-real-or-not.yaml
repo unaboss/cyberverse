@@ -1,0 +1,184 @@
+# Defend tower, floor 2. Designed with the owner on 2026-11-21 (three alerts,
+# one real).
+#
+# A busy morning. Ayanda has switched on a network sensor, so the learner now
+# sees traffic as well as logins, and three alerts arrive:
+#
+#   1. Ayanda types her old mail password three times from her own laptop, then
+#      the right one. "Login after failures" fires, marked critical. Harmless.
+#   2. The Recon agent runs its scheduled check of DataQuant's own website from
+#      the engagement vault. "Port scan" fires. Harmless.
+#   3. Somebody on the internet (10.88.0.143) scans the website. "Port scan"
+#      fires again. Real, and floor 3 blocks it.
+#
+# The learner sorts each one, and the mentor says right away whether they got
+# it right and why. The lesson: most alerts are us doing normal things, and
+# severity says how bad it would be, not whether it is real.
+#
+# The network sensor (cloud-ids) is something DataQuant only plans at level 1.
+# This practical switches it on in the lab; the company's manual is unchanged.
+#
+# Everything is scripted, and the Recon agent's job runs on cue instead of on
+# its schedule, so the floor plays the same way every time.
+
+id: defend-02-real-or-not
+title: "Real or not?"
+status: draft
+role: prey
+org: dataquant
+startTime: "09:40"
+durationMin: 0
+speed: 1
+controls: { cloud-ids: on }
+map:
+  rooms: [trust-risk, strategy-leadership, growth, data-insights, operations, offensive-security]
+  outside: [internet]
+  note: Operations runs our mail, and Offensive Security keeps the engagement vault. Both make noise you will learn to read.
+briefing: |
+  Your third day at DataQuant. After yesterday's password guesser, Ayanda
+  switched on a network sensor, so now you see traffic as well as logins.
+
+  More eyes means more alerts, and not all of them are attacks. This morning
+  you sort them. Still no clock, and anything that could hurt the business
+  stays locked.
+guide:
+  mentor: founder
+  locked: { block: 3, unblock: 3, lock: 4, reset: 4, control: 4, isolate: 5, release: 5, rebuild: 5 }
+  steps:
+    - id: new-sensor
+      title: Meet the new sensor
+      say: >-
+        After yesterday I switched on a network sensor. Logs tell you who logged
+        in. The network sensor sees traffic, so it catches things a log can't,
+        like somebody checking which doors we have open.
+      do: Open the Controls tab and find the network sensor.
+      hint: The Controls tab is next to Alerts in the SOC console. Look for "Network intrusion detection".
+      show: { tab: controls }
+      done: { look: tab, id: controls }
+      praise: >-
+        That's it: network intrusion detection on the cloud network. It's on,
+        so expect more alerts than yesterday.
+
+    - id: sort
+      title: Sort the morning's alerts
+      say: >-
+        Three alerts are on their way. Some are attacks, some are us doing
+        normal things. For each one, ask two questions. Did it come from one of
+        our machines? Was it something we expected? Two yeses means harmless.
+        Otherwise treat it as real, even if nothing got in.
+      do: >-
+        Open each alert as it arrives, read the evidence, and close it as a
+        true positive (a real attack) or a false positive (harmless).
+      hint: >-
+        Our addresses start 10.88.10 (the cloud) or 10.88.11 (laptops). When an
+        alert came from one of our machines, press "Open where it came from":
+        its Regular jobs box lists what runs there on purpose.
+      show: { tab: alerts }
+      script:
+        - { after: 5, event: login, system: mail, user: ayanda, from: founder-laptop, fails: 3, every: 5 }
+        - { after: 35, event: job, process: attack-surface-check }
+        - { after: 65, event: scan, system: website, src: 10.88.0.143 }
+      sort:
+        - rule: hids-login-after-failures
+          from: founder-laptop
+          verdict: false-positive
+          right: >-
+            Right, that was me. I changed my mail password last week and my
+            fingers still type the old one. Three tries from my own laptop, then
+            the right one: somebody who forgot, not a thief. The alert's advice
+            assumes the worst, because it can't know it was me.
+          wrong: >-
+            That one was me, typing my old mail password. Look where it came
+            from: {ip:founder-laptop} is my laptop, the account is mine, and I
+            got it right on the fourth try. The alert's advice assumes the
+            worst, because it can't know it was me. That's a false positive.
+        - rule: nids-port-scan
+          from: vault
+          verdict: false-positive
+          right: >-
+            Right. That's our Recon agent doing its daily check of our own
+            website, from the engagement vault. It's on the schedule, so it's
+            expected.
+          wrong: >-
+            That scan was ours. It came from {ip:vault}, the engagement vault,
+            and the vault's Regular jobs box lists the Recon agent's daily check
+            of our website. Something we do on purpose is a false positive.
+        - rule: nids-port-scan
+          src: 10.88.0.143
+          verdict: true-positive
+          right: >-
+            Right. 10.88.0.143 is on the internet, and nobody asked them to scan
+            us. Nothing got in, but somebody outside was checking our doors on
+            purpose. That's real.
+          wrong: >-
+            Look where this one came from: 10.88.0.143 is on the internet, not
+            one of ours, and nobody we know scans from there. Nothing got in,
+            but somebody outside checked our doors on purpose. That's a true
+            positive.
+      done: { sorted: true }
+      praise: >-
+        Three alerts, one real. Most mornings look like this: clear the harmless
+        ones carefully, so the real one gets your attention.
+      wrong: >-
+        Sorting takes practice. Each time, ask: did it come from one of our
+        machines, and was it something we expected?
+
+    - id: in-common
+      title: What gave them away?
+      say: >-
+        Let's look back. Two of those alerts were harmless and one was real.
+        Knowing why is what makes you fast next time.
+      do: Think about the two harmless alerts, then answer.
+      hint: One of the harmless alerts was marked critical. Where did each of them come from?
+      ask:
+        question: What did the two harmless alerts have in common?
+        options:
+          - text: They came from our own machines, doing something we expected.
+            correct: true
+            reply: >-
+              Exactly. My laptop, and our own scheduled scan. Once you know what
+              normal looks like, the odd one out stands out.
+          - text: They were low severity.
+            reply: >-
+              Not quite: my login was marked critical, the highest there is.
+              Severity says how bad it would be if it were real. It doesn't say
+              whether it is.
+          - text: Nothing got in, so they can't be attacks.
+            reply: >-
+              Careful: nothing got in from 10.88.0.143 either, and that was
+              real. Whether it worked and whether it's real are different
+              questions.
+      done: { answer: correct }
+
+    - id: needs-action
+      title: Which one needs action?
+      say: >-
+        Sorting is half the job. The other half is deciding what to do about
+        the real ones.
+      do: Choose the alert we should do something about.
+      hint: A harmless alert needs no action. Which one was real?
+      ask:
+        question: Which alert should we do something about?
+        options:
+          - text: The scan from 10.88.0.143, on the internet
+            correct: true
+            reply: >-
+              Yes. Somebody outside is mapping our website, and they may come
+              back. On the next floor you'll shut the door on them.
+          - text: My login on the mail server
+            reply: >-
+              That was just me. The fix there is a new habit, not a block.
+          - text: The Recon agent's scan
+            reply: >-
+              That one's ours, and it's meant to run. Stop it and we stop
+              checking our own doors.
+      done: { answer: correct }
+  outro:
+    title: Floor 2 complete
+    learned:
+      - Not every alert is an attack. Many are us, doing normal things.
+      - Two questions sort most alerts. Did it come from one of our machines? Was it something we expected?
+      - Severity says how bad it would be if it were real, not whether it is real.
+      - A scan from the internet is real even when nothing gets in.
+    next: "Floor 3: Close the door"
+qcto: [KM-01-KT02, KM-02-KT04, KM-03-KT04, PM-03-PS02, PM-03-PS03, PM-03-PS06, FA3.1, FA3.2]

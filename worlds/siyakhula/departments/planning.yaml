@@ -1,0 +1,139 @@
+id: planning
+name: Planning & Development
+purpose: Land use, building plans and the municipality's maps (GIS), which every service department relies on.
+room: { x: 15, y: 0, w: 5, h: 4 }
+
+people:
+  - id: gis-officer
+    role: GIS officer
+    kind: human
+    name: Anele Dlamini
+    awareness: 0.6
+  - id: building-inspector
+    role: Building control officer
+    kind: human
+    name: Hendrik Coetzee
+    awareness: 0.5
+
+processes:
+  - id: map-updates
+    name: Map and property updates
+    owner: gis-officer
+    every: 1h
+    hours: work
+    steps:
+      - Update property boundaries, services and zoning layers.
+    activity:
+      - { action: http, system: gis, via: gis-pc, path: /geoserver/web/ }
+  - id: plan-submissions
+    name: Building plan submissions
+    owner: building-inspector
+    every: 10m
+    hours: always
+    steps:
+      - Architects and residents upload building plans; officers review them in order.
+    activity:
+      - { action: http, system: plans-portal, via: internet, path: /submit }
+
+systems:
+  - id: gis
+    name: GIS map server
+    hostname: gis
+    kind: web
+    zone: servers
+    ip: 10.88.22.50
+    os: Ubuntu 20.04
+    services:
+      - { port: 8080, name: http, product: GeoServer, version: 2.23.1 }
+    weaknesses:
+      - id: geoserver-rce
+        name: GeoServer property expression code execution
+        kind: vulnerable-service
+        port: 8080
+        module: exploit/multi/http/geoserver_unauth_rce_cve_2024_36401
+        cve: CVE-2024-36401
+        grants: user
+        description: An unpatched GeoServer evaluates attacker-supplied expressions as code, without a login.
+    live: { image: "docker.osgeo.org/geoserver:2.23.1" }
+  - id: plans-portal
+    name: Building plans portal
+    hostname: plans
+    kind: web
+    zone: dmz
+    ip: 10.88.20.30
+    os: Ubuntu 22.04
+    services:
+      - { port: 443, name: https, product: Building plans portal, version: "2.1" }
+    weaknesses:
+      - id: plans-upload
+        name: Upload accepts any file type
+        kind: vulnerable-service
+        port: 443
+        module: upload-webshell
+        path: /submit/upload
+        grants: user
+        description: The upload form checks the file name, not the content, so a web shell can be uploaded as a "plan".
+  - id: gis-pc
+    name: GIS workstation
+    hostname: gis-pc
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.80
+    os: Windows 10 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: property-register
+    name: Property and valuation register
+    sensitivity: confidential
+    personalInformation: true
+    system: gis
+    path: /opt/geoserver/data/property
+    records: 60000
+    impact: 400000
+
+connections:
+  - { to: electrical, kind: internal, trust: Network maps for the electrical grid. }
+  - { to: water, kind: internal, trust: Pipe network maps. }
+  - { to: external:architects, kind: portal, trust: Architects upload plans from the internet. }
+
+threats:
+  - id: geoserver-exploit
+    name: Exploiting the unpatched map server
+    attack: T1190
+    stage: lateral-movement
+    target: gis
+    uses: geoserver-rce
+    description: A public exploit for GeoServer gives code execution on a server next to billing and the directory.
+    qcto: [KM-03-KT06, KM-03-KT14, PM-02-PS02]
+  - id: plans-webshell
+    name: Web shell through the plans upload
+    attack: T1505.003
+    stage: initial-access
+    target: plans-portal
+    uses: plans-upload
+    description: A "building plan" that is really a web shell gives the attacker a foothold in the DMZ.
+    qcto: [KM-03-KT14, KM-03-KT08]
+
+controls:
+  - id: patch-management
+    name: Monthly patching
+    kind: preventive
+    status: planned
+    fixes: [geoserver-rce]
+    description: Every server is patched monthly, and critical public exploits within 72 hours.
+  - id: upload-validation
+    name: Validate uploads by content
+    kind: preventive
+    status: planned
+    fixes: [plans-upload]
+    description: Uploads are checked by content, stored outside the web root and never executed.
+
+maturity:
+  1: Paper plans and printed maps.
+  2: A GIS server for the planners.
+  3: Online plan submissions and shared maps for all departments.
+  4: An open data portal with patching and secure uploads.
+
+qcto: [KM-03-KT06, KM-03-KT14, PM-02-PS02, FA1.3, KM-06-KT06]

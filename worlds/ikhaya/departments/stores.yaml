@@ -1,0 +1,167 @@
+id: stores
+name: Store operations
+purpose: Runs 120 stores. Each has tills, a back-office PC, a camera recorder, guest Wi-Fi and a router that joins the store to head office over the VPN. Store 47 in Mthatha is drawn here as an example of all of them.
+room: { x: 18, y: 7, w: 7, h: 6 }
+
+people:
+  - id: head-stores
+    role: Head of store operations
+    kind: human
+    name: Sipho Ndaba
+    awareness: 0.6
+  - id: store-manager
+    role: Store manager, store 47
+    kind: human
+    name: Zanele Khoza
+    awareness: 0.4
+  - id: store-support
+    role: Store support technician
+    kind: human
+    name: Andile Gumede
+    awareness: 0.6
+
+processes:
+  - id: till-sales
+    name: Till sales
+    owner: store-manager
+    every: 2m
+    hours: always
+    steps:
+      - Every sale goes from the till to the point-of-sale server at head office. If the VPN drops, the till keeps selling offline for up to four hours.
+    activity:
+      - { action: http, system: pos, via: till, path: /api/sales }
+  - id: store-reports
+    name: Store reports
+    owner: head-stores
+    every: 30m
+    hours: work
+    steps:
+      - Regional managers read each store's sales, stock gaps and shrinkage every morning.
+    activity:
+      - { action: http, system: pos, via: ops-pc, path: /reports/daily }
+
+systems:
+  - id: pos
+    name: Point-of-sale server
+    hostname: pos
+    kind: server
+    zone: servers
+    ip: 10.88.32.25
+    os: Windows Server 2019
+    critical: true
+    services:
+      - { port: 443, name: https, product: POS central, version: "8.2" }
+      - { port: 1433, name: ms-sql-s, product: Microsoft SQL Server 2019, version: "15.0" }
+  - id: store-router
+    name: Store 47 router
+    hostname: s47-rtr
+    kind: router
+    zone: stores
+    ip: 10.88.33.1
+    os: FortiOS 7.2
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: "8.4" }
+      - { port: 443, name: https, product: Router admin, version: 7.2.8 }
+  - id: till
+    name: Store 47 till 1
+    hostname: s47-till1
+    kind: pos
+    zone: stores
+    ip: 10.88.33.170
+    os: Windows 10 IoT Enterprise
+    services:
+      - { port: 443, name: https, product: Till agent, version: "8.2" }
+  - id: store-pc
+    name: Store 47 back-office PC
+    hostname: s47-pc
+    kind: desktop
+    zone: stores
+    ip: 10.88.33.171
+    os: Windows 11 Pro
+    services:
+      - { port: 3389, name: ms-wbt-server, product: Microsoft Terminal Services, version: "10.0" }
+    weaknesses:
+      - id: store-tablet-phishable
+        name: One shared mailbox, read on the back-office PC by whoever is on shift
+        kind: phishable
+        grants: user
+        description: Store staff share one login and one mailbox. There's no report button, and nobody wants to be the one who clicked.
+  - id: cctv
+    name: Store 47 camera recorder
+    hostname: s47-nvr
+    kind: iot
+    zone: stores
+    ip: 10.88.33.47
+    os: Embedded Linux (NVR firmware 3.4)
+    services:
+      - { port: 80, name: http, product: NVR web admin, version: "3.4.2" }
+      - { port: 554, name: rtsp, product: NVR video stream, version: "3.4.2" }
+      - { port: 23, name: telnet, product: BusyBox telnetd, version: "1.31" }
+    accounts:
+      - { user: admin, password: admin, role: admin, service: http }
+    weaknesses:
+      - id: cctv-default
+        name: Camera recorder still has its factory password
+        kind: default-credentials
+        port: 80
+        account: admin
+        module: exploit/linux/http/nvr_web_rce
+        grants: root
+        description: Installed by the alarm company in 2021 with admin/admin, never changed. Its firmware hasn't been updated since.
+  - id: ops-pc
+    name: Store operations desktop
+    hostname: ops-pc
+    kind: desktop
+    zone: hq
+    ip: 10.88.31.40
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: till-transactions
+    name: Till transactions
+    sensitivity: confidential
+    personalInformation: false
+    system: pos
+    path: pos.sales
+    records: 9000000
+    impact: 1500000
+  - id: cctv-footage
+    name: Store camera footage
+    sensitivity: confidential
+    personalInformation: true
+    system: cctv
+    path: /recordings
+    records: 30
+    impact: 300000
+    description: Thirty days of video of customers and staff.
+
+connections:
+  - { to: technology, kind: vpn, trust: Each store joins head office through the VPN hub. }
+  - { to: external:alarm-company, kind: supplier, trust: The alarm company installs and maintains the camera recorders. }
+
+threats:
+  - id: iot-botnet
+    name: A botnet takes the camera recorder
+    attack: T1078.001
+    stage: initial-access
+    target: cctv
+    uses: cctv-default
+    description: Botnets try factory passwords on every camera and router they can reach. Once in, the recorder is a computer inside the store's VPN.
+    qcto: [KM-03-KT18, KM-02-KT02]
+
+controls:
+  - id: store-offline-mode
+    name: Tills sell offline when the VPN drops
+    kind: corrective
+    status: in-place
+    description: A till keeps selling for four hours without head office, and sends the sales when the link is back.
+
+maturity:
+  1: A cash register and a safe.
+  2: Tills with a nightly upload.
+  3: Every store on the VPN, live till sales and cameras on a recorder in the back office.
+  4: Segmented store networks, managed device passwords and store devices in the SOC's inventory.
+
+qcto: [KM-03-KT18, KM-02-KT02, KM-07-KT20, PM-01-PS03, FA1.5]

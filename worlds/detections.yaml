@@ -1,0 +1,225 @@
+# The detection rule catalogue. A rule only fires when a control in the
+# organisation switches it on AND a sensor of the right type can see the
+# event. Rules are written like small Suricata or Wazuh rules: a match, and
+# optionally a threshold over a time window.
+#
+# Event keys you can group on: src, dst, dstPort, user, host, service.
+
+- id: nids-port-scan
+  name: Port scan from a single source
+  sensor: nids
+  severity: medium
+  attack: T1046
+  match: { kind: net.probe, tags: [tcp] }
+  threshold: { count: 25, withinSec: 20, groupBy: [src], distinct: dstPort }
+  cooldownSec: 120
+  description: One address touched many different ports in a short time.
+  response: Check whether the source is a known scanner. If not, block it at the perimeter and watch what it does next.
+
+- id: nids-host-sweep
+  name: Host discovery sweep
+  sensor: nids
+  severity: low
+  attack: T1018
+  match: { kind: net.probe, tags: [icmp] }
+  threshold: { count: 15, withinSec: 30, groupBy: [src], distinct: dst }
+  cooldownSec: 300
+  description: One address pinged many hosts, mapping the network.
+  response: Note the source. A sweep is usually the first step before a port scan.
+
+- id: hids-ssh-bruteforce
+  name: SSH brute force
+  sensor: hids
+  severity: high
+  attack: T1110.001
+  match: { kind: auth.fail, service: ssh }
+  threshold: { count: 5, withinSec: 60, groupBy: [src, host] }
+  cooldownSec: 120
+  description: Repeated failed SSH logins from one address against one server.
+  response: Block the source, check whether any login from it succeeded, and lock the targeted account if it is under attack.
+
+- id: hids-login-bruteforce
+  name: Repeated failed logins
+  sensor: hids
+  severity: medium
+  attack: T1110
+  match: { kind: auth.fail }
+  threshold: { count: 8, withinSec: 120, groupBy: [src, host] }
+  cooldownSec: 180
+  description: Many failed logins from one address on one system.
+  response: Find out which account is targeted and whether the source is a person who forgot a password or an attacker.
+
+- id: hids-password-spray
+  name: Password spraying across accounts
+  sensor: hids
+  severity: high
+  attack: T1110.003
+  match: { kind: auth.fail }
+  threshold: { count: 6, withinSec: 300, groupBy: [src], distinct: user }
+  cooldownSec: 300
+  description: One address tried a few passwords against many different accounts.
+  response: Block the source. Check every account it tried for a successful login, and force password resets where one worked.
+
+- id: hids-login-after-failures
+  name: Successful login after failures
+  sensor: hids
+  severity: critical
+  attack: T1078
+  match: { kind: auth.success }
+  after: { kind: auth.fail, count: 3, withinSec: 300, sameKeys: [src, host] }
+  cooldownSec: 60
+  description: A login succeeded from an address that had just been failing. The guess may have worked.
+  response: Treat the account as compromised. Disable or reset it, isolate the host if the session did anything, and block the source.
+
+- id: hids-service-account-new-source
+  name: Service account used from a new address
+  sensor: hids
+  severity: high
+  attack: T1078.003
+  match: { kind: auth.success, tags: [service-account, new-source] }
+  cooldownSec: 300
+  description: An account that only machines use logged in from somewhere it never has before.
+  response: Service accounts should only ever log in from their own servers. Assume the credential leaked; rotate it and block the source.
+
+- id: hids-default-credentials
+  name: Login with default credentials
+  sensor: hids
+  severity: high
+  attack: T1078.001
+  match: { kind: auth.success, tags: [default-credentials] }
+  cooldownSec: 300
+  description: Someone logged in with a vendor's factory password.
+  response: Change the password at once and check what the session did.
+
+- id: hids-off-hours-login
+  name: Interactive login outside working hours
+  sensor: hids
+  severity: low
+  attack: T1078
+  match: { kind: auth.success, tags: [interactive, off-hours] }
+  cooldownSec: 600
+  description: A person logged in at night or on a weekend.
+  response: Often legitimate (shift work, deadlines). Confirm with the person before escalating.
+
+- id: nids-exploit-signature
+  name: Known exploit signature
+  sensor: nids
+  severity: critical
+  attack: T1190
+  match: { kind: exploit.attempt }
+  cooldownSec: 30
+  description: Network traffic matched the signature of a known exploit.
+  response: Isolate the target if it is vulnerable, block the source, and check the target for new processes or accounts.
+
+- id: weblog-sqli
+  name: SQL injection attempt
+  sensor: weblog
+  severity: high
+  attack: T1190
+  match: { kind: http.request, tags: [sqli] }
+  cooldownSec: 60
+  description: A web request carried SQL syntax in a parameter.
+  response: Block the source, check whether the responses were large (data coming out), and get the code fixed.
+
+- id: weblog-dir-bruteforce
+  name: Web directory brute force
+  sensor: weblog
+  severity: medium
+  attack: T1595.003
+  match: { kind: http.request, outcome: fail }
+  threshold: { count: 30, withinSec: 30, groupBy: [src, host] }
+  cooldownSec: 180
+  description: Many requests for pages that do not exist, from one address.
+  response: Someone is guessing paths. Block the source if it is not a known scanner.
+
+- id: weblog-anonymous-listing
+  name: Anonymous storage listing
+  sensor: weblog
+  severity: medium
+  attack: T1619
+  match: { kind: http.request, tags: [anonymous-list] }
+  cooldownSec: 300
+  description: Someone listed a storage bucket without logging in.
+  response: The bucket policy is too open. Lock it down and check what was downloaded.
+
+- id: hids-suspicious-process
+  name: Suspicious process started
+  sensor: hids
+  severity: high
+  attack: T1059
+  match: { kind: proc.exec, tags: [suspicious] }
+  cooldownSec: 60
+  description: A shell or tool started from a service that should never start one.
+  response: A service was probably exploited. Isolate the host and investigate.
+
+- id: hids-new-admin
+  name: New administrator account
+  sensor: hids
+  severity: high
+  attack: T1136
+  match: { kind: account.change, tags: [admin] }
+  cooldownSec: 60
+  description: An account was created or given administrator rights.
+  response: Confirm with ICT whether it was a planned change. If not, disable it and look for how they got in.
+
+- id: hids-mass-file-read
+  name: Mass file access
+  sensor: hids
+  severity: high
+  attack: T1005
+  match: { kind: file.read }
+  threshold: { count: 40, withinSec: 60, groupBy: [user, host] }
+  cooldownSec: 300
+  description: One account read a very large number of files in a minute.
+  response: Someone may be collecting data to steal. Check the account and where the data is going.
+
+- id: hids-ransomware-encrypt
+  name: Files being encrypted
+  sensor: hids
+  severity: critical
+  attack: T1486
+  match: { kind: file.write, tags: [encrypt] }
+  threshold: { count: 20, withinSec: 30, groupBy: [host] }
+  cooldownSec: 60
+  description: Many files were rewritten with new extensions in seconds.
+  response: Isolate the host immediately, then start the recovery plan from clean backups.
+
+- id: nids-large-outbound
+  name: Large outbound transfer
+  sensor: nids
+  severity: high
+  attack: T1041
+  match: { kind: data.transfer, tags: [outbound], minBytes: 10000000 }
+  cooldownSec: 120
+  description: A lot of data left the network to the internet.
+  response: Find what was sent and to where. Block the destination and treat it as a possible data breach (POPIA).
+
+- id: mail-malicious-attachment
+  name: Malicious attachment delivered
+  sensor: mail
+  severity: medium
+  attack: T1566.001
+  match: { kind: mail.received, tags: [malicious] }
+  cooldownSec: 60
+  description: The mail gateway saw an attachment that matches known malware or a phishing lure.
+  response: Pull the message from every mailbox and warn the recipients not to open it.
+
+- id: nids-ot-write
+  name: Write to an industrial controller
+  sensor: nids
+  severity: critical
+  attack: T0836
+  match: { kind: ot.write }
+  cooldownSec: 30
+  description: Something changed a setpoint on a controller in the treatment works.
+  response: Call the process controller at once. Put the plant in manual and isolate the source.
+
+- id: decoy-touched
+  name: Something touched the honeypot
+  sensor: decoy
+  severity: high
+  attack: T1046
+  match: { kind: net.probe, tags: [tcp] }
+  cooldownSec: 600
+  description: A decoy machine that nobody uses was contacted. Nothing legitimate has a reason to touch it.
+  response: Find the source and treat it as hostile until you know better. Then look at what else it has touched.

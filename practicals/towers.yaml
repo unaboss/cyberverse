@@ -1,0 +1,259 @@
+# The towers: storylines that climb from easy to hard, one practical per
+# floor. Agreed with the owner on 2026-11-21: the defend tower starts at
+# DataQuant (you are its first security hire), and DataQuant wins Siyakhula's
+# security contract before the night shift. Floors without a practical are
+# still being designed and show as "coming".
+#
+# Also agreed on 2026-11-21: the start screen is a town. Blue buildings defend,
+# red ones attack, and each side has an intro, an intermediate and an advanced
+# tower. The advanced towers are big organisations (branch offices, VPNs, cloud).
+# Only the intro towers have floors so far; the others are drawn as buildings
+# under construction until their floors are designed with the owner.
+
+- id: defend
+  name: Intro defend tower
+  role: prey
+  tier: intro
+  blurb: >-
+    You're DataQuant's first security hire. Start on your first morning and
+    climb to running a municipality's night shift on your own.
+  floors:
+    - floor: 0
+      title: First day
+      practical: defend-00-first-day
+      teaches: Find your way round the office, read a log, and handle a test alert.
+    - floor: 1
+      title: Your first alert
+      practical: defend-01-first-alert
+      teaches: Read one alert and its log, and close it with the right verdict.
+    - floor: 2
+      title: Real or not?
+      practical: defend-02-real-or-not
+      teaches: Sort a busy morning's alerts into real and harmless.
+    - floor: 3
+      title: Close the door
+      practical: defend-03-close-the-door
+      teaches: Block a scanner at the perimeter without blocking the business.
+    - floor: 4
+      title: The default password
+      practical: defend-04-default-password
+      teaches: Reset a breached account and switch on the control that should have stopped it.
+    - floor: 5
+      title: The lure
+      practical: defend-05-the-lure
+      teaches: Spot a phishing infection and isolate one laptop.
+    - floor: 6
+      title: What you can't see
+      practical: defend-06-what-you-cant-see
+      teaches: Notice an attack no sensor sees, and switch the sensor on.
+    - floor: 7
+      title: Night shift
+      practical: smoke-prey-night-shift
+      teaches: Run Siyakhula's night shift against a live attacker, then write the status report.
+
+- id: attack
+  name: Intro attack tower
+  role: predator
+  tier: intro
+  blurb: >-
+    You've joined DataQuant's Offensive Security team. Learn to test a client
+    the way an attacker would, inside a signed scope, with the Kali terminal:
+    footprinting, scanning, enumeration, passwords, and proving impact.
+  floors:
+    - floor: 0
+      title: The rules of engagement
+      practical: attack-00-rules
+      teaches: What makes a test legal, the scope letter, and the rules of engagement.
+    - floor: 1
+      title: Footprinting
+      practical: attack-01-footprinting
+      teaches: Find what faces the internet with a ping sweep and a port scan.
+    - floor: 2
+      title: Fingerprinting and stealth
+      practical: attack-02-fingerprinting
+      teaches: Identify the exact software with nmap -sV, and scan quietly past the SOC.
+    - floor: 3
+      title: Enumeration
+      practical: attack-03-enumeration
+      teaches: Dig into each service for exposed folders, and match versions to exploits.
+    - floor: 4
+      title: Password attacks
+      practical: attack-04-passwords
+      teaches: Crack an internet-facing login with hydra; online guessing versus offline cracking.
+    - floor: 5
+      title: Exploitation and impact
+      practical: attack-05-exploitation
+      teaches: Read a database through SQL injection with sqlmap, and write the finding up.
+    - floor: 6
+      title: DataQuant tests Siyakhula
+      practical: smoke-predator-pentest
+      teaches: An external test against a watching defender, inside a signed scope.
+
+- id: defend-intermediate
+  name: Intermediate defend tower
+  role: prey
+  tier: intermediate
+  blurb: >-
+    Siyakhula Local Municipality borrows you for its SOC. Five networks, staff
+    working around you, attackers who are quieter, and the work after an
+    incident: recovering what was lost and writing it up.
+  floors:
+    - floor: 0
+      title: The crown jewels
+      practical: defend-mid-00-crown-jewels
+      teaches: Find what the town can't live without, and score its risks in the risk register.
+    - floor: 1
+      title: Patch Tuesday
+      practical: defend-mid-01-patch-tuesday
+      teaches: Run the vulnerability scan, rank what it finds and prove the fixes.
+    - floor: 2
+      title: The slow scan
+      practical: defend-mid-02-slow-scan
+      teaches: Catch a scan too slow for the alarm with a honeypot.
+    - floor: 3
+      title: Load shedding
+      practical: defend-mid-03-load-shedding
+      teaches: Keep the crown jewels up on the UPS, then repair a server that won't boot.
+    - floor: 4
+      title: Helpdesk Monday
+      practical: defend-mid-04-helpdesk-monday
+      teaches: Six helpdesk tickets, each with a security catch.
+    - floor: 5
+      title: The evil twin
+      practical: defend-mid-05-evil-twin
+      teaches: Find a fake Wi-Fi network on the floor plan and end the sessions it stole.
+    - floor: 6
+      title: No electricity for sale
+      practical: defend-mid-06-no-electricity
+      teaches: Keep prepaid sales going through a flood of traffic, and tell residents.
+    - floor: 7
+      title: Ransomware
+      practical: defend-mid-07-ransomware
+      teaches: Restore the HR files from the offline copy and write the close-out report.
+
+- id: attack-intermediate
+  name: Intermediate attack tower
+  role: predator
+  tier: intermediate
+  blurb: >-
+    An internal penetration test of Siyakhula. Cross from outside to inside with
+    a foothold, pivot the server network, exploit soft internal boxes, harvest
+    credentials, reach the crown-jewel data and the water plant, and write it up.
+  floors:
+    - floor: 0
+      title: The internal engagement
+      practical: attack-mid-00-engagement
+      teaches: The phases of a pentest, the scope letter, handling client data, and doing no harm.
+    - floor: 1
+      title: The foothold
+      practical: attack-mid-01-foothold
+      teaches: Turn a file-upload flaw into a shell on a web server with Metasploit.
+    - floor: 2
+      title: Pivoting
+      practical: attack-mid-02-pivoting
+      teaches: Scan the internal server network from the foothold the firewall trusts.
+    - floor: 3
+      title: Internal exploitation
+      practical: attack-mid-03-internal-exploitation
+      teaches: Exploit a soft internal server's default login for a root shell.
+    - floor: 4
+      title: Credential access
+      practical: attack-mid-04-credential-access
+      teaches: Dump and crack stored password hashes, the fuel for lateral movement.
+    - floor: 5
+      title: The crown jewels
+      practical: attack-mid-05-crown-jewels
+      teaches: Reach the resident data and prove it with a minimal, secured sample.
+    - floor: 6
+      title: The water plant
+      practical: attack-mid-06-water-plant
+      teaches: Reach a safety-critical Modbus controller and prove it by reading only.
+    - floor: 7
+      title: Lateral movement and the report
+      practical: attack-mid-07-report
+      teaches: Lateral movement, sniffing, evil-twin Wi-Fi, and the report the client pays for.
+
+- id: defend-advanced
+  name: Advanced defend tower
+  role: prey
+  tier: advanced
+  blurb: >-
+    Ikhaya Stores: 120 stores on VPNs, an online shop in the cloud and 8 000
+    staff. Problems too big to read by eye, and the board that decides what
+    security gets to spend.
+  floors:
+    - floor: 0
+      title: 122 000 sign-ins
+      practical: defend-adv-00-sign-ins
+      teaches: Find a credential-stuffing run in a day of sign-ins, with SQL.
+    - floor: 1
+      title: Forty stores
+      practical: defend-adv-01-forty-stores
+      teaches: Finish a script that checks forty stores' camera recorders, in bash, Python or PowerShell.
+    - floor: 2
+      title: The scraper
+      practical: defend-adv-02-scraper
+      teaches: Find who scraped 48 000 orders through the API, close the hole, and lock the public bucket.
+    - floor: 3
+      title: A branch went dark
+      practical: defend-adv-03-branch-dark
+      teaches: Cut off a hijacked camera recorder and segment 120 stores' networks.
+    - floor: 4
+      title: Why do they click?
+      practical: defend-adv-04-why-click
+      teaches: Lead a team through design thinking to change how store staff handle phishing.
+    - floor: 5
+      title: The insider
+      practical: defend-adv-05-insider
+      teaches: Investigate a manager who paid himself through the ERP, ethically, and fix who can approve what.
+    - floor: 6
+      title: The monthly report
+      practical: defend-adv-06-monthly-report
+      teaches: Build the executives' security report from a database, a CSV and a scan, with pivots and a dashboard.
+    - floor: 7
+      title: The board
+      practical: defend-adv-07-board
+      teaches: Spend R3 million on the risks that matter most, hire for it, and present the plan to the board.
+
+- id: attack-advanced
+  name: Advanced attack tower
+  role: predator
+  tier: advanced
+  blurb: >-
+    Red-team a retailer the size of Ikhaya Stores: credential-stuff the cloud
+    shop, scrape its API, read a public bucket, break into a store through an
+    exposed camera recorder, pivot the flat VPN to head office, own the domain,
+    and report it to the board — inside a signed scope.
+  floors:
+    - floor: 0
+      title: The engagement at scale
+      practical: attack-adv-00-engagement
+      teaches: Scope a test across cloud, stores and the corporate core, with cloud rules and data handling.
+    - floor: 1
+      title: The cloud shop
+      practical: attack-adv-01-credential-stuffing
+      teaches: Credential-stuff a sign-in with no bot protection, and why reused breached passwords work.
+    - floor: 2
+      title: The orders API
+      practical: attack-adv-02-api-idor
+      teaches: Broken access control (IDOR) — read millions of orders by walking the order numbers.
+    - floor: 3
+      title: The cloud bucket
+      practical: attack-adv-03-public-bucket
+      teaches: Find and read a public cloud storage bucket, the classic cloud misconfiguration.
+    - floor: 4
+      title: Into a store
+      practical: attack-adv-04-store-foothold
+      teaches: Turn an internet-exposed camera recorder with default creds into a shell inside a store.
+    - floor: 5
+      title: The flat VPN
+      practical: attack-adv-05-flat-vpn
+      teaches: Pivot a flat store VPN to reach the domain controller, till system and databases at head office.
+    - floor: 6
+      title: The domain
+      practical: attack-adv-06-the-domain
+      teaches: Kerberoast a weak service account to domain admin, and the blast radius of owning the directory.
+    - floor: 7
+      title: The report to the board
+      practical: attack-adv-07-report
+      teaches: Rank findings by business risk, pitch costed fixes to executives, disclose safely, and retest.

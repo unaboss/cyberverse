@@ -1,0 +1,292 @@
+id: ict
+name: ICT Services
+purpose: Runs the network, the directory, mail, backups and the data warehouse, and from level 3 a small security operations centre.
+room: { x: 0, y: 3, w: 6, h: 5 }
+
+people:
+  - id: ict-manager
+    role: ICT manager
+    kind: human
+    name: Pieter van Wyk
+    awareness: 0.8
+  - id: helpdesk
+    role: Helpdesk technician
+    kind: human
+    name: Bongani Ndlovu
+    awareness: 0.5
+  - id: soc-analyst
+    role: Junior SOC analyst
+    kind: human
+    name: Amahle Ntuli
+    awareness: 0.9
+    from: 3
+    description: The learner's seat on prey practicals at the municipality.
+
+processes:
+  - id: helpdesk-resets
+    name: Password resets and account changes
+    owner: helpdesk
+    every: 20m
+    hours: work
+    steps:
+      - Reset passwords after verifying the caller's identity with their employee number and manager.
+      - Account changes come only from an HR joiner, mover or leaver form.
+    activity:
+      - { action: login, system: dc01, via: helpdesk-pc, typo: 0.1 }
+  - id: nightly-backup
+    name: Backups
+    owner: ict-manager
+    every: 1h
+    cadence: nightly
+    hours: always
+    steps:
+      - Back up the directory, billing and file servers to the backup server.
+      - Test a restore every month. Keep one copy offline.
+    activity:
+      - { action: transfer, system: backup, via: dc01, bytes: 25000000 }
+  - id: vulnerability-scan
+    name: Scheduled vulnerability scan
+    owner: ict-manager
+    from: 3
+    every: 3h
+    cadence: weekly
+    hours: always
+    steps:
+      - Scan the server network for missing patches and report the findings to system owners.
+      - Scans run from the SOC scanner only. Tell the SOC before any ad-hoc scan.
+    activity:
+      - { action: scan, system: billing, via: soc }
+
+systems:
+  - id: dc01
+    name: Domain controller
+    hostname: dc01
+    kind: directory
+    zone: servers
+    ip: 10.88.22.10
+    os: Ubuntu 22.04 (Samba AD DC)
+    critical: true
+    services:
+      - { port: 53, name: domain, product: Samba DNS, version: 4.15.13 }
+      - { port: 88, name: kerberos-sec, product: Samba Kerberos, version: 4.15.13 }
+      - { port: 389, name: ldap, product: Samba LDAP, version: 4.15.13 }
+      - { port: 445, name: microsoft-ds, product: Samba smbd, version: 4.15.13 }
+      - { port: 636, name: ldaps, product: Samba LDAP, version: 4.15.13 }
+    accounts:
+      - { user: administrator, password: "Xq!8vR2#mKp7", role: admin, service: smb }
+      - { user: svc_backup, password: Backup2019!, role: service, service: smb }
+    weaknesses:
+      - id: svc-backup-weak
+        name: Backup service account with an old, guessable password
+        kind: weak-password
+        port: 445
+        account: svc_backup
+        grants: root
+        description: The backup account has domain-wide rights and the password it was given in 2019.
+    live: { image: "nowsci/samba-domain:latest" }
+  - id: mail
+    name: Mail server and webmail
+    hostname: mail
+    kind: mail
+    zone: dmz
+    ip: 10.88.20.25
+    os: Debian 11
+    critical: true
+    services:
+      - { port: 25, name: smtp, product: Postfix, version: 3.5.25 }
+      - { port: 443, name: https, product: Roundcube Webmail, version: 1.5.2 }
+    accounts:
+      - { user: lerato, password: Lerato1, role: user, person: mm, service: https }
+      - { user: kagiso, password: Welcome1, role: user, person: pa, service: https }
+      - { user: johan, password: Summer2026!, role: user, person: creditors-clerk, service: https }
+      - { user: mpho, password: Siyakhula@123, role: user, person: customer-care, service: https }
+    weaknesses:
+      - id: webmail-passwords-only
+        name: Webmail accepts a password alone, from anywhere
+        kind: weak-password
+        port: 443
+        account: kagiso
+        grants: user
+        description: Webmail faces the internet with no second factor, and several staff use seasonal passwords.
+    live: { image: "axllent/mailpit:v1.21" }
+  - id: backup
+    name: Backup server
+    hostname: backup
+    kind: backup
+    zone: servers
+    ip: 10.88.22.15
+    os: Ubuntu 20.04
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 8.2p1 }
+      - { port: 873, name: rsync, product: rsync, version: "3.1.3" }
+  - id: dwh
+    name: Data warehouse
+    hostname: dwh
+    kind: database
+    zone: servers
+    ip: 10.88.22.16
+    os: Ubuntu 22.04
+    services:
+      - { port: 5432, name: postgresql, product: PostgreSQL, version: "14.10" }
+    accounts:
+      - { user: dq_etl, password: "Etl#Siyakhula25", role: service, service: postgresql }
+    live: { image: "postgres:14.10" }
+  - id: helpdesk-pc
+    name: Helpdesk desktop
+    hostname: help-pc
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.20
+    os: Windows 10 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+  - id: soc
+    name: SOC console and scanner
+    hostname: soc
+    kind: security
+    zone: security
+    ip: 10.88.24.10
+    os: Ubuntu 22.04
+    from: 3
+    services:
+      - { port: 443, name: https, product: Wazuh dashboard, version: 4.9.2 }
+      - { port: 1514, name: wazuh, product: Wazuh manager, version: 4.9.2 }
+      - { port: 55000, name: http, product: Wazuh API, version: 4.9.2 }
+  - id: ids
+    name: Network sensor
+    hostname: ids
+    kind: security
+    zone: security
+    ip: 10.88.24.11
+    os: Ubuntu 22.04
+    from: 3
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: 8.9p1 }
+    live: { image: "jasonish/suricata:7.0.7" }
+
+data:
+  - id: backups
+    name: Backup sets
+    sensitivity: restricted
+    personalInformation: true
+    system: backup
+    path: /srv/backups
+    records: 90
+    impact: 1000000
+  - id: dwh-analytics
+    name: Revenue and vending analytics
+    sensitivity: restricted
+    personalInformation: true
+    system: dwh
+    path: analytics.customers_monthly
+    records: 72000
+    impact: 3000000
+
+connections:
+  - { to: corporate-services, kind: internal, trust: Account changes come from HR forms. }
+  - { to: org:dataquant, kind: vpn, trust: DataQuant's runner loads the data warehouse over a site-to-site VPN. }
+
+threats:
+  - id: webmail-spray
+    name: Password spraying webmail
+    attack: T1110.003
+    stage: initial-access
+    target: mail
+    uses: webmail-passwords-only
+    description: A few seasonal passwords tried against every mailbox from the internet. One always works.
+    qcto: [KM-03-KT07, KM-02-KT04]
+  - id: backup-account-takeover
+    name: Guessing the backup service account
+    attack: T1110.001
+    stage: privilege-escalation
+    target: dc01
+    uses: svc-backup-weak
+    description: From inside, the backup account falls to a short wordlist and has rights across the whole domain.
+    qcto: [KM-03-KT07, KM-03-KT05]
+  - id: warehouse-via-supplier
+    name: Reaching the warehouse through the supplier's VPN
+    attack: T1199
+    stage: initial-access
+    target: dwh
+    description: An attacker inside DataQuant uses the integration runner's VPN and credential to read the municipality's warehouse.
+    qcto: [KM-02-KT02, KM-03-KT19]
+
+controls:
+  - id: perimeter-ids
+    name: Network sensor on the DMZ and server network
+    kind: detective
+    status: in-place
+    from: 3
+    sensor: { type: nids, covers: [dmz, servers] }
+    rules: [nids-port-scan, nids-host-sweep, nids-exploit-signature, nids-large-outbound]
+    description: Suricata watches everything entering or leaving the DMZ and the server network.
+  - id: server-logging
+    name: Log agents on servers
+    kind: detective
+    status: in-place
+    from: 3
+    sensor: { type: hids, covers: [dc01, mail, billing, eservices, payroll, dwh, backup, gis, vending, licensing] }
+    rules: [hids-ssh-bruteforce, hids-login-bruteforce, hids-password-spray, hids-login-after-failures, hids-service-account-new-source, hids-default-credentials, hids-suspicious-process, hids-new-admin, hids-mass-file-read, hids-ransomware-encrypt, hids-off-hours-login]
+    description: Wazuh agents on the main servers send their logs to the SOC. The legacy file server and the plant have none.
+  - id: web-logging
+    name: Web server logs to the SOC
+    kind: detective
+    status: in-place
+    from: 3
+    sensor: { type: weblog, covers: [eservices, tenders, mail, plans-portal] }
+    rules: [weblog-sqli, weblog-dir-bruteforce]
+    description: Public web servers send their access logs to the SOC.
+  - id: mail-gateway
+    name: Mail gateway scanning
+    kind: detective
+    status: in-place
+    sensor: { type: mail, covers: [mail] }
+    rules: [mail-malicious-attachment]
+    description: Inbound mail is scanned for malware and known lures.
+  - id: ad-lockout
+    name: Directory account lockout
+    kind: preventive
+    status: in-place
+    lockoutAfter: 10
+    description: Ten failed logins lock a directory account for 30 minutes.
+  - id: mfa-remote
+    name: MFA for webmail and remote access
+    kind: preventive
+    status: planned
+    from: 4
+    mfa: true
+    description: Webmail and remote access need a second factor.
+  - id: ddos-protection
+    name: DDoS protection from the internet provider
+    kind: preventive
+    status: planned
+    from: 4
+    description: The internet provider scrubs floods of junk traffic before they reach the municipality's line.
+  - id: service-account-passwords
+    name: Long random passwords for service accounts
+    kind: preventive
+    status: planned
+    fixes: [svc-backup-weak]
+    description: Service accounts get long random passwords, rotated yearly and stored in the password vault.
+  - id: corporate-ids
+    name: Network sensor on the staff network
+    kind: detective
+    status: planned
+    from: 4
+    sensor: { type: nids, covers: [corporate] }
+    rules: [nids-port-scan, nids-host-sweep, nids-exploit-signature]
+    description: Extends network detection to the staff network, where lateral movement happens.
+  - id: offline-backups
+    name: Offline, tested backups
+    kind: corrective
+    status: planned
+    description: One backup copy is offline and a restore is tested every month.
+    policy: If ransomware hits, we restore from the offline copy. We do not pay.
+
+maturity:
+  1: A server room and a single ICT officer.
+  2: A domain, mail and backups, with a helpdesk.
+  3: A small SOC with a network sensor, log agents on the main servers and a scanner.
+  4: Segmented networks, MFA, OT monitoring and a 24/7 co-managed SOC.
+
+qcto: [KM-02-KT01, KM-02-KT02, KM-02-KT03, KM-02-KT04, KM-02-KT05, KM-07-KT16, KM-07-KT20, PM-01-PS02, PM-01-PS03, PM-01-PS04, PM-03-PS02, PM-03-PS05, PM-03-PS09, FA2.1, FA2.3, FA2.5, FA3.1, FA3.3]

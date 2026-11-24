@@ -1,0 +1,210 @@
+id: ecommerce
+name: Online
+purpose: The online shop, the mobile app and its API, and the loyalty programme's 1.1 million members. Runs in a public cloud account.
+room: { x: 18, y: 0, w: 7, h: 5 }
+
+people:
+  - id: head-online
+    role: Head of online
+    kind: human
+    name: Kabelo Moloto
+    awareness: 0.6
+  - id: lead-developer
+    role: Lead developer
+    kind: human
+    name: Megan Naidoo
+    awareness: 0.8
+
+processes:
+  - id: online-orders
+    name: Customers shopping online
+    owner: head-online
+    every: 2m
+    hours: always
+    steps:
+      - Customers sign in, shop and pay on the website and the app at any hour. The app reads their orders through the API.
+    activity:
+      - { action: http, system: shop, via: internet, path: /checkout }
+      - { action: http, system: api, via: internet, path: /api/orders/me }
+      - { action: query, system: orders-db, via: api }
+  - id: releases
+    name: Weekly releases
+    owner: lead-developer
+    every: 3h
+    cadence: weekly
+    hours: work
+    steps:
+      - Every change is reviewed by a second developer and passes the automated tests and security scan before it ships.
+    activity:
+      - { action: http, system: api, via: dev-laptop, path: /health }
+
+systems:
+  - id: shop
+    name: Online shop
+    hostname: shop
+    kind: web
+    zone: cloud
+    ip: 10.88.30.10
+    os: Container platform
+    critical: true
+    services:
+      - { port: 80, name: http, product: nginx, version: 1.25.4 }
+      - { port: 443, name: https, product: Ikhaya shop, version: "6.3" }
+    accounts:
+      - { user: lerato, password: Welcome1, role: user, service: https }
+    weaknesses:
+      - id: shop-no-bot-protection
+        name: The sign-in page accepts unlimited attempts from anywhere
+        kind: weak-password
+        port: 443
+        path: /account/sign-in
+        description: No bot protection, no check against breached passwords and no second factor for customers, so lists of passwords leaked from other sites can be tried at speed.
+  - id: api
+    name: App and partner API
+    hostname: api
+    kind: web
+    zone: cloud
+    ip: 10.88.30.11
+    os: Container platform
+    critical: true
+    services:
+      - { port: 443, name: https, product: Ikhaya API, version: "3.8" }
+    weaknesses:
+      - id: api-idor
+        name: The orders API returns any order to any signed-in customer
+        kind: misconfiguration
+        port: 443
+        module: idor
+        path: /api/orders/
+        exposes: [customer-orders]
+        description: The API checks that a caller is signed in, but not that the order is theirs. Order numbers count up, so every order can be read one at a time.
+  - id: media
+    name: Media storage bucket
+    hostname: media
+    kind: storage
+    zone: cloud
+    ip: 10.88.30.20
+    os: Cloud object storage
+    services:
+      - { port: 443, name: https, product: Cloud object storage, version: "2026" }
+    weaknesses:
+      - id: public-bucket
+        name: The media bucket lets anyone list and read everything in it
+        kind: misconfiguration
+        port: 443
+        module: directory-listing
+        path: /exports/
+        exposes: [loyalty-export]
+        description: The bucket is public so product photos load fast. Somebody put a loyalty export in it to share with a marketing agency.
+  - id: orders-db
+    name: Orders database
+    hostname: orders-db
+    kind: database
+    zone: servers
+    ip: 10.88.32.20
+    os: Ubuntu 22.04
+    critical: true
+    services:
+      - { port: 5432, name: postgresql, product: PostgreSQL, version: "15.4" }
+  - id: dev-laptop
+    name: Lead developer's laptop
+    hostname: dev-lt
+    kind: laptop
+    zone: hq
+    ip: 10.88.31.30
+    os: macOS 15
+    services:
+      - { port: 22, name: ssh, product: OpenSSH, version: "9.8" }
+
+data:
+  - id: customer-orders
+    name: Online orders
+    sensitivity: restricted
+    personalInformation: true
+    system: orders-db
+    path: shop.orders
+    records: 2400000
+    impact: 20000000
+    description: Every online order with the customer's name, phone number, delivery address and what they bought.
+  - id: loyalty-export
+    name: Loyalty member export for the agency
+    sensitivity: restricted
+    personalInformation: true
+    system: media
+    path: /exports/loyalty-2026-10.csv
+    records: 310000
+    impact: 9000000
+    description: Names, cellphone numbers, email addresses, birthdays and spend bands of 310 000 loyalty members.
+  - id: customer-accounts
+    name: Online customer accounts
+    sensitivity: restricted
+    personalInformation: true
+    system: shop
+    path: shop.customers
+    records: 1100000
+    impact: 12000000
+
+connections:
+  - { to: technology, kind: internal, trust: Technology manages the cloud account and the SIEM. }
+  - { to: supply-chain, kind: internal, trust: The shop reads stock from the warehouse system. }
+  - { to: external:customers, kind: portal, trust: Customers use the shop and the app from the internet. }
+  - { to: external:marketing-agency, kind: supplier, trust: The agency runs campaigns from loyalty exports. }
+
+threats:
+  - id: credential-stuffing
+    name: Credential stuffing against the shop
+    attack: T1110.004
+    stage: initial-access
+    target: shop
+    uses: shop-no-bot-protection
+    description: Millions of email and password pairs leaked from other sites, tried by a botnet. People reuse passwords, so a few in every thousand work.
+    qcto: [KM-03-KT07, KM-08-KT04]
+  - id: order-scraping
+    name: Scraping every order through the API
+    attack: T1119
+    stage: collection
+    target: api
+    uses: api-idor
+    description: A signed-in account asks for order after order by number. Nothing checks the orders are theirs.
+    qcto: [KM-08-KT05, KM-08-KT01]
+  - id: open-bucket
+    name: Reading the public storage bucket
+    attack: T1530
+    stage: collection
+    target: media
+    uses: public-bucket
+    description: Anyone who guesses the bucket's name can list it and download what is in it.
+    qcto: [KM-08-KT03, KM-07-KT22]
+
+controls:
+  - id: shop-bot-protection
+    name: Bot protection on the shop's sign-in
+    kind: preventive
+    status: planned
+    fixes: [shop-no-bot-protection]
+    description: The sign-in page challenges automated traffic, slows repeated failures and refuses passwords that appear in known breaches.
+  - id: api-authz
+    name: Order ownership check in the API
+    kind: preventive
+    status: planned
+    fixes: [api-idor]
+    description: The API returns an order only to the customer who placed it, and order references are random, not counting numbers.
+  - id: private-buckets
+    name: Private storage by default
+    kind: preventive
+    status: planned
+    fixes: [public-bucket]
+    description: Buckets are private unless the security team signs off. Photos are served through the content network, not straight from storage.
+  - id: customer-mfa
+    name: Optional second factor for customers
+    kind: preventive
+    status: planned
+    description: Customers can turn on a one-time code by SMS or app, and are asked to when they sign in from a new device.
+
+maturity:
+  1: A shop on a hosted platform.
+  2: Our own shop and a mobile app.
+  3: Shop, app and API in our own cloud account, with logs in the SIEM.
+  4: Bot protection, authorisation tests in every release, private storage and customer MFA.
+
+qcto: [KM-08-KT01, KM-08-KT03, KM-08-KT04, KM-08-KT05, KM-07-KT22, KM-06-KT04]

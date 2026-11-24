@@ -1,0 +1,255 @@
+# Advanced defend tower, floor 6. Built on 2026-11-21 from the agreed floor
+# plan.
+#
+# The executive committee meets on Monday, and the security report is
+# item 4. The learner builds it in a spreadsheet, the way analysts do:
+# import from the SIEM database, a semicolon-separated CSV and the scanner's
+# report (and not the HR file somebody suggested), relate the incidents to
+# the store list for regions, pivot by the date's month level, by region and
+# by average time to respond, chart the trend, read what it says, and
+# publish a dashboard of the five tiles the executives can act on.
+#
+# The floor's new desk tool is the spreadsheet: data, model, pivot and
+# dashboard, with every pivot computed from the imported rows.
+
+id: defend-adv-06-monthly-report
+title: "The monthly report"
+status: draft
+role: prey
+org: ikhaya
+startTime: "15:40"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+  note: All of Ikhaya, from the boardroom to the tills.
+briefing: |
+  It's the last Friday of November. The executive committee meets at 09:00
+  on Monday, and the security report is item 4.
+
+  Thato has always built it himself. This month it's yours: four months of
+  incidents, the phishing simulations and the vulnerability scans, turned
+  into one page the executives can read in two minutes and act on.
+tools:
+  sheet:
+    file: November security report.xlsx
+    target: 60
+    sources:
+      - { id: siem, name: SIEM database (incidents), kind: database, table: incidents, about: "A live connection to the SIEM's incidents table, August to November." }
+      - { id: phish, name: phishing-results.csv, kind: csv, table: phishing, delimiter: ";", about: "Refilwe's export from the phishing simulation platform." }
+      - { id: stores, name: stores.xlsx, kind: file, table: stores, about: "Store operations' list of all 120 stores and their regions." }
+      - { id: vulns, name: "Vulnerability scan report, 27 Nov", kind: report, table: vulns, about: "The scanner's monthly report. Its findings table imports as data." }
+      - id: hr
+        name: hr-staff-and-salaries.xlsx
+        kind: file
+        about: "Every employee, with salary, ID number and home address. Rajesh suggested it \"in case\"."
+        reply: >-
+          Nothing in a security report needs salaries or ID numbers. Pulling
+          personal information into a file that gets emailed around is how
+          it leaks. Import only what the report needs.
+    relationship: { from: incidents.store, to: stores.store }
+    findings:
+      - { id: by-month, rows: month, value: count }
+      - { id: by-region, rows: region, columns: month, value: count, either: true }
+      - { id: respond, rows: month, value: avg-minutes }
+    tiles:
+      - { id: trend, name: Incidents per month, kind: trend, good: true }
+      - { id: regions, name: "Incidents by region, November", kind: regions, good: true }
+      - { id: respond, name: Average minutes to respond against the 60-minute target, kind: respond, good: true }
+      - { id: phishing, name: "Stores' phishing click rate (%)", kind: phishing, good: true }
+      - { id: vulns, name: Critical vulnerabilities open longer than 30 days, kind: vulns, good: true }
+      - id: logs
+        name: Firewall log lines collected
+        kind: figure
+        figure: "1 214 880 512"
+        reply: A big number that says nothing about whether we're safer. Nobody can act on it.
+      - id: updates
+        name: Antivirus updates downloaded
+        kind: figure
+        figure: "8 760"
+        reply: That's activity, not an outcome. The executives can't decide anything from it.
+      - id: analysts
+        name: Tickets closed per analyst, by name
+        kind: figure
+        figure: "Kgomotso 41 · Thato 38 · Sello 22"
+        reply: A security report to the executives isn't a league table of your colleagues. Individual performance belongs in one-to-ones, with context.
+guide:
+  mentor: soc-lead
+  target: 25
+  steps:
+    - id: purpose
+      title: What's it for?
+      say: Before you open anything, decide what the page is for.
+      do: Answer the question.
+      hint: What does the committee do with it on Monday?
+      ask:
+        question: What is the monthly security report for?
+        options:
+          - text: To show the executives whether security is getting better or worse against our targets, and what they need to decide.
+            correct: true
+            reply: >-
+              Yes. Trends and targets, in their language, with a decision
+              where one is needed. Everything else stays in the SOC.
+          - text: To show how busy the SOC has been
+            reply: Busy isn't the point. They need to know whether the risk is going down, and what to decide.
+          - text: To list every incident
+            reply: 370 lines nobody will read. The SIEM has the list; the report says what it means.
+      done: { answer: correct }
+
+    - id: siem
+      title: From the database
+      say: The incidents live in the SIEM's database. Connect to it from the spreadsheet rather than copying and pasting, so next month is one click.
+      do: Open the Spreadsheet and import the SIEM incidents.
+      hint: Press the arrow on "Spreadsheet" at the top left of the desk. On the Data tab, press Import next to the SIEM database.
+      show: { tab: sheet }
+      done: { action: sheet.import, target: siem }
+
+    - id: phish
+      title: From a file
+      say: Refilwe exported the phishing results as a CSV. Look at its first line before you import it.
+      do: Import phishing-results.csv.
+      hint: What separates the columns in its first line? Choose that separator, then Import.
+      done: { action: sheet.import, target: phish }
+
+    - id: more
+      title: And the rest
+      say: Two more sources, and one you've been sent that you shouldn't need.
+      do: Import the store list and the vulnerability scan report.
+      hint: stores.xlsx and the scan report. Leave the HR file alone.
+      done: { action: sheet.import, targets: [stores, vulns] }
+
+    - id: relate
+      title: Which region?
+      say: Each incident has a store number. The region is in the store list. Join them.
+      do: On the Model tab, relate the incidents to the store list.
+      hint: incidents.store → stores.store. Number to number.
+      done: { action: sheet.relate, target: stores }
+      praise: Many incidents to one store. Every incident now knows its region, and the pivot can use it.
+
+    - id: trend
+      title: The trend
+      say: Start with the question everyone asks first. Are there more incidents, or fewer?
+      do: On the Pivot tab, pivot the number of incidents by month.
+      hint: Rows "Opened → Month", no columns, values "Count of incidents". A date has levels; you want the month, not each minute.
+      done: { action: sheet.pivot, target: by-month }
+      praise: 96, 88, 81, and then 105 in November.
+
+    - id: chart
+      title: Show it
+      say: Numbers in a table make people read. A chart makes them see.
+      do: Chart the trend.
+      hint: Months are time. Which chart shows one number moving over time?
+      done: { action: sheet.chart, target: line }
+
+    - id: region
+      title: Where?
+      say: Something happened in November. Find out where.
+      do: Pivot the number of incidents by region, with months across the columns.
+      hint: Rows "Store → Region", columns "Opened → Month", values "Count of incidents".
+      done: { action: sheet.pivot, target: by-region }
+
+    - id: blank
+      title: The blank row
+      say: One row of the pivot says (blank), with 59 incidents in it.
+      do: Answer the question.
+      hint: Which incidents have no store number?
+      ask:
+        question: What do you do with the (blank) row?
+        options:
+          - text: "Label it Head office, with a note: those incidents happened at head office, which has no store number."
+            correct: true
+            reply: >-
+              Yes. Every row accounted for, and labelled so the executives
+              know what it means. One incident in six happened at head
+              office.
+          - text: Delete those incidents. They spoil the chart.
+            reply: Then the report quietly loses 59 incidents, one in six. A report that drops rows misleads.
+          - text: Leave it as (blank)
+            reply: Somebody on Monday will ask what "blank" means, and nobody in the room will know.
+      done: { answer: correct }
+
+    - id: east
+      title: What stands out?
+      say: Read across each region's row, month by month.
+      do: Answer the question.
+      hint: Compare each region with itself, not with the others.
+      ask:
+        question: Which region does the report need to explain?
+        options:
+          - text: "The Eastern Cape: 31 incidents in November, against 10 to 16 a month before. That's the camera recorders, and they're fixed."
+            correct: true
+            reply: >-
+              Yes. One cause, already dealt with on the store network map.
+              Say both on the page, so the spike doesn't start a panic.
+          - text: Gauteng. It has the most incidents every month.
+            reply: Gauteng has 35 stores, the most of any region, so it always has the most. Compare a region with its own past.
+          - text: None. 105 incidents is about normal.
+            reply: Up from 81, and almost all of the rise is one region. That's worth one line on the page.
+      done: { answer: correct }
+
+    - id: respond
+      title: How fast?
+      say: The SOC's target is to start on every incident within 60 minutes.
+      do: Pivot the average minutes to respond, by month.
+      hint: Rows "Opened → Month", values "Average of minutes to respond". Add a line chart to see it against the target.
+      done: { action: sheet.pivot, target: respond }
+
+    - id: target
+      title: On target?
+      say: Read the averages against the target.
+      do: Answer the question.
+      hint: Is each month's average above or below 60?
+      ask:
+        question: Is the SOC meeting its 60-minute target?
+        options:
+          - text: "Yes, since October: about 75, 66, 57 and 42 minutes. Say what changed, so they know it will last."
+            correct: true
+            reply: >-
+              Yes. The automated store checks and the 24/7 rota brought it
+              down. A number against a target, with the reason, is what
+              performance looks like on a page.
+          - text: No. The total minutes went up in November.
+            reply: The total grows with the number of incidents. The target is per incident, which is the average.
+          - text: Can't tell without reading every incident
+            reply: That's what the average is for. It's under 60 since October.
+      done: { answer: correct }
+
+    - id: dashboard
+      title: One page
+      say: The executives get one page. Every tile on it must be something they can act on.
+      do: On the Dashboard tab, choose the tiles for the executives and publish them.
+      hint: Trends and targets, not activity. Five tiles.
+      done: { action: sheet.publish, target: dashboard }
+
+    - id: targets
+      title: Next quarter
+      say: Rajesh likes the page. He wants to set the SOC's targets for next quarter and asks what makes a good one.
+      do: Answer the question.
+      hint: Could you tell, on 31 March, whether it was met?
+      ask:
+        question: What makes a good security target?
+        options:
+          - text: "Specific and measurable, tied to a risk, with an owner and a date. \"Critical vulnerabilities fixed within 30 days, owner: Technology, from January.\""
+            correct: true
+            reply: >-
+              Yes. Measurable, owned and dated, and about an outcome. The
+              three critical vulnerabilities on this month's page are where
+              that target starts.
+          - text: Zero incidents
+            reply: Zero incidents rewards hiding them. Set targets on what you control, such as how fast and how completely you respond.
+          - text: Better than last quarter
+            reply: Better by how much, measured how, and whose job is it? Nobody can say on 31 March whether that was met.
+      done: { answer: correct }
+  outro:
+    title: Floor 6 complete
+    learned:
+      - Decide what the report is for before you build it. Trends and targets, for decisions.
+      - Connect to the database, so next month is one click.
+      - Look at a CSV's first line. A semicolon is a separator too.
+      - Import only what you need. Personal data doesn't belong in a report.
+      - Relate tables on what they share, so a pivot can use both.
+      - Pivot by the date's month level, compare a region with its own past, and account for every row.
+      - Average for a per-incident target, a line for a trend over time.
+      - A dashboard tile is something the reader can act on. Targets are measurable, owned and dated.
+    next: "Floor 7: The board"
+qcto: [PM-06-PS01, PM-06-PS02, PM-06-PS03, PM-06-PS04, PM-06-PS05, PM-06-PS06, PM-06-PS07, PM-06-PS08, PM-06-PS09, PM-06-PS10, KM-08-KT06, KM-04-KT06, FA1.4, FA4.3]

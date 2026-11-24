@@ -1,0 +1,108 @@
+id: municipal-manager
+name: Office of the Municipal Manager
+purpose: The accounting officer's office. Runs the administration, supports the council and answers to the Auditor-General.
+room: { x: 0, y: 0, w: 5, h: 3 }
+
+people:
+  - id: mm
+    role: Municipal Manager
+    kind: human
+    name: Lerato Mokoena
+    awareness: 0.4
+  - id: pa
+    role: Executive PA to the Municipal Manager
+    kind: human
+    name: Kagiso Sithole
+    awareness: 0.3
+
+processes:
+  - id: mm-mail
+    name: Municipal Manager's mail
+    owner: mm
+    every: 45m
+    hours: work
+    steps:
+      - Read council and departmental mail; approve submissions.
+    activity:
+      - { action: login, system: mail, via: mm-laptop, typo: 0.08 }
+  - id: pa-diary
+    name: Diary and correspondence
+    owner: pa
+    every: 15m
+    hours: work
+    steps:
+      - Manage the diary, open incoming documents and route them to departments.
+    activity:
+      - { action: mail, system: mail, via: pa-pc }
+      - { action: file, system: pa-pc, path: "C:/Users/kagiso/Downloads/" }
+
+systems:
+  - id: mm-laptop
+    name: Municipal Manager's laptop
+    hostname: mm-lt
+    kind: laptop
+    zone: corporate
+    ip: 10.88.21.10
+    os: Windows 11 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+  - id: pa-pc
+    name: PA's desktop
+    hostname: pa-pc
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.11
+    os: Windows 10 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+      - { port: 3389, name: ms-wbt-server, product: Microsoft Terminal Services, version: "10.0" }
+    weaknesses:
+      - id: pa-phishable
+        name: Opens every attachment routed to the office
+        kind: phishable
+        grants: user
+        description: The PA's job is to open documents for the Municipal Manager, quickly.
+
+data:
+  - id: council-confidential
+    name: Confidential council and disciplinary matters
+    sensitivity: confidential
+    personalInformation: true
+    system: mm-laptop
+    path: C:/Users/lerato/Documents/Council
+    records: 300
+    impact: 400000
+
+connections:
+  - { to: treasury, kind: internal, trust: Approves large payments and tender awards. }
+  - { to: ict, kind: internal, trust: Signs off ICT governance and incident reports. }
+
+threats:
+  - id: ceo-fraud
+    name: Urgent payment request "from the Municipal Manager"
+    attack: T1566.001
+    stage: initial-access
+    target: pa-pc
+    uses: pa-phishable
+    description: A lure aimed at the PA lands malware on the executive floor, and a spoofed "urgent payment" follows.
+    qcto: [KM-03-KT10, KM-01-KT07]
+
+controls:
+  - id: awareness-training
+    name: Annual security awareness training
+    kind: preventive
+    status: in-place
+    description: Staff learn to spot phishing and report it to the ICT helpdesk.
+  - id: ict-governance
+    name: ICT governance framework
+    kind: corrective
+    status: in-place
+    description: The municipal ICT governance framework, with an ICT steering committee that reviews risks and incidents.
+
+maturity:
+  1: Paper-based office with shared mailboxes.
+  2: Every official has a mailbox and laptop.
+  3: An ICT steering committee and a risk register reported to the Audit Committee.
+  4: Board-level cyber reporting and tested crisis communications.
+
+qcto: [KM-04-KT01, KM-04-KT02, KM-01-KT07, FA1.1]

@@ -1,0 +1,313 @@
+# Intermediate defend tower, floor 5. Built on 2026-11-21 from the agreed
+# floor plan.
+#
+# Three people found mail in their Sent folders they never wrote. All three
+# spent the morning at reception. The learner walks the floor with the Wi-Fi
+# survey, the floor's new desk tool, on a map in metres (x across, y up), spots
+# a Siyakhula-Staff network from the wrong maker, follows its signal and marks
+# it. Pythagoras says why every phone at reception picked it. Unplugged, the
+# box shows how: a fake certificate everybody clicked past. Webmail sessions,
+# the second new tool, shows the stolen tickets; the learner resets the
+# passwords first, then ends the sessions, switches on MFA, and says what
+# would stop a twin for good.
+
+id: defend-mid-05-evil-twin
+title: "The evil twin"
+status: draft
+role: prey
+org: siyakhula
+startTime: "09:30"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+briefing: |
+  Three people found mail in their Sent folders this morning that they never
+  wrote: invoices to suppliers, with new bank details. Johan in Treasury, Mpho
+  at customer care, and Kagiso from the Municipal Manager's office.
+
+  All three spent the first hour of the day at reception in Community
+  Services, where the Wi-Fi is good. Amahle has a hunch, and a laptop with a
+  Wi-Fi survey on it.
+controls:
+  mfa-remote: off
+tools:
+  wifi:
+    scale: 2
+    readings: 4
+    near: 3
+    aps:
+      - { id: ap-1, name: AP-1, ssid: Siyakhula-Staff, bssid: "24:de:c6:4a:10:01", vendor: Aruba, channel: 1, security: WPA2-Personal, x: 6, y: 10, known: true }
+      - { id: ap-2, name: AP-2, ssid: Siyakhula-Staff, bssid: "24:de:c6:4a:10:02", vendor: Aruba, channel: 6, security: WPA2-Personal, x: 24, y: 18, known: true }
+      - { id: ap-3, name: AP-3, ssid: Siyakhula-Staff, bssid: "24:de:c6:4a:10:03", vendor: Aruba, channel: 11, security: WPA2-Personal, x: 32, y: 6, known: true }
+      - { id: twin, ssid: Siyakhula-Staff, bssid: "50:c7:bf:3a:91:0e", vendor: TP-Link, channel: 6, security: WPA2-Personal, x: 15, y: 6, rogue: true }
+      - { id: printer, ssid: DIRECT-prn-corp, bssid: "a4:5d:36:08:c2:7f", vendor: Printer, channel: 11, security: WPA2-Personal, x: 16, y: 17 }
+      - { id: cafe, ssid: Mzansi Cafe Guest, bssid: "e8:94:f6:21:0b:5c", vendor: Café router, channel: 1, security: Open, x: 18, y: -6 }
+    seized:
+      found: >-
+        A pocket travel router, taped under the brochure stand at reception.
+        It runs off the socket behind the stand, has a cable into the wall's
+        network port, and a 4G dongle so its owner can reach it from outside.
+        Under it is the card from the counter with the staff Wi-Fi password
+        on it.
+      clients:
+        - { name: Mpho Radebe, device: Android phone }
+        - { name: Kagiso Sithole, device: Windows laptop }
+        - { name: Johan Botha, device: Android phone }
+      capture:
+        - "08:31:12  join   mpho-phone   Siyakhula-Staff, WPA2 password from the card"
+        - "08:31:40  tls    mpho-phone   webmail: sent our own certificate"
+        - "08:31:47  tls    mpho-phone   certificate warning: user pressed Continue"
+        - "08:31:52  https  POST /?_task=login  user=mpho  password captured"
+        - "08:31:52  https  Set-Cookie: roundcube_sessid=5e81d0c4…  captured"
+        - "08:40:05  join   KAGISO-LT    Siyakhula-Staff, WPA2 password from the card"
+        - "08:40:31  tls    KAGISO-LT    certificate warning: user pressed Continue"
+        - "08:40:39  https  POST /?_task=login  user=kagiso  password captured"
+        - "08:40:39  https  Set-Cookie: roundcube_sessid=c07b3e9d…  captured"
+        - "08:47:02  join   johan-phone  Siyakhula-Staff, WPA2 password from the card"
+        - "08:47:20  tls    johan-phone  certificate warning: user pressed Continue"
+        - "08:47:26  https  POST /?_task=login  user=johan  password captured"
+        - "08:47:26  https  Set-Cookie: roundcube_sessid=a3f9c2e1…  captured"
+  sessions:
+    system: mail
+    thief: { ip: 10.88.0.143, where: Outside the municipality, device: Linux · Firefox }
+    sessions:
+      - id: 9b1c7e3f2d08
+        user: lerato
+        uses:
+          - { ip: 10.88.21.10, where: "Staff network, Municipal Manager's office", device: Windows laptop · Edge, since: "07:45" }
+      - id: 4d2e8f6a0b91
+        user: johan
+        uses:
+          - { ip: 10.88.21.40, where: "Staff network, Treasury", device: Windows desktop · Edge, since: "07:58" }
+      - id: 5e81d0c4a9f2
+        user: mpho
+        uses:
+          - { ip: 10.88.21.200, where: "Staff network, reception", device: Android phone · Chrome, since: "08:31" }
+          - { ip: 10.88.0.143, where: Outside the municipality, device: Linux · Firefox, since: "08:55" }
+      - id: c07b3e9d1a65
+        user: kagiso
+        uses:
+          - { ip: 10.88.21.200, where: "Staff network, reception", device: Windows laptop · Edge, since: "08:40" }
+          - { ip: 10.88.0.143, where: Outside the municipality, device: Linux · Firefox, since: "09:02" }
+      - id: a3f9c2e17b40
+        user: johan
+        uses:
+          - { ip: 10.88.21.200, where: "Staff network, reception", device: Android phone · Chrome, since: "08:47" }
+          - { ip: 10.88.0.143, where: Outside the municipality, device: Linux · Firefox, since: "09:06" }
+guide:
+  mentor: soc-analyst
+  target: 15
+  steps:
+    - id: survey
+      title: Listen to the Wi-Fi
+      say: >-
+        Every access point calls out its network's name (the SSID) and its own
+        hardware address (the BSSID) about ten times a second. A phone joins
+        the loudest one with the right name and password. All three were at
+        reception, so start there, then walk the floor.
+      do: >-
+        Open the Wi-Fi survey. Choose a spot on the map and take a reading.
+        Take four, spread around the floor, starting at reception, (18, 10).
+      hint: Click the map to choose a spot, or type x and y. x is metres across, y is metres up from the bottom-left corner.
+      show: { tab: wifi }
+      done: { action: wifi.survey }
+      praise: >-
+        Look at the reading from reception. A laptop there joins a
+        Siyakhula-Staff, but not one of ours.
+
+    - id: twin
+      title: Spot the twin
+      say: >-
+        ICT put up three access points, AP-1 to AP-3, all the same make. The
+        first half of a BSSID is the maker's prefix.
+      do: Answer the question.
+      hint: Compare the maker and the start of the BSSID for every Siyakhula-Staff.
+      ask:
+        question: Which network is the evil twin?
+        options:
+          - text: Siyakhula-Staff from the TP-Link box, 50:c7:bf:3a:91:0e
+            correct: true
+            reply: >-
+              Yes. Ours are all Aruba, and their BSSIDs all start 24:de:c6, the
+              maker's prefix. Same name, same password, different maker. A
+              phone can't tell: it only checks the name and the password.
+          - text: Siyakhula-Staff on channel 6
+            reply: >-
+              AP-2 is on channel 6 too. Channels are shared; the maker's
+              prefix in the BSSID isn't.
+          - text: Mzansi Cafe Guest
+            reply: >-
+              That's the café across the road, open and honest about it. It
+              doesn't pretend to be us.
+          - text: DIRECT-prn-corp
+            reply: >-
+              That's the printer's own Wi-Fi Direct. Worth switching off, but
+              it doesn't call itself Siyakhula-Staff.
+      done: { answer: correct }
+
+    - id: find
+      title: Find it
+      say: >-
+        Signal falls off with distance, so where the twin is loudest, it's
+        close. Readings are in dBm: -40 is beside you, -70 is across the
+        building.
+      do: >-
+        In a reading, click the twin's row to colour the dots by its signal.
+        Take readings where it's loudest, then mark the twin on the map.
+      hint: Each reading tells you how loud it is there. Move a few metres towards louder, and read again.
+      show: { tab: wifi }
+      done: { action: wifi.locate, target: twin }
+      wrong: Follow the red dots to where it's loudest, then mark it there.
+      praise: In Community Services, a few metres from reception.
+
+    - id: distance
+      title: Why everyone picked it
+      say: >-
+        Reception's counter is at (18, 10). AP-2, the nearest of ours, is at
+        (24, 18). The twin is at (15, 6). The straight-line distance between
+        two points is Pythagoras: √((x₂ − x₁)² + (y₂ − y₁)²).
+      do: Answer the question.
+      hint: "From the counter to AP-2 is 6 across and 8 up. To the twin it's 3 across and 4 down."
+      ask:
+        question: How far is the reception counter from AP-2, and from the twin?
+        options:
+          - text: 10 m from AP-2, 5 m from the twin
+            correct: true
+            reply: >-
+              AP-2: 6 across and 8 up, √(36 + 64) = √100 = 10 m. The twin: 3
+              across and 4 down, √(9 + 16) = √25 = 5 m. Half the distance, so
+              it's far louder at the counter, and every phone in the queue
+              joined it.
+          - text: 14 m from AP-2, 7 m from the twin
+            reply: >-
+              That's walking along the two sides, 6 + 8 and 3 + 4. Straight
+              across is shorter: √(6² + 8²) = √100 = 10 m.
+          - text: 100 m from AP-2, 25 m from the twin
+            reply: >-
+              Those are the squares, 6² + 8² and 3² + 4². Take the square
+              root: √100 = 10 and √25 = 5.
+      done: { answer: correct }
+
+    - id: seize
+      title: Unplug it
+      say: Amahle walks over to reception with the spot on her phone.
+      do: In the Wi-Fi survey, press "Go there and unplug it".
+      hint: The button is under the map, beside "Mark the twin here".
+      show: { tab: wifi }
+      done: { action: wifi.seize, target: twin }
+      wrong: Unplug the twin.
+      praise: >-
+        Unplugged, and the password card was underneath. Read its capture
+        log: it shows exactly what happened to the three of them.
+
+    - id: how
+      title: How did it read webmail?
+      say: >-
+        Webmail uses HTTPS, so everything between a browser and webmail is
+        encrypted. The certificate is how the browser knows it's really
+        talking to webmail.
+      do: Answer the question.
+      hint: Read the capture log. What did each of them press?
+      ask:
+        question: How did the twin read their webmail passwords?
+        options:
+          - text: It sent its own certificate. The browser warned, and they pressed Continue.
+            correct: true
+            reply: >-
+              Right. The twin couldn't prove it was webmail, so the browser
+              warned. Pressing Continue let the twin decrypt everything, read
+              it, and pass it on: a man in the middle, sniffing every sign-in.
+          - text: HTTPS isn't encrypted over Wi-Fi
+            reply: >-
+              It is, end to end, whatever network carries it. That's the point
+              of it. Look at the capture log: what did each of them accept?
+          - text: It cracked the encryption
+            reply: >-
+              Nobody cracks TLS in a morning. Look at the capture log: the
+              browser asked them, and they said yes.
+      done: { answer: correct }
+
+    - id: reset
+      title: New passwords first
+      say: >-
+        Open Webmail sessions. Three sessions are used from two places: from
+        reception this morning, and from outside the municipality now. Before
+        you throw anybody out: they have the passwords too.
+      do: On the mail server, reset the passwords for johan, mpho and kagiso.
+      hint: In Webmail sessions, press "Open the mail server". Type each account name and press Reset password.
+      show: { tab: sessions }
+      done: { action: reset, targets: ["mail:johan", "mail:mpho", "mail:kagiso"] }
+      wrong: >-
+        Lerato's sessions are all from her own laptop. It's johan, mpho and
+        kagiso whose sign-ins went through the twin.
+      praise: Three new passwords. The ones in the twin's log are worthless now.
+
+    - id: revoke
+      title: End the stolen sessions
+      say: >-
+        New passwords don't end a session that's already open. A session is
+        a ticket webmail handed out when the password checked out, and the
+        thief has three of them. Changing the lock doesn't take back tickets.
+      do: In Webmail sessions, end the three sessions that are used from two places.
+      hint: Look for the sessions marked "Used from 2 places". Johan has two sessions; only one is stolen.
+      show: { tab: sessions }
+      done: { action: sessions.revoke, targets: [johan, mpho, kagiso] }
+      wrong: End the sessions used from outside the municipality, not the ones used only at work.
+      praise: >-
+        Thrown out of all three mailboxes. They'll sign in again with their
+        new passwords, and the suppliers get a call to ignore the new bank
+        details.
+
+    - id: mfa
+      title: Make a password not enough
+      say: >-
+        Webmail faces the internet and accepts a password alone. Every
+        password stolen this way, or guessed, opens a mailbox.
+      do: In Controls, switch on MFA for webmail and remote access.
+      hint: Look for "MFA for webmail and remote access".
+      show: { tab: controls }
+      done: { action: control, target: mfa-remote }
+      wrong: Useful, but a stolen password would still open webmail. Look for the MFA control.
+      praise: >-
+        Now a stolen password alone opens nothing. A stolen session would
+        still work until it ends, which is why the fix that matters most is
+        not letting anybody into the middle.
+
+    - id: fix
+      title: Stop the next twin
+      say: Last one. Anybody with the card from the counter could put up a perfect copy of Siyakhula-Staff.
+      do: Answer the question.
+      hint: What does every phone on Siyakhula-Staff share, and what could it check instead?
+      ask:
+        question: Why could anybody copy our Wi-Fi, and what stops it?
+        options:
+          - text: Everyone shares one password. Enterprise Wi-Fi gives each person their own sign-in and has devices check the network's certificate.
+            correct: true
+            reply: >-
+              Yes. With one shared password the network can't prove it's ours,
+              and anyone who has it can even decrypt their neighbours' traffic
+              from the handshake. WPA2 or WPA3-Enterprise (802.1X) signs each
+              person in separately, and the laptop checks a certificate first,
+              so a twin can't pass. And the card comes off the counter.
+          - text: Make the Wi-Fi password longer
+            reply: >-
+              A longer shared password is still shared. Whoever put up the
+              twin read it off the counter.
+          - text: Hide the network's name
+            reply: >-
+              A hidden network still shows up: phones call out its name looking
+              for it, and anybody listening hears them.
+      done: { answer: correct }
+  outro:
+    title: Floor 5 complete
+    learned:
+      - An evil twin copies a network's name and password. Phones join whichever is loudest.
+      - The first half of a BSSID names the maker. Know your own.
+      - A point on a map is (x, y). The distance between two points is Pythagoras, √((x₂ − x₁)² + (y₂ − y₁)²).
+      - HTTPS protects you until you click past a certificate warning. Then the man in the middle reads everything.
+      - A session is a ticket. Reset the password first, then end the stolen session, or the thief just signs in again.
+      - MFA makes a stolen password useless on its own.
+      - A shared Wi-Fi password can't prove the network is yours. Enterprise Wi-Fi signs each person in and checks a certificate.
+    next: "Floor 6: No electricity for sale"
+qcto: [KM-03-KT09, KM-03-KT12, KM-03-KT16, KM-03-KT20, KM-06-KT06, KM-06-KT07, KM-07-KT20, FA2.2]

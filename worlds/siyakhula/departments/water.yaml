@@ -1,0 +1,169 @@
+id: water
+name: Water & Sanitation
+purpose: Treats and supplies drinking water and runs the wastewater works. Its control systems are safety critical.
+room: { x: 15, y: 4, w: 5, h: 5 }
+
+people:
+  - id: process-controller
+    role: Process controller (shift)
+    kind: human
+    name: Ruan Steyn
+    awareness: 0.5
+  - id: water-manager
+    role: Water services manager
+    kind: human
+    name: Busisiwe Gumede
+    awareness: 0.6
+
+processes:
+  - id: plant-rounds
+    name: Plant rounds on the HMI
+    owner: process-controller
+    every: 30m
+    hours: always
+    steps:
+      - Check levels, flows and chlorine dosing on the HMI every half hour, around the clock.
+      - Any setpoint change is logged and confirmed with the shift supervisor.
+    activity:
+      - { action: login, system: hmi, via: eng-ws }
+  - id: historian-poll
+    name: Historian polling
+    owner: water-manager
+    every: 5m
+    hours: always
+    steps:
+      - The historian reads plant values from the controllers for reporting.
+    activity:
+      - { action: query, system: plc, via: historian }
+
+systems:
+  - id: hmi
+    name: Treatment works HMI
+    hostname: hmi
+    kind: ot
+    zone: ot
+    ip: 10.88.23.10
+    os: Windows 7 Embedded
+    critical: true
+    services:
+      - { port: 5900, name: vnc, product: TightVNC, version: 2.8.11 }
+    weaknesses:
+      - id: hmi-vnc-open
+        name: HMI remote desktop with no password
+        kind: misconfiguration
+        port: 5900
+        module: vnc-no-auth
+        grants: user
+        description: VNC was set up for the integrator's support calls with authentication off.
+  - id: plc
+    name: Dosing controller
+    hostname: plc-01
+    kind: ot
+    zone: ot
+    ip: 10.88.23.20
+    os: PLC firmware 4.2
+    critical: true
+    services:
+      - { port: 502, name: modbus, product: Modbus/TCP, version: "1.1" }
+    weaknesses:
+      - id: plc-modbus-open
+        name: Controller accepts writes from anyone
+        kind: misconfiguration
+        port: 502
+        module: modbus-write
+        grants: root
+        description: Modbus has no authentication. Anything that reaches the controller can change the chlorine setpoint.
+  - id: historian
+    name: Plant historian
+    hostname: historian
+    kind: database
+    zone: servers
+    ip: 10.88.22.35
+    os: Windows Server 2012 R2
+    services:
+      - { port: 443, name: https, product: Plant historian, version: "2015" }
+      - { port: 1433, name: ms-sql-s, product: Microsoft SQL Server, version: "2014" }
+  - id: eng-ws
+    name: Engineering workstation
+    hostname: eng-ws
+    kind: desktop
+    zone: corporate
+    ip: 10.88.21.70
+    os: Windows 10 Pro
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+      - { port: 3389, name: ms-wbt-server, product: Microsoft Terminal Services, version: "10.0" }
+    accounts:
+      - { user: engineer, password: Springbok1, role: admin, service: rdp }
+    weaknesses:
+      - id: eng-ws-shared-login
+        name: Shared engineering login with a weak password
+        kind: weak-password
+        port: 3389
+        account: engineer
+        grants: root
+        description: Every shift uses one "engineer" login, and its password is a rugby team.
+
+data:
+  - id: dosing-setpoints
+    name: Chlorine dosing setpoints
+    sensitivity: restricted
+    personalInformation: false
+    system: plc
+    path: holding registers 40001-40010
+    records: 10
+    impact: 5000000
+    description: Wrong values can make water unsafe to drink. Tampering is a public safety incident, not just a data breach.
+
+connections:
+  - { to: ict, kind: internal, trust: ICT runs the historian and the network, not the plant. }
+  - { to: external:integrator, kind: remote-support, trust: The control system integrator dials in over VNC. }
+
+threats:
+  - id: plant-tampering
+    name: Changing the chlorine setpoint
+    attack: T0836
+    stage: impact
+    target: plc
+    uses: plc-modbus-open
+    description: From the staff network, the attacker writes a new setpoint to the dosing controller.
+    qcto: [KM-03-KT18, KM-09-KT01, PM-03-PS05]
+  - id: engineering-login-guess
+    name: Guessing the shared engineering login
+    attack: T1110.001
+    stage: lateral-movement
+    target: eng-ws
+    uses: eng-ws-shared-login
+    description: The shared login falls to a wordlist, and the workstation reaches the plant.
+    qcto: [KM-03-KT07, KM-02-KT03]
+
+controls:
+  - id: ot-segmentation
+    name: Segment the plant from the staff network
+    kind: preventive
+    status: planned
+    from: 4
+    fixes: [hmi-vnc-open]
+    description: Only an engineering jump host with MFA reaches the plant. VNC requires a password.
+  - id: ot-monitoring
+    name: OT network monitoring
+    kind: detective
+    status: planned
+    from: 4
+    sensor: { type: nids, covers: [ot] }
+    rules: [nids-ot-write, nids-port-scan]
+    description: A network sensor that understands Modbus watches the plant network.
+  - id: manual-override
+    name: Manual operation fallback
+    kind: corrective
+    status: in-place
+    description: Operators can run the plant by hand if the controls cannot be trusted.
+    policy: When in doubt about the controls, go to manual and call the water services manager.
+
+maturity:
+  1: Manual dosing and paper logs.
+  2: Controllers with a local HMI.
+  3: Remote monitoring and a historian on the staff network, with no OT security.
+  4: Segmented OT with monitoring and secure remote access.
+
+qcto: [KM-03-KT18, KM-02-KT03, PM-03-PS05, FA2.2, KM-09-KT01]

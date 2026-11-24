@@ -1,0 +1,90 @@
+# Intermediate attack tower, floor 1. The foothold. The external surface is
+# small, but one of the public portals accepts file uploads it should not. The
+# learner uses Metasploit to turn that flaw into a shell on the web server, the
+# first machine inside.
+
+id: attack-mid-01-foothold
+title: "The foothold"
+status: draft
+role: predator
+org: siyakhula
+startTime: "09:30"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  Recon done. Most of Siyakhula's public portals are solid, but the building
+  plans portal lets you upload files and runs them. That is a web shell waiting
+  to happen.
+
+  Today you cross the line from outside to inside. You turn that upload flaw
+  into a shell on the web server, using Metasploit, and you have your foothold.
+guide:
+  mentor: founder
+  target: 15
+  steps:
+    - id: why
+      title: What a foothold is
+      say: So far you have read data and guessed a login from the outside. A foothold is different. It is code running on their machine, a shell you control.
+      do: Answer the question.
+      hint: Why is one shell inside worth more than a dozen findings outside?
+      ask:
+        question: Why is the first foothold such a big step?
+        options:
+          - text: From a machine inside, you can reach systems the firewall hid and attack them as if you were staff.
+            correct: true
+            reply: >-
+              Yes. The perimeter was the hard part. One shell inside turns the
+              network's own trust against it, because the firewall assumes
+              inside traffic is friendly.
+          - text: It looks impressive in the report
+            reply: It matters because of what it unlocks, not how it looks. A foothold is your route to everything the firewall was hiding.
+          - text: It is not; external findings are enough
+            reply: External findings show the front door. A foothold shows the whole building. It is the step that proves real risk.
+      done: { answer: correct }
+
+    - id: find
+      title: Find the exploit
+      say: The plans portal runs software with a known file-upload flaw. Metasploit has a module for it. Open the console and search.
+      do: Open Metasploit and search for the upload exploit.
+      hint: "Type `msfconsole`, then `search upload`."
+      show: { tab: term }
+      done: { command: { did: read, text: search } }
+
+    - id: shell
+      title: Get the shell
+      say: Load the module, point it at the plans portal, and run it. If it works, it opens a session, which is your shell on that machine.
+      do: Exploit the plans portal to get a shell.
+      hint: "`use upload-webshell`, then `set RHOSTS {ip:plans-portal}`, then `run`."
+      show: { tab: term }
+      done: { command: { did: shell, of: plans-portal } }
+      praise: Session opened. You are now running commands on the plans portal, a machine inside Siyakhula's network. That is your foothold.
+
+    - id: inside
+      title: Where you landed
+      say: You have a shell. Before you go further, understand what it is worth.
+      do: Answer the question.
+      hint: This web server sits where the firewall trusts it.
+      ask:
+        question: You have a shell on the web server. What does it give you?
+        options:
+          - text: A position inside the network, from which you can scan and attack machines the internet could never reach directly.
+            correct: true
+            reply: >-
+              Yes. The plans portal can talk to the internal servers, because
+              the firewall lets the DMZ reach them. Your shell inherits that
+              reach. Next you use it to look around.
+          - text: Nothing more; it is just a web server
+            reply: It is a web server the internal network trusts. From here you reach systems the firewall hid. That is the whole point of a foothold.
+          - text: Full control of everything, instantly
+            reply: Not yet. One foothold is a starting point, not the keys to the kingdom. You pivot and escalate from here.
+      done: { answer: correct }
+  outro:
+    title: You are inside
+    learned:
+      - A foothold is code running on the target's own machine, not just a finding from outside.
+      - A file upload that runs what it receives is a web shell waiting to happen.
+      - Metasploit turns a known flaw into a shell — search, use, set the target, run.
+      - A shell on a DMZ server inherits the trust the firewall gives it, which is your route inward.
+    next: "Floor 2: Pivoting"
+qcto: [KM-03-KT08, KM-03-KT09, KM-03-KT10, PM-02-PS02, PM-02-PS04, FA3.4]

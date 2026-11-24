@@ -1,0 +1,113 @@
+id: strategy-leadership
+name: Strategy & Leadership
+purpose: Sets direction, wins and keeps the big clients, and owns partnerships, risk appetite and the company's legal duties.
+room: { x: 0, y: 0, w: 4, h: 3 }
+
+people:
+  - id: founder
+    role: Managing Director and Information Officer
+    kind: human
+    name: Ayanda Khumalo
+    awareness: 0.7
+    description: Lab persona for the founder. Sells and leads every engagement, and directs the agents.
+  - id: proposal-agent
+    role: Proposal agent
+    kind: agent
+    name: Proposal agent
+    permissions: [read:crm, read:case-studies, write:drafts]
+    description: Researches prospects and drafts proposals and statements of work for the founder to approve.
+  - id: coo
+    role: Chief Operating Officer
+    kind: human
+    name: Dineo Sebata
+    awareness: 0.8
+    from: 3
+
+processes:
+  - id: check-mail
+    name: Inbox and approvals
+    owner: founder
+    every: 30m
+    hours: work
+    steps:
+      - Read client mail and approve agent drafts (proposals, invoices, reports) before anything leaves the company.
+      - Nothing an agent writes goes to a client without a human approval.
+    activity:
+      - { action: login, system: mail, via: founder-laptop, typo: 0.05 }
+      - { action: http, system: mail, via: founder-laptop, path: "/?_task=mail" }
+  - id: weekly-pipeline-review
+    name: Weekly pipeline and risk review
+    owner: founder
+    every: 4h
+    cadence: weekly
+    hours: work
+    steps:
+      - Review open deals, delivery health and the risk register.
+      - Decide which engagements need an associate brought in.
+    activity:
+      - { action: http, system: crm, via: founder-laptop, path: /pipeline }
+
+systems:
+  - id: founder-laptop
+    name: Founder's laptop
+    hostname: ayanda-lt
+    kind: laptop
+    zone: devices
+    ip: 10.88.11.10
+    os: Windows 11 Pro
+    services: []
+    accounts:
+      - { user: ayanda, password: Dataquant2026, role: admin, person: founder, service: login }
+    weaknesses:
+      - id: founder-phishable
+        name: Opens convincing client attachments
+        kind: phishable
+        grants: user
+        description: Busy founder, many inbound documents. A good enough lure gets opened.
+
+data:
+  - id: contracts
+    name: Client contracts and statements of work
+    sensitivity: confidential
+    personalInformation: false
+    system: founder-laptop
+    path: C:/Users/ayanda/Documents/Contracts
+    records: 40
+    impact: 200000
+
+connections:
+  - { to: growth, kind: internal, trust: Approves every proposal before it goes out. }
+  - { to: operations, kind: internal, trust: Signs contracts and approves payments. }
+  - { to: trust-risk, kind: internal, trust: Owns POPIA duties as Information Officer until a dedicated owner is hired. }
+
+threats:
+  - id: founder-lure
+    name: Fake tender briefing invite
+    attack: T1566.001
+    stage: initial-access
+    target: founder-laptop
+    uses: founder-phishable
+    description: A convincing municipal tender briefing invite carries a malicious attachment. One click gives the attacker the founder's laptop and every login saved on it.
+    qcto: [KM-03-KT10, KM-01-KT04]
+
+controls:
+  - id: human-approval
+    name: Human approval before anything leaves
+    kind: preventive
+    status: in-place
+    description: Every agent-written proposal, invoice or report is approved by a person before it reaches a client.
+    policy: No agent may send anything to a client or move money without a named human approving it.
+  - id: board-risk-review
+    name: Quarterly risk review
+    kind: corrective
+    status: planned
+    from: 2
+    description: The risk register and incidents are reviewed every quarter and actions assigned.
+
+maturity:
+  1: The founder directs everything, with a proposal agent doing the research and first drafts.
+  2: First associates join on contract. The founder still sells, but delivery is shared.
+  3: A COO runs delivery and operations. Strategy and sales stay with the founder.
+  4: A small leadership team with a board, formal risk appetite and annual planning.
+
+qcto: [KM-04-KT01, KM-04-KT07, KM-04-KT04, FA1.1, PM-08-PS03]

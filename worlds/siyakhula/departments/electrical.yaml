@@ -1,0 +1,120 @@
+id: electrical
+name: Electrical Services
+purpose: Distributes electricity and sells prepaid electricity, the municipality's biggest income.
+room: { x: 10, y: 4, w: 5, h: 4 }
+
+people:
+  - id: electrical-engineer
+    role: Electrical engineer
+    kind: human
+    name: Sizwe Mahlaba
+    awareness: 0.6
+  - id: vending-supervisor
+    role: Prepaid vending supervisor
+    kind: human
+    name: Nokuthula Shabalala
+    awareness: 0.4
+
+processes:
+  - id: token-sales
+    name: Prepaid token sales
+    owner: vending-supervisor
+    every: 1m
+    hours: always
+    steps:
+      - Vendors (shops, banks, apps) sell tokens through the vending gateway day and night.
+      - Sales are reconciled against vendor payments every morning.
+    activity:
+      - { action: http, system: vend-gw, via: internet, path: /api/vend }
+      - { action: http, system: vending, via: vend-gw, path: /vending/api/token }
+  - id: vending-admin
+    name: Vending administration
+    owner: vending-supervisor
+    every: 1h
+    cadence: daily
+    hours: work
+    steps:
+      - Manage tariffs, vendors and blocked meters in the vending console.
+    activity:
+      - { action: login, system: vending, via: finance-pc }
+
+systems:
+  - id: vend-gw
+    name: Vending gateway
+    hostname: vend
+    kind: web
+    zone: dmz
+    ip: 10.88.20.22
+    os: Ubuntu 20.04
+    critical: true
+    services:
+      - { port: 443, name: https, product: Prepaid vending gateway, version: "6.1" }
+  - id: vending
+    name: Prepaid vending server
+    hostname: vending
+    kind: server
+    zone: servers
+    ip: 10.88.22.30
+    os: Ubuntu 18.04
+    critical: true
+    services:
+      - { port: 8080, name: http, product: Apache Tomcat, version: 8.5.23 }
+    accounts:
+      - { user: tomcat, password: tomcat, role: admin, service: http }
+      - { user: nokuthula, password: "V3nd!ng-Sup-2026", role: admin, person: vending-supervisor, service: http }
+    weaknesses:
+      - id: tomcat-default-creds
+        name: Tomcat manager with its default password
+        kind: default-credentials
+        port: 8080
+        account: tomcat
+        module: exploit/multi/http/tomcat_mgr_upload
+        grants: root
+        description: The vendor installed Tomcat with the manager app enabled and the default tomcat:tomcat login.
+    live: { image: "tomcat:8.5.23-jre8" }
+
+data:
+  - id: vending-records
+    name: Meter and token records
+    sensitivity: confidential
+    personalInformation: true
+    system: vending
+    path: /opt/vending/data
+    records: 95000
+    impact: 900000
+
+connections:
+  - { to: treasury, kind: internal, trust: Vending income flows into revenue. }
+  - { to: planning, kind: internal, trust: Uses the GIS for network maps. }
+  - { to: external:vendors, kind: api, trust: Shops, banks and apps sell tokens through the gateway. }
+
+threats:
+  - id: vending-takeover
+    name: Taking over the vending server
+    attack: T1078.001
+    stage: privilege-escalation
+    target: vending
+    uses: tomcat-default-creds
+    description: The default Tomcat login lets an attacker deploy code on the vending server and issue free tokens or stop sales.
+    qcto: [KM-03-KT07, KM-03-KT18, PM-02-PS03]
+
+controls:
+  - id: vendor-hardening
+    name: Vendor systems hardened before go-live
+    kind: preventive
+    status: planned
+    fixes: [tomcat-default-creds]
+    description: Vendor-installed systems are checked for default accounts and management apps before go-live.
+  - id: vending-reconciliation
+    name: Daily vending reconciliation
+    kind: detective
+    status: in-place
+    description: Tokens issued are reconciled against payments every morning, which catches fraud within a day.
+
+maturity:
+  1: Credit meters read by hand.
+  2: Prepaid vending at municipal offices.
+  3: Vendors sell tokens online around the clock.
+  4: Smart meters and a head-end, monitored like the plant.
+
+qcto: [KM-03-KT07, KM-03-KT18, PM-02-PS03, FA1.2]

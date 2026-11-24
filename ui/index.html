@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cyberverse</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <!-- Start: choose a practical -->
+  <section id="start" class="screen">
+    <header class="start-head">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"></span>Cyber<b>verse</b></div>
+      <p class="start-lede">A living miniverse. DataQuant and Siyakhula Local Municipality go about their day; somebody is about to try their luck. Pick a building in the town and climb it, one floor at a time.</p>
+      <button id="open-manual" class="ghost">Operating manuals</button>
+    </header>
+    <div class="start-options">
+      <label>Speed
+        <select id="speed">
+          <option value="1">Real time</option>
+          <option value="5">5 times faster</option>
+          <option value="10" selected>10 times faster</option>
+          <option value="20">20 times faster</option>
+        </select>
+      </label>
+      <label>Seed <input id="seed" type="number" inputmode="numeric" placeholder="random"></label>
+      <span class="note">Guided floors run at their own pace.</span>
+    </div>
+    <div class="town">
+      <figure class="town-map">
+        <svg id="town" viewBox="-365 -165 730 515" role="group" aria-label="The town. Blue buildings defend, red buildings attack."></svg>
+        <figcaption class="note">Blue buildings defend, red buildings attack. Each storey is a floor, and a lit storey is ready to play.</figcaption>
+      </figure>
+      <div id="towers" class="tower-panel" aria-live="polite"></div>
+    </div>
+    <h2 id="others-head" class="others-head" hidden>Other practicals</h2>
+    <div id="practicals" class="cards"></div>
+  </section>
+
+  <!-- A round -->
+  <section id="round" class="screen" hidden>
+    <header class="topbar">
+      <div class="brand small"><span class="brand-mark" aria-hidden="true"></span>Cyberverse</div>
+      <div class="round-title"><span id="role-chip" class="chip"></span><span id="round-name"></span></div>
+      <div class="meters">
+        <div class="meter"><span class="meter-label">Clock</span><span id="clock" class="mono">--:--:--</span></div>
+        <div class="meter" id="remaining-meter"><span class="meter-label">Left</span><span id="remaining" class="mono">--:--</span></div>
+        <div class="meter" id="target-meter" hidden title="The floor's target time. Running over never fails it."><span class="meter-label">Target</span><span id="target" class="mono">--:--</span></div>
+        <div class="meter wide" id="business-meter">
+          <span class="meter-label">Business</span>
+          <span class="bar"><span id="health-bar"></span></span>
+          <span id="health-text" class="mono"></span>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="mute" class="icon" title="Sound on" aria-label="Mute alert sounds">🔊</button>
+        <button id="layout-reset" class="ghost" title="Put every window back where it started">Reset layout</button>
+        <button id="pause" class="ghost">Pause</button>
+        <button id="stop" class="danger">End round</button>
+      </div>
+    </header>
+
+    <!-- The floor fills the stage; every panel is a window over it (ui/windows.js) -->
+    <main id="stage" class="stage">
+      <div class="floor-wrap">
+        <div id="floor-view" class="floor-view">
+          <svg id="floor" role="img" aria-label="Office floor. Drag to move, scroll to zoom, double-click a room to go to it."></svg>
+          <div id="map-caption" class="map-caption" hidden role="status" aria-live="polite"></div>
+          <div class="map-tools" role="toolbar" aria-label="Map">
+            <button id="map-in" class="map-btn" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
+            <button id="map-out" class="map-btn" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
+            <button id="map-fit" class="map-btn" type="button" title="Show the whole floor (0)" aria-label="Show the whole floor">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </button>
+            <button id="map-tour" class="map-btn" type="button" title="Show me round (?)" aria-label="Show me round the screen">?</button>
+          </div>
+          <div id="legend" class="legend"></div>
+          <div id="toasts" class="toasts" aria-live="assertive"></div>
+        </div>
+      </div>
+
+      <!-- Guided floors: the mentor's card -->
+      <section id="guide" class="guide" hidden aria-live="polite"></section>
+
+      <!-- Prey: the SOC console -->
+      <div id="soc" class="panel" hidden>
+        <nav class="tabs" role="tablist">
+          <button role="tab" data-tab="alerts" aria-selected="true">Alerts <span id="alert-count" class="count">0</span></button>
+          <button role="tab" data-tab="controls" aria-selected="false">Controls</button>
+          <button role="tab" data-tab="blocks" aria-selected="false">Blocks</button>
+        </nav>
+        <div class="tab-body" data-body="alerts"><ol id="alerts" class="alerts"></ol></div>
+        <div class="tab-body" data-body="controls" hidden><ul id="controls-list" class="list"></ul></div>
+        <div class="tab-body" data-body="blocks" hidden>
+          <form id="block-form" class="inline-form">
+            <input id="block-ip" placeholder="10.88.0.143" aria-label="Address to block" autocomplete="off">
+            <button>Block</button>
+          </form>
+          <ul id="blocks-list" class="list"></ul>
+        </div>
+      </div>
+
+      <!-- Prey: what you have done this round -->
+      <div id="feed-panel" class="panel feed-panel" hidden>
+        <ol id="feed" class="feed"></ol>
+      </div>
+
+      <!-- Predator: the attack terminal -->
+      <div id="term" class="panel terminal" hidden>
+        <div class="term-head">
+          <span>kali · <span id="term-ip" class="mono"></span></span>
+          <span id="term-busy" class="busy" hidden>running…</span>
+        </div>
+        <pre id="term-out" class="term-out" tabindex="0" aria-live="polite"></pre>
+        <form id="term-form" class="term-line">
+          <span id="term-prompt" class="mono prompt"></span>
+          <input id="term-input" class="mono" autocomplete="off" spellcheck="false" aria-label="Terminal command">
+        </form>
+      </div>
+
+      <!-- A machine -->
+      <aside id="host" class="host-panel" hidden>
+        <header class="drawer-head">
+          <div class="host-title">
+            <h2 id="host-name"></h2>
+            <div id="host-sub" class="mono sub"></div>
+          </div>
+          <button id="host-close" class="icon" aria-label="Close the machine" title="Close" data-pane-close>✕</button>
+        </header>
+        <div class="drawer-body">
+          <div class="drawer-col">
+            <dl id="host-facts" class="facts"></dl>
+            <div id="host-actions" class="actions"></div>
+            <h3>Ports</h3>
+            <ul id="host-ports" class="ports mono"></ul>
+          </div>
+          <div class="drawer-col logs-col" id="logs-col">
+            <h3 id="logs-head">Logs</h3>
+            <pre id="host-logs" class="logs mono"></pre>
+          </div>
+        </div>
+      </aside>
+
+      <!-- "Done": a note beside whatever you just used -->
+      <div id="notes" class="notes" aria-live="polite"></div>
+    </main>
+
+    <!-- Room details -->
+    <aside id="room" class="popover" hidden></aside>
+  </section>
+
+  <!-- Briefing before the round -->
+  <div id="briefing" class="modal" hidden>
+    <div class="modal-card">
+      <div id="brief-role" class="chip"></div>
+      <h2 id="brief-title"></h2>
+      <p id="brief-text" class="brief"></p>
+      <p id="brief-placeholder" class="note" hidden>This practical is a placeholder that proves the foundation works. The real practicals get designed together, one by one.</p>
+      <div class="modal-actions">
+        <button id="brief-back" class="ghost">Back</button>
+        <button id="brief-go" class="primary">Begin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Debrief -->
+  <div id="debrief" class="modal" hidden>
+    <div class="modal-card wide">
+      <header class="debrief-head">
+        <div>
+          <div id="db-outcome" class="eyebrow"></div>
+          <h2><span id="db-total"></span><small>/100</small> <span id="db-grade" class="grade"></span></h2>
+        </div>
+        <div class="modal-actions">
+          <button id="db-floor" class="ghost">Look at the floor</button>
+          <button id="db-again" class="primary">New round</button>
+        </div>
+      </header>
+      <div class="debrief-grid">
+        <section>
+          <h3>Score</h3>
+          <ul id="db-parts" class="parts"></ul>
+          <div id="db-leaked"></div>
+          <h3>Blind spots</h3>
+          <ul id="db-blind" class="blind"></ul>
+          <form id="report-form" class="report" hidden>
+            <h3>Status report</h3>
+            <p class="note">Write it as you would for the ICT manager at 07:00. It counts for 15 points.</p>
+            <label>What happened<textarea name="summary" rows="3" required></textarea></label>
+            <label>Impact<textarea name="impact" rows="2" required></textarea></label>
+            <label>What you did<textarea name="actions" rows="2" required></textarea></label>
+            <label>What should change<textarea name="recommendations" rows="2" required></textarea></label>
+            <button class="primary">Submit report</button>
+          </form>
+        </section>
+        <section>
+          <h3>What really happened</h3>
+          <div id="db-lanes" class="lane-filter"></div>
+          <ol id="db-timeline" class="timeline"></ol>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- A guided floor is complete -->
+  <div id="complete" class="modal" hidden>
+    <div class="modal-card complete-card">
+      <div class="complete-mark" aria-hidden="true">✓</div>
+      <div id="cp-floor" class="eyebrow"></div>
+      <h2 id="cp-title"></h2>
+      <p id="cp-last" class="complete-last"></p>
+      <p id="cp-time" class="cp-time" hidden></p>
+      <h3>What you now know</h3>
+      <ul id="cp-learned" class="learned"></ul>
+      <p id="cp-next" class="note"></p>
+      <div class="modal-actions">
+        <button id="cp-floor-btn" class="ghost">Look at the floor</button>
+        <button id="cp-tower" class="ghost">Back to the town</button>
+        <button id="cp-go" class="primary">Next floor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manuals -->
+  <div id="manual" class="modal" hidden>
+    <div class="modal-card wide">
+      <header class="debrief-head">
+        <div class="manual-pick">
+          <select id="manual-org" aria-label="Organisation"></select>
+          <select id="manual-level" aria-label="Maturity level">
+            <option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option><option value="4">Level 4</option>
+          </select>
+        </div>
+        <button id="manual-close" class="icon" aria-label="Close">✕</button>
+      </header>
+      <article id="manual-body" class="manual"></article>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

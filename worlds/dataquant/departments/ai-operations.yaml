@@ -1,0 +1,127 @@
+id: ai-operations
+name: AI Operations
+purpose: Runs DataQuant's digital workforce. Decides which models each agent uses, what it may touch, how it is tested and what it costs, and watches for agents being misused.
+room: { x: 8, y: 4, w: 4, h: 4 }
+
+people:
+  - id: agent-supervisor
+    role: Agent supervisor agent
+    kind: agent
+    name: Agent supervisor
+    permissions: [read:agent-logs, read:spend, write:alerts]
+    description: Watches every agent's actions and spend, and flags anything outside its permissions.
+  - id: ai-ops-lead
+    role: AI operations lead
+    kind: human
+    name: Tumi Masilela
+    awareness: 0.9
+    from: 3
+
+processes:
+  - id: agent-spend-check
+    name: Agent spend and behaviour check
+    owner: agent-supervisor
+    every: 1h
+    hours: always
+    steps:
+      - Check each agent's spend against its budget and each action against its permission list.
+      - Any agent acting outside its permissions is paused until a person reviews it.
+    activity:
+      - { action: http, system: agent-gateway, path: /admin/spend }
+  - id: agent-review
+    name: Monthly agent permission review
+    owner: founder
+    every: 8h
+    cadence: monthly
+    hours: work
+    steps:
+      - Review every agent's permissions and remove anything it has not needed.
+    activity:
+      - { action: login, system: agent-gateway, via: founder-laptop }
+
+systems:
+  - id: agent-gateway
+    name: Agent gateway
+    hostname: agents
+    kind: ai
+    zone: cloud
+    ip: 10.88.10.40
+    os: Ubuntu 24.04
+    critical: true
+    services:
+      - { port: 443, name: https, product: nginx, version: 1.24.0 }
+      - { port: 8080, name: http, product: LLM gateway, version: 1.40.2 }
+    accounts:
+      - { user: ayanda, password: Dataquant2026, role: admin, person: founder, service: https }
+    weaknesses:
+      - id: gateway-debug-endpoint
+        name: Debug endpoint shows the gateway's configuration
+        kind: exposed-secret
+        port: 8080
+        path: /debug/config
+        reveals: dataquant/dataroom:dq-agents
+        description: A debug page left on in production prints the configuration, including the data room key the agents use.
+      - id: agent-excess-permissions
+        name: Analyst agent can send data to any address
+        kind: misconfiguration
+        port: 443
+        module: prompt-injection
+        exposes: [client-datasets]
+        description: The analyst agent reads client documents and can email or upload anywhere. A document with hidden instructions can make it send a dataset out.
+
+data:
+  - id: agent-config
+    name: Agent prompts, permissions and model keys
+    sensitivity: restricted
+    personalInformation: false
+    system: agent-gateway
+    path: /etc/gateway/config.yaml
+    records: 12
+    impact: 120000
+
+connections:
+  - { to: solutions-studio, kind: internal, trust: Every agent call goes through the gateway. }
+  - { to: data-insights, kind: internal, trust: The analyst agent reads the data room through the gateway. }
+  - { to: external:model-providers, kind: api, trust: Model providers get prompts, never raw client personal information. }
+
+threats:
+  - id: prompt-injection-exfil
+    name: Prompt injection makes an agent leak data
+    attack: AML.T0051
+    stage: exfiltration
+    target: agent-gateway
+    uses: agent-excess-permissions
+    description: A client uploads a document with hidden instructions. The analyst agent follows them and sends a client dataset to an outside address.
+    qcto: [KM-09-KT01, KM-09-KT04, KM-08-KT01]
+  - id: gateway-key-theft
+    name: Stealing the agents' storage key
+    attack: T1552
+    stage: credential-access
+    target: agent-gateway
+    uses: gateway-debug-endpoint
+    description: The debug page hands over the agents' data room key, which reads every client dataset.
+    qcto: [KM-03-KT14, KM-09-KT02]
+
+controls:
+  - id: least-privilege-agents
+    name: Least privilege for agents
+    kind: preventive
+    status: in-place
+    lab: off
+    fixes: [agent-excess-permissions]
+    description: Each agent has only the permissions its job needs. No agent can send data outside the company.
+    policy: An agent's permissions are written down, reviewed monthly, and never include sending data outside without a human approval.
+  - id: no-debug-in-production
+    name: No debug endpoints in production
+    kind: preventive
+    status: planned
+    fixes: [gateway-debug-endpoint]
+    description: Debug pages are switched off before deployment and checked by the release checklist.
+
+maturity:
+  1: The agent supervisor watches agents; the founder reviews permissions.
+  2: Agent permissions and budgets are written down per agent.
+  3: An AI operations lead owns model choice, evaluations, red-teaming and spend.
+  4: AI operations is offered to clients as a service.
+
+qcto: [KM-09-KT01, KM-09-KT02, KM-09-KT03, KM-09-KT04, KM-03-KT19]

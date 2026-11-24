@@ -1,0 +1,112 @@
+# Intro attack tower, floor 2. Fingerprinting and stealth. A port tells you a
+# service is there; version detection tells you exactly which software and
+# version, which is how you find known weaknesses. And the client's SOC is
+# watching, so the learner meets scan timing: a slow, targeted scan is far
+# quieter than a fast, noisy one.
+
+id: attack-02-fingerprinting
+title: "Fingerprinting and stealth"
+status: draft
+role: predator
+org: siyakhula
+startTime: "09:30"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  You know which machines face the internet and which ports are open. Now you
+  find out exactly what is running on them, because a weakness belongs to a
+  specific piece of software at a specific version.
+
+  And from today you think about noise. Siyakhula's security team watches their
+  network. A real attacker scans slowly and carefully so the watchers never
+  notice. So do you.
+guide:
+  mentor: founder
+  target: 15
+  steps:
+    - id: why
+      title: Why the version matters
+      say: An open port says "a web server is here". That is not enough. You need the exact software and version.
+      do: Answer the question.
+      hint: Weaknesses are published against a named product and version.
+      ask:
+        question: Why identify the exact software version?
+        options:
+          - text: Because known weaknesses are published against a specific product and version, so the version tells you what to try.
+            correct: true
+            reply: >-
+              Yes. "Apache 2.4.29" or "OpenSSH 8.2" is a key you look up. Version
+              detection turns an open port into a shortlist of known weaknesses.
+          - text: So you can report how modern their systems are
+            reply: That is a side effect. The real reason is that the version points you at the weaknesses that affect it.
+          - text: It does not really matter; try every exploit
+            reply: Firing every exploit is loud and mostly useless. The version tells you the few that could work.
+      done: { answer: correct }
+
+    - id: version
+      title: Fingerprint the portal
+      say: Version detection (-sV) asks each open port what it is and reads the banner it sends back.
+      do: Run a version scan of the e-services portal.
+      hint: "Type `nmap -sV {ip:eservices}` and press Enter."
+      show: { tab: term }
+      done: { command: { did: scan, of: eservices } }
+      praise: Apache 2.4.29 on Ubuntu. Now you know exactly what you are looking at, and you can look up what it is vulnerable to.
+
+    - id: noise
+      title: Who is watching
+      say: Their SOC sees network traffic. A scan that hammers every port in seconds lights up like a flare. One that trickles probes slowly, over a long time, often slips past.
+      do: Answer the question.
+      hint: What does a sensor notice — a burst, or a trickle?
+      ask:
+        question: Which scan is least likely to wake the SOC?
+        options:
+          - text: A slow, targeted scan (a low timing setting, a few ports), spread out over time.
+            correct: true
+            reply: >-
+              Yes. Sensors trigger on bursts. A slow scan with -T1 or -T2, aimed
+              at a few ports you care about, looks like ordinary background
+              traffic. Patience is stealth.
+          - text: The fastest scan (-T5) of every port, to finish before they notice
+            reply: The opposite. A fast full scan is the loudest thing you can do, and it is exactly what their sensors are tuned to catch.
+          - text: It makes no difference; a scan is a scan
+            reply: Speed and spread make all the difference to whether a sensor fires. Slow and targeted is quiet.
+      done: { answer: correct }
+
+    - id: quiet
+      title: A quiet scan
+      say: Do it properly on the tenders portal. Slow timing, just the common ports, so it stays under the radar.
+      do: Run a slow, targeted version scan of the tenders portal.
+      hint: "Type `nmap -sV -T2 -F {ip:tenders}`. -T2 is slow, -F is the top 100 ports only."
+      show: { tab: term }
+      done: { command: { did: scan, of: tenders } }
+
+    - id: found
+      title: Read the banner
+      say: The quiet scan came back. Read what the tenders portal is running.
+      do: Answer the question.
+      hint: nginx is the web server software behind it.
+      ask:
+        question: The tenders portal runs nginx 1.18.0. What do you do with that?
+        options:
+          - text: Note the exact version, then look up the known weaknesses and exposed paths for nginx 1.18.0.
+            correct: true
+            reply: >-
+              Yes. Each fingerprint becomes a line in your notes and a search for
+              known issues. Two portals, two stacks, two shortlists. Next you
+              enumerate them.
+          - text: Nothing; nginx is always secure
+            reply: No software is always secure. A named version is something to look up, not to trust.
+          - text: Re-run the scan ten more times to be sure
+            reply: You have the version. Re-scanning only adds noise. Write it down and move on.
+      done: { answer: correct }
+  outro:
+    title: You know what they run
+    learned:
+      - Version detection (nmap -sV) names the exact software and version behind a port.
+      - A named version is a key you look up for known weaknesses.
+      - The client's SOC watches for noise. A fast full scan is the loudest thing you can do.
+      - A slow, targeted scan (-T1 or -T2, a few ports) is far quieter. Patience is stealth.
+      - Every fingerprint becomes a line in your notes and a shortlist to enumerate.
+    next: "Floor 3: Enumeration"
+qcto: [KM-03-KT05, KM-03-KT06, KM-03-KT07, PM-02-PS02, FA3.4]

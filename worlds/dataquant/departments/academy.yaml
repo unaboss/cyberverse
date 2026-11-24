@@ -1,0 +1,91 @@
+id: academy
+name: Academy
+purpose: Teaches. Runs CyberLab by DataQuant for individuals and training providers, with agents marking and supporting learners.
+room: { x: 12, y: 4, w: 4, h: 4 }
+
+people:
+  - id: tutor-agent
+    role: Tutor and marking agent
+    kind: agent
+    name: Tutor agent
+    permissions: [read:submissions, write:feedback]
+    description: Marks practical evidence against the QCTO criteria and answers learner questions. A person moderates every final mark.
+  - id: academy-lead
+    role: Academy lead
+    kind: human
+    name: Lindiwe Zungu
+    awareness: 0.7
+    from: 3
+
+processes:
+  - id: mark-submissions
+    name: Mark learner submissions
+    owner: tutor-agent
+    every: 20m
+    hours: always
+    steps:
+      - Mark new practical submissions and write feedback.
+      - A person moderates a sample of marks every week and every final result.
+    activity:
+      - { action: http, system: cyberlab-portal, path: /api/submissions?status=new }
+
+systems:
+  - id: cyberlab-portal
+    name: CyberLab portal
+    hostname: lab
+    kind: web
+    zone: cloud
+    ip: 10.88.10.70
+    os: Ubuntu 24.04
+    critical: true
+    services:
+      - { port: 443, name: https, product: CyberLab portal, version: 8.0.0 }
+    weaknesses:
+      - id: portal-learner-idor
+        name: Learner records readable by changing an id in the URL
+        kind: misconfiguration
+        port: 443
+        module: idor
+        path: /api/learners/
+        exposes: [learner-records]
+        description: The learner API checks that you are logged in, but not that the record you ask for is yours.
+
+data:
+  - id: learner-records
+    name: Learner records and marks
+    sensitivity: confidential
+    personalInformation: true
+    system: cyberlab-portal
+    path: /var/lib/cyberlab/learners
+    records: 640
+    impact: 300000
+
+connections:
+  - { to: trust-risk, kind: internal, trust: Shares the lab's scenarios with the SOC for its own training. }
+  - { to: external:training-providers, kind: portal, trust: Providers see their own cohorts only. }
+
+threats:
+  - id: learner-records-idor
+    name: Reading other learners' records
+    attack: T1213
+    stage: collection
+    target: cyberlab-portal
+    uses: portal-learner-idor
+    description: A learner changes the id in an API call and reads everyone's personal details and marks.
+    qcto: [KM-03-KT14, KM-08-KT01]
+
+controls:
+  - id: object-level-checks
+    name: Check ownership on every record
+    kind: preventive
+    status: planned
+    fixes: [portal-learner-idor]
+    description: Every API call checks the record belongs to the caller or their cohort.
+
+maturity:
+  1: The tutor agent marks; the founder moderates.
+  2: Training providers such as Melsoft run cohorts on the portal.
+  3: An academy lead runs partnerships, moderation and content.
+  4: Accredited delivery, with CyberLab sold to providers across the country.
+
+qcto: [KM-09-KT03, PM-08-PS01, KM-01-KT06]

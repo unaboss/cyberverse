@@ -1,0 +1,328 @@
+# Intermediate defend tower, floor 1. Built on 2026-11-21 from the floor plan
+# the owner agreed ("tell me the floor plans, then build").
+#
+# The monthly vulnerability scan didn't run, so the learner runs it by hand
+# from the SOC scanner, the floor's new desk tool. They read CVSS for what it
+# is (how bad a flaw is in general, not how much it matters here), see why
+# enumeration findings matter, rank the fixes by score, crown jewel and effort,
+# switch on the two fixes, and rescan to prove them. The 10.0 on the legacy
+# file server is a project, not a switch, so it stays red with a compensating
+# control, and the learner says how often the scan should run.
+
+id: defend-mid-01-patch-tuesday
+title: "Patch Tuesday"
+status: draft
+role: prey
+org: siyakhula
+startTime: "09:00"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+briefing: |
+  Once a month the big vendors publish their security patches on a Tuesday,
+  and once a month Siyakhula's SOC scans, ranks and fixes.
+
+  This month the scheduled scan didn't run. Pieter wants it done by hand
+  today, and he wants the two worst holes closed before lunch. No clock yet.
+controls:
+  retire-legacy-fs: project
+tools:
+  scan:
+    from: soc
+    takes: 15
+    zones: [servers, dmz]
+    findings:
+      - id: samba-usermap
+        system: fs01
+        port: 445
+        title: Samba "username map script" command execution
+        cve: CVE-2007-2447
+        cvss: 10.0
+        weakness: samba-usermap
+        detail: >-
+          Samba 3.0.20 runs whatever is hidden in a crafted user name, as root,
+          before anyone logs in. The exploit has been public since 2007.
+        fix: >-
+          Upgrade Samba, or move the HR share to the supported file platform
+          and switch this server off. HR's move is planned, not started.
+      - id: tomcat-default
+        system: vending
+        port: 8080
+        title: Tomcat manager accepts its default login
+        cvss: 9.8
+        weakness: tomcat-default-creds
+        detail: >-
+          The manager app is on and tomcat:tomcat works. Anyone who can reach
+          port 8080 can deploy their own code on the vending server.
+        fix: >-
+          Remove the manager app and the default account. That is the vendor
+          hardening checklist, which takes minutes.
+      - id: geoserver-rce
+        system: gis
+        port: 8080
+        title: GeoServer property name evaluation, remote code execution
+        cve: CVE-2024-36401
+        cvss: 9.8
+        weakness: geoserver-rce
+        detail: >-
+          GeoServer 2.23.1 evaluates property names as code. A public exploit
+          gives code execution without a login, on a server beside billing and
+          the directory.
+        fix: >-
+          Patch GeoServer to 2.23.6 or later. A public exploit for a critical
+          flaw falls under our 72-hour patching rule.
+      - id: smb-null
+        system: fs01
+        port: 445
+        title: SMB null session lists the shares
+        cvss: 5.3
+        detail: Anyone on the network can list the server's shares without logging in.
+        reveals: The shares HR, Payroll and Public, and the exact Samba version, which points straight at CVE-2007-2447.
+        fix: Refuse anonymous sessions. Goes away with the server.
+      - id: ldap-anon
+        system: dc01
+        port: 389
+        title: Anonymous LDAP bind lists every account
+        cvss: 5.3
+        detail: The directory answers queries from anyone, without a login.
+        reveals: 1 412 user names, including svc_backup and every manager. That is the exact list a password sprayer needs.
+        fix: Turn off anonymous binds on the domain controller.
+      - id: tenders-listing
+        system: tenders
+        port: 443
+        title: Directory listing on /uploads/
+        cvss: 5.3
+        weakness: tenders-dir-listing
+        detail: The tender portal lists every file in its uploads folder.
+        reveals: Every bid document, readable before the closing date.
+        fix: Switch listing off and keep uploads outside the web root.
+      - id: mysql-staff
+        system: billing
+        port: 3306
+        title: MySQL reachable from the whole staff network
+        cvss: 4.3
+        detail: Billing's database answers on port 3306 to every desk, not only to the billing application.
+        fix: Firewall 3306 so only the billing application and the DBA's jump host reach it.
+      - id: tls10
+        system: mail
+        port: 443
+        title: TLS 1.0 and 1.1 still accepted
+        cvss: 3.7
+        detail: Webmail still agrees to old TLS versions with known weaknesses.
+        fix: Allow TLS 1.2 and 1.3 only, at the next change window.
+guide:
+  mentor: ict-manager
+  hold: [vulnerability-scan]
+  steps:
+    - id: run
+      title: Run the scan
+      say: >-
+        Morning. The scanner on our SOC machine checks every server and public
+        service for missing patches and bad settings. The scheduled run failed
+        last night, so run it by hand.
+      do: Open the Vulnerability scan, run it, and wait for it to finish.
+      hint: The window is on the left. Press "Run scan". It takes about 15 seconds.
+      show: { tab: scan }
+      done: { action: scan.finished }
+      praise: >-
+        Eight findings. Three critical. Now we read them like analysts, not
+        like a list.
+
+    - id: cvss
+      title: What the score says
+      say: >-
+        Every finding has a CVSS score from 0 to 10. 9 and up is critical, 7
+        to 8.9 high, 4 to 6.9 medium, below that low. The top of our report is
+        Samba on the HR file server, at 10.0.
+      do: Open the top finding, then answer.
+      hint: Click a finding to read it. Then think about what the score could know, and what it couldn't.
+      show: { tab: scan }
+      ask:
+        question: What does the 10.0 on the HR file server tell you?
+        options:
+          - text: How bad the flaw is anywhere. It works over the network, needs no login and gives full control.
+            correct: true
+            reply: >-
+              Right. CVSS scores the flaw, not our town. It doesn't know fs01
+              holds 1 400 personnel files, or that vending is our biggest
+              income. Weighing that is our job.
+          - text: That fs01 is our most important server
+            reply: >-
+              CVSS knows nothing about us. It would give the same 10.0 to a
+              test box nobody uses. Importance comes from the crown jewels.
+          - text: That somebody has already broken in
+            reply: >-
+              A scan finds doors that are open, not people who came through
+              them. For that, you read the alerts and the logs.
+      done: { answer: correct }
+
+    - id: enumeration
+      title: The mediums
+      say: >-
+        Lower down are two mediums: an SMB null session on the HR file server,
+        and anonymous LDAP on the directory. Open both and read what an
+        attacker learns.
+      do: Answer the question.
+      hint: Read the "An attacker learns" line on each one.
+      show: { tab: scan }
+      ask:
+        question: Neither gives control of anything. Why do they still matter?
+        options:
+          - text: They give an attacker the map for the next attack, the shares and every user name
+            correct: true
+            reply: >-
+              That's enumeration: learning names, shares and versions before
+              attacking. 1 412 user names is the list a password sprayer
+              wants, and the Samba version points at the exact exploit.
+          - text: They slow the servers down
+            reply: >-
+              They hardly cost anything to run. The harm is what they tell an
+              attacker. Read the "An attacker learns" lines.
+          - text: They don't matter while the servers aren't on the internet
+            reply: >-
+              Every desk on our flat staff network reaches both, and so does
+              anyone with a foothold on one desk. Inside is not safe.
+      done: { answer: correct }
+
+    - id: rank
+      title: What first?
+      say: >-
+        We have this morning, not a month. CVSS is one input. The others: does
+        it sit on a crown jewel, is there an exploit out, and how long does the
+        fix take?
+      do: Answer the question.
+      hint: Look for the gold diamond, which marks a business-critical machine, and read each fix.
+      show: { tab: scan }
+      ask:
+        question: Which do we fix first, today?
+        options:
+          - text: Tomcat's default login on the prepaid vending server
+            correct: true
+            reply: >-
+              Yes. 9.8 on a crown jewel, a way in anyone can use, and the fix
+              takes minutes. The 10.0 on fs01 needs a migration, so it goes on
+              the plan with protection in the meantime.
+          - text: Samba on the HR file server, because it scores highest
+            reply: >-
+              Highest score, but its fix is moving HR's files to a new
+              platform: weeks of work. Start with what's critical, on a crown
+              jewel, and quick to close.
+          - text: TLS 1.0 on webmail, because mail faces the internet
+            reply: >-
+              Facing the internet counts, but 3.7 is low. It can wait for the
+              next change window. Critical first.
+      done: { answer: correct }
+
+    - id: fix-vending
+      title: Close the vending door
+      say: >-
+        Nokuthula owns the vending risk and has said yes. The vendor hardening
+        checklist removes Tomcat's manager app and its default login.
+      do: In the Controls tab, switch on the control that hardens vendor systems.
+      hint: Look for "Vendor systems hardened before go-live".
+      show: { tab: controls }
+      done: { action: control, target: vendor-hardening }
+      wrong: >-
+        Useful, but it doesn't touch Tomcat's default login. Look for the
+        control about vendor systems.
+      replies:
+        patch-management: >-
+          That one's next, and it's on now. But vending first: switch on
+          vendor hardening too.
+        disable-listing: >-
+          Fair, the tender listing needs closing too, and now it is. But the
+          9.8 on vending comes first: switch on vendor hardening.
+      praise: The vending server's default login is gone.
+
+    - id: fix-gis
+      title: Patch the map server
+      say: >-
+        Next, GeoServer on the GIS server. There's a public exploit for it,
+        and our rule says a critical flaw with a public exploit is patched
+        within 72 hours. Anele in Planning has agreed to a short outage.
+      do: Switch on the patching control.
+      hint: Look for "Monthly patching".
+      show: { tab: controls }
+      done: { action: control, target: patch-management }
+      wrong: >-
+        That one doesn't patch GeoServer. Look for the control about
+        patching.
+      praise: GeoServer is patched to a fixed version.
+
+    - id: rescan
+      title: Prove it
+      say: >-
+        Switching a control on is a claim. A rescan is the proof, and the
+        report owners get should say "fixed, see the scan", not "we think so".
+      do: Rescan, and check that both findings turned green.
+      hint: Press "Rescan" in the Vulnerability scan window and wait for it to finish.
+      show: { tab: scan }
+      done: { action: scan.fixed, targets: [tomcat-default, geoserver-rce] }
+      praise: >-
+        Both green, with a scan to prove it. That's what goes in the report to
+        Nokuthula and Anele.
+
+    - id: meanwhile
+      title: The one that stays red
+      say: >-
+        The 10.0 on the HR file server is still open. Retiring that server is
+        a project with its own budget. Try switching it on in Controls if you
+        like: it won't go.
+      do: Answer the question.
+      hint: What can we do today that makes the hole harder to reach and quicker to notice?
+      ask:
+        question: The migration is weeks away. What do we do about fs01 meanwhile?
+        options:
+          - text: Firewall it so only HR's desks reach it, watch it closely, and have its owner accept the risk that's left
+            correct: true
+            reply: >-
+              That's a compensating control: a smaller door and a closer
+              watch, while the real fix is built. Refilwe owns the risk, so
+              she signs that she accepts what's left until the move.
+          - text: Nothing. It's on the project plan
+            reply: >-
+              A plan doesn't stop an exploit from 2007. Until the move, make
+              the hole harder to reach and quicker to notice.
+          - text: Switch it off today
+            reply: >-
+              HR and payroll need those files today. Switching off without a
+              plan stops the business. Make it harder to reach instead.
+      done: { answer: correct }
+
+    - id: rhythm
+      title: How often?
+      say: >-
+        Last one. A scan is only true on the day it runs. New flaws come out
+        every week, and every change we make can open something.
+      do: Answer the question.
+      hint: Think about new flaws, and about changes we make ourselves.
+      ask:
+        question: How often should we scan?
+        options:
+          - text: Every week, and again after every change, with each owner getting their findings
+            correct: true
+            reply: >-
+              Yes. Weekly catches new flaws, a rescan proves each fix, and the
+              owners get their findings because they own the risk.
+          - text: Once a year, for the audit
+            reply: >-
+              An audit is once a year. Attackers aren't. A year-old scan
+              misses every flaw published since.
+          - text: Only after an attack
+            reply: >-
+              Then the scan tells you how they got in. Scan before, so it
+              tells you how they could.
+      done: { answer: correct }
+  outro:
+    title: Floor 1 complete
+    learned:
+      - A vulnerability scan finds missing patches and bad settings. It finds open doors, not intruders.
+      - CVSS scores how bad a flaw is anywhere, from 0 to 10. It knows nothing about your business.
+      - Enumeration findings, like share lists and user names, are the attacker's map. They matter even when they score medium.
+      - Rank fixes by score, by crown jewel, by exploit and by effort. Quick fixes on crown jewels come first.
+      - A rescan proves a fix. Without it, "fixed" is a guess.
+      - When the real fix is a project, add a compensating control and have the owner accept what's left.
+      - Scan every week and after every change, and send each owner their findings.
+    next: "Floor 2: The slow scan"
+qcto: [KM-03-KT05, KM-03-KT06, KM-02-KT02, FA1.4, FA2.2, FA3.3, PM-02-PS02, PM-02-PS03, PM-01-PS03, KM-07-KT18]

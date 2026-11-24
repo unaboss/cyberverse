@@ -1,0 +1,321 @@
+# Advanced defend tower, floor 2. Built on 2026-11-21 from the agreed floor
+# plan.
+#
+# Two listings on a forum: 48 000 Ikhaya online orders, and 310 000 loyalty
+# members. Nobody broke in. The app's API checks that a caller is signed in,
+# never that the order is theirs, and order numbers count up, so one new
+# account asked for every recent order, one at a time, overnight. And a
+# loyalty export for a marketing agency sat in the public media bucket.
+#
+# The floor's new desk tool is the cloud console (API keys and storage
+# buckets). The query console comes back for the API's request log. The
+# learner finds the scraper, sizes what it took, closes the hole before
+# revoking the key (revoke first and it signs up again a minute later),
+# takes the export out of the public bucket without breaking the shop's
+# photos, and works out who has to be told.
+
+id: defend-adv-02-scraper
+title: "The scraper"
+status: draft
+role: prey
+org: ikhaya
+startTime: "10:20"
+durationMin: 0
+speed: 1
+map:
+  rooms: [technology, ecommerce, customer, stores]
+  outside: [internet]
+  perimeter: true
+briefing: |
+  Kabelo, the head of online, forwards a screenshot from a threat
+  intelligence service. Two listings on a criminal forum, posted at 07:00:
+
+  "Ikhaya Stores online orders, fresh, 48k: names, phones, delivery
+  addresses, what they bought." And, from another seller: "Ikhaya loyalty
+  members 310k, with birthdays."
+
+  Nothing in the SIEM alerted overnight. Thato wants to know how.
+controls:
+  api-authz: off
+  private-buckets: off
+tools:
+  sql:
+    source: SIEM
+    start: SELECT * FROM api_requests LIMIT 10
+    tables:
+      api_requests:
+        dataset: api
+        about: Every request to the app's API today, from midnight to now.
+    findings:
+      - { id: by-key, check: { column: api_key, topIn: scraper-key } }
+      - { id: sequence, check: { column: order_id, top: 1431788, min: 5 } }
+      - { id: orders, check: { value: 48213, uses: distinct } }
+  cloud:
+    provider: Public cloud, af-south-1 (Cape Town)
+    account: ikhaya-prod
+    control: api-authz
+    respawn: { id: k_2b7c0f, account: deals.4.u@inbox.example, after: 60 }
+    keys:
+      - { id: k_9d41e7, account: deals4u@post.example, created: "yesterday 23:58", requests: 48213, scraper: true }
+      - { id: k_8bafb6, account: sipho.mabuza999@telco.example, created: 2023-08-14, requests: 15 }
+      - { id: k_44c77e, account: zodwa.ebrahim423@post.example, created: 2024-01-30, requests: 15 }
+      - { id: k_17ac69, account: lwazi.govender570@post.example, created: 2022-11-02, requests: 15 }
+      - { id: k_283524, account: liezl.smith207@telco.example, created: 2025-06-19, requests: 14 }
+    buckets:
+      - id: media
+        name: ikhaya-media
+        public: true
+        purpose: Product photos for the shop and the app, loaded straight from here.
+        privateReply: >-
+          You stop before you confirm. The shop and the app load 12 400
+          product photos straight from this bucket: make it private now and
+          every product on the website shows an empty box. Take out what
+          shouldn't be there first. The photos move behind the content
+          network next.
+        objects:
+          - id: photos
+            name: products/  (12 400 photos)
+            size: 3.1 GB
+            reply: The shop and the app load every product photo from here. Remove them and the shop shows empty boxes.
+          - id: loyalty-export
+            name: exports/loyalty-2026-10.csv
+            size: 41 MB
+            sensitive: true
+            downloads:
+              - { at: "14 Oct 09:02", ip: 10.88.0.66, who: Brightside Agency (expected) }
+              - { at: "Yesterday 03:12", ip: 10.88.0.58, who: unknown }
+              - { at: "Yesterday 03:13", ip: 10.88.0.58, who: unknown }
+      - id: backups
+        name: ikhaya-db-backups
+        public: false
+        purpose: Nightly database backups, encrypted.
+        objects:
+          - id: dump
+            name: orders-2026-11-20.dump.enc
+            size: 88 GB
+            reply: That's last night's backup, private and encrypted. You'll want it if anything goes wrong.
+      - id: logs
+        name: ikhaya-logs
+        public: false
+        purpose: Access logs for the shop, the API and the buckets.
+        objects:
+          - id: api-logs
+            name: api/2026-11-21/
+            size: 1.4 GB
+            reply: Those logs are how you're finding the scraper. Keep them.
+guide:
+  mentor: soc-lead
+  target: 20
+  steps:
+    - id: look
+      title: The API's log
+      say: >-
+        The app talks to an API: give it a key and an order number, it gives
+        back the order. Every request is in the SIEM, in a table called
+        api_requests.
+      do: Open the Query console and run the query in it, to see what a request looks like.
+      hint: Press the arrow on "Query console" at the top left, then Run.
+      done: { look: tab, id: sql }
+
+    - id: by-key
+      title: Who asks the most?
+      say: >-
+        Every customer's app has its own API key. Count the requests per
+        key, busiest first.
+      do: Count the requests per api_key, busiest first.
+      hint: "SELECT api_key, account, COUNT(*) FROM api_requests GROUP BY api_key, account ORDER BY COUNT(*) DESC LIMIT 10"
+      show: { tab: sql }
+      done: { action: sql.query, target: by-key }
+      wrong: Group by api_key and sort by the count, busiest first.
+      praise: >-
+        One account made 48 213 requests since midnight. The next busiest
+        made 15. Nothing alerted because every request was signed in and
+        every answer was 200 OK.
+
+    - id: sequence
+      title: What did it ask for?
+      say: Look at that key's requests in the order it made them.
+      do: List the time, path, order_id and status of k_9d41e7's requests, in time order.
+      hint: "SELECT time, path, order_id, status FROM api_requests WHERE api_key = 'k_9d41e7' ORDER BY time LIMIT 20"
+      show: { tab: sql }
+      done: { action: sql.query, target: sequence }
+      wrong: Filter on api_key = 'k_9d41e7' and order by time.
+
+    - id: idor
+      title: Name the hole
+      say: Order 1431788, then 1431789, then 1431790, two a second, all night. Every answer 200 OK.
+      do: Answer the question.
+      hint: Whose orders are they?
+      ask:
+        question: What's wrong with the API?
+        options:
+          - text: It checks that you're signed in, but not that the order is yours. And order numbers count up, so you can ask for every one.
+            correct: true
+            reply: >-
+              Yes. It's called an insecure direct object reference, or broken
+              object-level authorisation: the top problem in APIs. Signed in
+              tells you who someone is. It doesn't tell you what they may
+              see.
+          - text: The account's password was stolen
+            reply: It's a new account, signed up last night. It didn't need anyone's password.
+          - text: The API was hacked with SQL injection
+            reply: Nothing was injected. Each request is a normal order lookup. The API just never asks whose order it is.
+      done: { answer: correct }
+
+    - id: legal
+      title: Just asking?
+      say: >-
+        Scraping is collecting data in bulk with a program, by asking for it
+        the way a person would, over and over. The account holder could say
+        "I only asked the API, and it answered."
+      do: Answer the question.
+      hint: Whose data is it, and who said they could have it?
+      ask:
+        question: Is that a defence?
+        options:
+          - text: No. Taking other people's data you know you're not meant to have is unlawful access, and for us it's still a breach of personal information.
+            correct: true
+            reply: >-
+              Right. Scraping public prices is one thing; scraping other
+              people's orders through a hole is unlawful access under the
+              Cybercrimes Act. And our duty under POPIA doesn't depend on
+              how clever the attacker was: we left the data reachable.
+          - text: Yes. We published the API, so anything it returns is public.
+            reply: The API was meant to return your own orders. Anyone who asks for 48 000 strangers' orders knows they're not meant to have them.
+          - text: It's only a problem if they sell it
+            reply: Collecting it is already unlawful access, and it's already a breach we must report. Selling it makes it worse, not illegal for the first time.
+      done: { answer: correct }
+
+    - id: orders
+      title: How many?
+      say: >-
+        The Information Regulator and the customers have to be told what was
+        taken. Count the different orders the key read.
+      do: Count the distinct order_id values for k_9d41e7.
+      hint: "SELECT COUNT(DISTINCT order_id), MIN(order_id), MAX(order_id) FROM api_requests WHERE api_key = 'k_9d41e7'"
+      show: { tab: sql }
+      done: { action: sql.query, target: orders }
+      wrong: Count the distinct order_id values for that key.
+      praise: 48 213 orders, every one from 1 431 788 to 1 480 000. That matches the listing's "48k".
+
+    - id: close
+      title: Close the hole
+      say: >-
+        The obvious move is to revoke the key. Think first: what stops the
+        same person signing up again in a minute?
+      do: In Controls, switch on the order ownership check in the API.
+      hint: Look for "Order ownership check in the API". Megan's team has the fix ready; this deploys it.
+      show: { tab: controls }
+      done: { action: control, target: api-authz }
+      wrong: Close the hole itself first, with the order ownership check.
+      praise: The API now returns an order only to the customer who placed it.
+
+    - id: revoke
+      title: Revoke the key
+      say: >-
+        Now revoke the scraper's key in the cloud console. If you revoked it
+        earlier, look again: it may have come back with a new account.
+      do: Revoke the scraper's API key, and any new one it made.
+      hint: The scraper's keys are the ones with thousands of requests. Don't revoke the customers'.
+      show: { tab: cloud }
+      done: { action: cloud.revoke, target: scraper }
+      wrong: Revoke the scraper's key in the cloud console.
+
+    - id: bucket
+      title: The other listing
+      say: >-
+        The second listing says 310 000 loyalty members, with birthdays. The
+        API doesn't serve birthdays. Look at the account's storage buckets.
+      do: Take the loyalty export out of the public bucket.
+      hint: In the Cloud console, find exports/loyalty-2026-10.csv in ikhaya-media and press Remove.
+      show: { tab: cloud }
+      done: { action: cloud.remove, target: loyalty-export }
+      wrong: Remove the loyalty export from the public bucket. The shop needs the rest.
+
+    - id: downloaded
+      title: Did anyone take it?
+      say: Open the export's download log in the cloud console.
+      do: Answer the question.
+      hint: Look at "Downloads" under exports/loyalty-2026-10.csv.
+      show: { tab: cloud }
+      ask:
+        question: What does the download log tell you?
+        options:
+          - text: The agency took it once in October, as planned. An unknown address took it twice yesterday at 03:12. It leaked.
+            correct: true
+            reply: >-
+              Yes. That address, 10.88.0.58, has no business with us. The
+              file sat in a bucket anyone could list for five weeks.
+          - text: Only the agency downloaded it, so it's fine
+            reply: Look again. Two downloads yesterday at 03:12 came from an address nobody knows.
+          - text: We can't tell who downloaded it
+            reply: The bucket keeps a log of every download. Open "Downloads" under the export.
+      done: { answer: correct }
+
+    - id: shared
+      title: Whose job?
+      say: The bucket is in our account at a big cloud provider.
+      do: Answer the question.
+      hint: Who chose to make the bucket public, and who put the file in it?
+      ask:
+        question: Who was responsible for that bucket being open?
+        options:
+          - text: We were. The provider secures the cloud itself; what we put in it and who can read it is ours.
+            correct: true
+            reply: >-
+              Yes: the shared responsibility model. The provider runs the
+              data centres, the hardware and the storage service. Your data,
+              your settings and your access rules stay yours, and most cloud
+              breaches are settings like this one.
+          - text: The cloud provider. They should stop public buckets.
+            reply: The provider offers the setting; we chose it. Configuring access is the customer's side of the shared responsibility model.
+          - text: The marketing agency
+            reply: They asked for a file. We put it in a bucket the whole internet can list.
+      done: { answer: correct }
+
+    - id: private
+      title: For good
+      say: >-
+        The photos still load straight from a public bucket, and the next
+        export could land there too.
+      do: In Controls, switch on private storage by default.
+      hint: Look for "Private storage by default". Photos then load through the content network, and nothing in a bucket is public unless security signs it off.
+      show: { tab: controls }
+      done: { action: control, target: private-buckets }
+      wrong: Look for "Private storage by default".
+
+    - id: tell
+      title: Who must know
+      say: >-
+        48 213 customers' orders and 310 000 loyalty members' details, in
+        criminals' hands.
+      do: Answer the question.
+      hint: What does POPIA section 22 say about a breach of personal information?
+      ask:
+        question: Who has to be told?
+        options:
+          - text: The Information Regulator, and every affected customer, as soon as reasonably possible, with what was taken and what they should watch for.
+            correct: true
+            reply: >-
+              Yes. Section 22 of POPIA: notify the Regulator and the people
+              affected, so they can protect themselves. Here that means
+              warning them about scam calls and SMSes that quote their real
+              orders and birthdays.
+          - text: Nobody. We fixed it, and the data wasn't financial.
+            reply: Names, phone numbers, addresses and birthdays are personal information. Fixing the hole doesn't undo the leak.
+          - text: Only the customers whose orders were over R1 000
+            reply: The law doesn't care about order value. Everyone whose personal information was taken must be told.
+      done: { answer: correct }
+  outro:
+    title: Floor 2 complete
+    learned:
+      - Signed in is not allowed. An API must check that every object it returns belongs to the caller.
+      - Numbers that count up make every record easy to scrape. Use random references.
+      - Scraping looks like normal traffic. Count by key, and look at the order of what it asked for.
+      - Close the hole before you revoke the key, or the scraper signs up again.
+      - In the cloud, the provider secures the platform. Your settings and data are yours.
+      - Take out what shouldn't be public without breaking what should.
+      - Every download is logged. Read the log before you say nothing leaked.
+      - Under POPIA, tell the Regulator and everyone affected.
+    next: "Floor 3: A branch went dark"
+qcto: [KM-08-KT05, KM-08-KT03, KM-08-KT01, KM-07-KT22, KM-03-KT19, KM-06-KT11, PM-04-PS06]

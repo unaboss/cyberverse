@@ -1,0 +1,125 @@
+# Intro attack tower, floor 0. DataQuant's offensive team runs an authorised
+# external test of Siyakhula's internet-facing systems. Before a single packet,
+# the learner has to understand what makes the work legal and what the rules of
+# engagement are. The terminal is open, but the only command this floor needs
+# is reading the scope letter.
+
+id: attack-00-rules
+title: "The rules of engagement"
+status: draft
+role: predator
+org: siyakhula
+startTime: "18:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  Welcome to the Offensive Security team. Siyakhula Local Municipality has
+  hired DataQuant to test its systems the way a real attacker would, and find
+  the holes before someone else does.
+
+  You will do the hands-on work this week. Ayanda runs the engagement with you.
+  Tonight is only the brief: what a penetration test is, and the one thing that
+  separates it from a crime, which is permission in writing.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: what
+      title: What is this work?
+      say: A penetration test is a real attack on a system, done on purpose, to find the weaknesses before a criminal does. The whole of it rests on one thing.
+      do: Answer the question.
+      hint: What is the one difference between what you do this week and a crime?
+      ask:
+        question: What makes a penetration test legal?
+        options:
+          - text: Written permission from the owner, naming the systems, the dates and a contact, signed before you start.
+            correct: true
+            reply: >-
+              Yes. The signed scope letter is your authorisation. Under the
+              Cybercrimes Act, touching someone's system without it is an
+              offence, however good your intentions. No letter, no test.
+          - text: Using the same tools a real attacker uses
+            reply: The tools are the same. That is exactly why permission is the only thing that tells the two apart.
+          - text: Only testing, never actually breaking in
+            reply: A real test does break in, to prove the risk. What keeps it legal is that the owner asked you to.
+      done: { answer: correct }
+
+    - id: scope
+      title: Read the letter
+      say: Everything you are allowed to do is in the scope letter. It is on your Kali desktop. Read it before you touch anything, every single engagement.
+      do: In the terminal, read the scope letter.
+      hint: Type `cat scope-letter.pdf` and press Enter.
+      show: { tab: term }
+      done: { command: { did: read, text: scope-letter } }
+      praise: That letter is your authorisation and your boundary. Siyakhula's own systems are in scope; everything else, including DataQuant's, is not.
+
+    - id: out
+      title: Where it stops
+      say: The scope letter names Siyakhula's systems and nothing else. Halfway through, you notice the mayor's personal email and a supplier's website on the same screen.
+      do: Answer the question.
+      hint: Are they named in the letter?
+      ask:
+        question: The mayor's personal Gmail is reachable. Do you test it?
+        options:
+          - text: No. It is not in the scope letter, so it is out of bounds, however easy it looks.
+            correct: true
+            reply: >-
+              Yes. Interesting and reachable is not the same as in scope.
+              Testing it would be illegal and would break the client's trust.
+              Note it as an observation and move on.
+          - text: Yes, quickly, to show the mayor the risk
+            reply: That is unauthorised access to a third party's account. It is a crime, and it is not yours to test. Out of scope means out of bounds.
+          - text: Only if you do not change anything
+            reply: Reading a private mailbox without permission is already the offence. In scope or not is the only question.
+      done: { answer: correct }
+
+    - id: safety
+      title: When to stop
+      say: Siyakhula runs a water treatment works, with controllers that open and close real valves. Rules of engagement say what you do if something safety-critical starts behaving oddly while you work.
+      do: Answer the question.
+      hint: A test is never worth harming a real person.
+      ask:
+        question: A control system wobbles while you are scanning. What do you do?
+        options:
+          - text: Stop, and call the contact in the scope letter straight away.
+            correct: true
+            reply: >-
+              Yes. A pentest is never worth an outage or a safety incident. You
+              stop, you tell the client's named contact, and you agree together
+              how to carry on. That line is written into the rules of engagement.
+          - text: Keep going; it is their system to fix
+            reply: If your testing harms a real service or a real person, that is on you. Safety comes before the finding. Stop and call.
+          - text: Quietly undo it and say nothing
+            reply: Hiding it is worse. The client has to know what happened to their own systems. Stop and report.
+      done: { answer: correct }
+
+    - id: notes
+      title: Write it down
+      say: One more habit before we start. From the first command, you keep notes, with times. It is how you prove what you did, write the report, and show you stayed in scope.
+      do: Answer the question.
+      hint: Who might have to read your notes afterwards?
+      ask:
+        question: Why keep timestamped notes of every step?
+        options:
+          - text: So the report is accurate, the client can tell your traffic from a real attack, and you can show you stayed in scope.
+            correct: true
+            reply: >-
+              Yes. Your notes are the evidence. They become the report, they let
+              the client's SOC separate the test from a real intrusion, and they
+              prove every command was inside the letter. Good. Tomorrow you scan.
+          - text: So you can repeat the exact same test next time
+            reply: Repeatability matters, but the bigger reason is proof of what you did, when, and that it was in scope.
+          - text: It is not really needed on a small job
+            reply: It is needed on every job. Without notes you cannot prove you stayed in scope, and the report is guesswork.
+      done: { answer: correct }
+  outro:
+    title: You know the rules
+    learned:
+      - A penetration test is a real attack, made legal by written permission.
+      - The signed scope letter names what you may touch; everything else is out of bounds.
+      - Reachable is not the same as in scope. Out of scope means out of bounds.
+      - Stop and call the contact the moment anything safety-critical misbehaves.
+      - Keep timestamped notes from the first command. They are your proof and your report.
+    next: "Floor 1: Footprinting"
+qcto: [KM-03-KT01, KM-03-KT02, KM-03-KT03, PM-02-PS01, FA1.3, FA3.4]

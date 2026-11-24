@@ -1,0 +1,64 @@
+# Ikhaya Stores: a fictional retail chain, and the biggest organisation of the
+# miniverse. It carries the advanced defend tower: an online shop in the cloud,
+# 120 stores on site-to-site VPNs, distribution centres, 8 000 staff, and the
+# board that signs off the security budget. Everything at this size is about
+# data and scale: a million log lines, forty stores at once, a scraper that
+# takes 48 000 orders a row at a time.
+#
+# Any resemblance to a real retailer's systems is by design (this is how
+# retailers are built); the name, people and data are made up.
+
+id: ikhaya
+name: Ikhaya Stores
+kind: Retail chain
+domain: ikhaya.internal
+tagline: Groceries and homeware in 120 stores across Gauteng, KwaZulu-Natal and the Eastern Cape, and online.
+fictional: true
+level: 4
+colour: "#a78bfa"
+revenuePerHour: 1400000
+
+floor: { width: 25, height: 17 }
+
+zones:
+  - { id: cloud, name: "Cloud: online shop", cidr: 10.88.30.0/24 }
+  - { id: hq, name: Head office staff, cidr: 10.88.31.0/24 }
+  - { id: servers, name: Head office servers, cidr: 10.88.32.0/24 }
+  - { id: stores, name: Store networks (VPN), cidr: 10.88.33.0/24 }
+  - { id: security, name: Security operations, cidr: 10.88.34.0/24 }
+
+policy:
+  - { src: internet, dst: cloud, ports: [25, 80, 443], note: Customers reach the shop, the app's API and mail. }
+  - { src: internet, dst: stores, ports: [80, 3389], note: "Port forwards on store routers: the alarm company's remote viewing, and an old remote-support setup." }
+  - { src: cloud, dst: servers, ports: [443, 5432], note: The shop reads stock and writes orders at head office. }
+  - { src: hq, dst: servers, ports: any, note: Head office desks reach the servers. }
+  - { src: hq, dst: cloud, ports: any }
+  - { src: hq, dst: stores, ports: [22, 443, 3389], note: Store support reaches store devices over the VPN. }
+  - { src: stores, dst: servers, ports: any, note: "One flat VPN: every store device reaches every head office server." }
+  - { src: servers, dst: stores, ports: [22, 443] }
+  - { src: security, dst: cloud, ports: any }
+  - { src: security, dst: hq, ports: any }
+  - { src: security, dst: servers, ports: any }
+  - { src: security, dst: stores, ports: any }
+
+# The room the security team sits in: the learner's own desk on the map.
+home: technology
+
+departments:
+  - executive
+  - finance
+  - people
+  - risk
+  - technology
+  - ecommerce
+  - stores
+  - supply-chain
+  - customer
+
+# On the map Ikhaya is spread out: head office, the online shop in the cloud,
+# the stores on their VPN, and the distribution centre.
+sites:
+  - { id: hq, name: Head office, rooms: [executive, finance, people, technology, risk, customer] }
+  - { id: cloud, name: "Cloud: online shop", kind: cloud, rooms: [ecommerce] }
+  - { id: stores, name: Stores on the VPN, kind: stores, rooms: [stores] }
+  - { id: dc, name: Distribution centre, kind: depot, rooms: [supply-chain] }

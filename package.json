@@ -1,0 +1,32 @@
+{
+  "name": "cyberverse",
+  "version": "8.0.0-foundation",
+  "private": true,
+  "type": "module",
+  "description": "Cyberverse: a living DataQuant and a municipality to attack and defend, for the QCTO Cybersecurity Analyst course.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node src/cli.ts serve",
+    "dev": "node src/dev.ts",
+    "validate": "node src/cli.ts validate",
+    "manual": "node src/cli.ts manual",
+    "round": "node src/cli.ts round",
+    "compose": "node src/cli.ts compose",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json",
+    "cf:build": "node cloudflare/build.ts",
+    "cf:check": "node cloudflare/build.ts && tsc -p cloudflare/tsconfig.json",
+    "cf:dev": "node cloudflare/build.ts && wrangler dev -c cloudflare/wrangler.jsonc --var LAB_OPEN:local-only",
+    "cf:deploy": "node cloudflare/build.ts && wrangler deploy -c cloudflare/wrangler.jsonc"
+  },
+  "dependencies": {
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^6.0.3",
+    "wrangler": "4.156.2"
+  }
+}

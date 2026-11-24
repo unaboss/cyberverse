@@ -1,0 +1,69 @@
+id: supply-chain
+name: Supply chain
+purpose: Three distribution centres that receive from suppliers and deliver to every store and online customer overnight.
+room: { x: 5, y: 14, w: 6, h: 3 }
+
+people:
+  - id: dc-manager
+    role: Distribution centre manager, Midrand
+    kind: human
+    name: Riaan Botes
+    awareness: 0.5
+
+processes:
+  - id: replenishment
+    name: Store replenishment
+    owner: dc-manager
+    every: 30m
+    hours: always
+    steps:
+      - Tills report what sold; the warehouse system builds each store's delivery for the night.
+    activity:
+      - { action: http, system: wms, via: dc-pc, path: /replenishment }
+
+systems:
+  - id: wms
+    name: Warehouse management system
+    hostname: wms
+    kind: server
+    zone: servers
+    ip: 10.88.32.30
+    os: Red Hat Enterprise Linux 9
+    critical: true
+    services:
+      - { port: 443, name: https, product: Warehouse management, version: "2024.2" }
+  - id: dc-pc
+    name: Distribution centre desktop
+    hostname: dc-pc
+    kind: desktop
+    zone: hq
+    ip: 10.88.31.45
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: stock-levels
+    name: Stock levels and deliveries
+    sensitivity: internal
+    personalInformation: false
+    system: wms
+    path: wms.stock
+    records: 48000
+    impact: 200000
+
+connections:
+  - { to: stores, kind: internal, trust: Store sales drive the nightly deliveries. }
+  - { to: finance, kind: internal, trust: Goods received release supplier invoices. }
+
+threats: []
+
+controls: []
+
+maturity:
+  1: A storeroom.
+  2: One warehouse and a stock spreadsheet.
+  3: A warehouse system and three distribution centres.
+  4: Automated replenishment from live till data, with handheld scanners on their own network.
+
+qcto: [KM-09-KT04, KM-09-KT01]

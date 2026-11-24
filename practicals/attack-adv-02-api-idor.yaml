@@ -1,0 +1,93 @@
+# Advanced attack tower, floor 2. The orders API. The API checks that a caller is
+# signed in, but not that the order they ask for is theirs, and order numbers
+# count up. So any signed-in account can read every order, one number at a time.
+# This is broken access control — a logic flaw, not an injection — and it leaks
+# 2.4 million orders with names, numbers and addresses.
+
+id: attack-adv-02-api-idor
+title: "The orders API"
+status: draft
+role: predator
+org: ikhaya
+startTime: "10:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  You have a customer account. Now look at how the app talks to Ikhaya behind
+  the scenes — its API.
+
+  The orders endpoint checks that you are signed in, but not that an order is
+  actually yours. Order numbers just count up. So a logged-in account can ask for
+  order 1, then 2, then 3, and read all 2.4 million of them. No injection, no
+  exploit — just a missing check.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: what
+      title: A different kind of flaw
+      say: There is no broken login here and no database trick. The API does exactly what it was built to do; it was just built to trust the wrong thing.
+      do: Answer the question.
+      hint: What does the API check, and what does it forget to check?
+      ask:
+        question: What kind of weakness is "any order readable by its number"?
+        options:
+          - text: Broken access control — the API confirms you are logged in but never that the record is yours, so changing the number in the request returns someone else's data.
+            correct: true
+            reply: >-
+              Yes. It is an authorisation flaw, not an authentication one. You
+              are allowed in; you are just never stopped from reading records
+              that are not yours. Counting numbers make it trivial to automate.
+          - text: SQL injection in the order number
+            reply: No injection is needed. The number is a valid order id; the API simply hands it over without checking it belongs to you. That is broken access control.
+          - text: A buffer overflow in the API
+            reply: Nothing is being overflowed. The flaw is a missing ownership check — the API trusts that if you ask for an order, it must be yours.
+      done: { answer: correct }
+
+    - id: look
+      title: Ask for an order
+      say: Call the orders endpoint and see what comes back. The API answers because you are signed in — it just does not care whose order it is.
+      do: Query the orders API.
+      hint: "Type `curl https://{ip:api}/api/orders/` and press Enter."
+      show: { tab: term }
+      done: { command: { did: read, text: orders } }
+
+    - id: scrape
+      title: Take the lot
+      say: Because the numbers count up, you do not stop at one. A script walks every order number and pulls the rest. Download it to prove the whole set was reachable.
+      do: Scrape the orders through the API.
+      hint: "Type `curl -O https://{ip:api}/api/orders/` to pull the orders the endpoint exposes."
+      show: { tab: term }
+      done: { command: { did: exfil, of: api } }
+      praise: 2.4 million orders — every customer's name, phone number and delivery address — walked out through an endpoint that only ever checked you were logged in.
+
+    - id: impact
+      title: Why this is severe
+      say: You read millions of records without breaking in. Put that in the language of risk.
+      do: Answer the question.
+      hint: Think about who is affected and how quietly it happens.
+      ask:
+        question: How serious is this, and why?
+        options:
+          - text: Very — a single ordinary account can quietly read every customer's personal data, which is a mass breach with no exploit and little noise to detect.
+            correct: true
+            reply: >-
+              Yes. One logged-in account, millions of people's data, and almost
+              nothing in the logs that looks like an attack. That combination —
+              high impact, low noise — is what makes broken access control so
+              dangerous.
+          - text: Minor — it is only order data, not passwords
+            reply: It is millions of people's names, numbers and addresses. That is a serious personal-data breach, and it falls under the same protection laws as any other.
+          - text: It does not matter, because the attacker was logged in legitimately
+            reply: Being logged in is what makes it quiet, not acceptable. A legitimate account reading everyone else's data is exactly the breach the ownership check should stop.
+      done: { answer: correct }
+  outro:
+    title: A missing check, a mass breach
+    learned:
+      - Broken access control means the system checks who you are, but not whether a record is yours to see.
+      - Sequential, guessable identifiers let an attacker walk every record by counting up.
+      - It needs no exploit and leaves little trace, which makes it both common and dangerous.
+      - The fix is an ownership check on every request, and references that are random, not counting numbers.
+    next: "Floor 3: The cloud bucket"
+qcto: [KM-03-KT10, KM-03-KT11, KM-08-KT01, KM-08-KT05, PM-02-PS02, PM-02-PS04, FA3.4]

@@ -1,0 +1,102 @@
+id: risk
+name: Risk and data
+purpose: The chief risk officer's team. Keeps the risk register, runs the awareness programme and the phishing simulations, and turns the company's data into the reports the executives read.
+room: { x: 8, y: 3, w: 7, h: 4 }
+
+people:
+  - id: cro
+    role: Chief risk officer
+    kind: human
+    name: Ayesha Ebrahim
+    awareness: 0.9
+  - id: data-analyst
+    role: Data analyst
+    kind: human
+    name: Lwazi Mthembu
+    awareness: 0.7
+  - id: awareness-lead
+    role: Security awareness lead
+    kind: human
+    name: Refilwe Molefe
+    awareness: 0.9
+
+processes:
+  - id: dashboards
+    name: Management dashboards
+    owner: data-analyst
+    every: 30m
+    cadence: monthly
+    hours: work
+    steps:
+      - Refresh the sales, stock, risk and security dashboards from the warehouse and send the monthly pack to the executives.
+      - Every number on a dashboard says where it comes from and when it was last refreshed.
+    activity:
+      - { action: query, system: bi, via: analyst-pc }
+  - id: phishing-simulation
+    name: Monthly phishing simulation
+    owner: awareness-lead
+    every: 3h
+    cadence: monthly
+    hours: work
+    steps:
+      - Send every staff member one realistic, harmless lure a month, and report the click and report rates by department.
+      - Nobody is named or shamed for clicking. Reporters are thanked.
+    activity:
+      - { action: mail, system: mail, via: analyst-pc }
+
+systems:
+  - id: bi
+    name: Data warehouse and BI
+    hostname: bi
+    kind: database
+    zone: servers
+    ip: 10.88.32.60
+    os: Ubuntu 22.04
+    services:
+      - { port: 5432, name: postgresql, product: PostgreSQL, version: "15.4" }
+      - { port: 443, name: https, product: BI dashboards, version: "10.2" }
+  - id: analyst-pc
+    name: Data analyst's laptop
+    hostname: analyst-lt
+    kind: laptop
+    zone: hq
+    ip: 10.88.31.60
+    os: Windows 11 Enterprise
+    services:
+      - { port: 445, name: microsoft-ds, product: Windows SMB, version: "3.1.1" }
+
+data:
+  - id: risk-register
+    name: Risk register
+    sensitivity: confidential
+    personalInformation: false
+    system: bi
+    path: risk.register
+    records: 140
+    impact: 500000
+
+connections:
+  - { to: executive, kind: internal, trust: The risk report goes to the audit and risk committee every quarter. }
+  - { to: technology, kind: internal, trust: The SOC's numbers feed the monthly security report. }
+
+threats: []
+
+controls:
+  - id: phishing-sims
+    name: Monthly phishing simulations
+    kind: detective
+    status: in-place
+    description: Every staff member gets one harmless lure a month. The click and report rates go to the executives.
+  - id: report-button
+    name: One-tap "report phishing" on every device
+    kind: preventive
+    status: planned
+    description: A report button in the mail app on every PC, phone and store tablet. A report reaches the SOC in seconds.
+
+maturity:
+  1: Risk is the owner's gut feel.
+  2: A spreadsheet of risks reviewed once a year.
+  3: A chief risk officer, a risk register and annual awareness training.
+  4: Risk appetite set by the board, monthly simulations and dashboards the executives actually use.
+
+qcto: [KM-05-KT01, KM-05-KT06, KM-05-KT07, PM-07-PS02, PM-06-PS01, PM-06-PS04, KM-08-KT06]

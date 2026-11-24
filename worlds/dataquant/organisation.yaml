@@ -1,0 +1,59 @@
+# DataQuant: the lab twin of the real company.
+#
+# Rules for the twin (agreed 2026-11-21):
+# - Only the structure and the way the company works are real. Names, clients,
+#   numbers and secrets in the lab are made up.
+# - The twin is deliberately broken. The real company is built like the lab's
+#   fixed state.
+# - Learners never touch the real website or domain. The twin lives on
+#   dataquant.internal, which can never reach the internet.
+#
+# Each department file is the source for both the real operating manual and
+# the lab. When a real department grows a level, update its file and bump
+# `level` here, and the lab grows with it.
+
+id: dataquant
+name: DataQuant
+kind: AI-native data consultancy
+domain: dataquant.internal
+tagline: We help organisations use their data, automate their work and keep that data safe.
+fictional: false
+level: 1
+colour: "#38bdf8"
+revenuePerHour: 2500
+
+floor: { width: 16, height: 11 }
+
+zones:
+  - { id: cloud, name: Cloud platform, cidr: 10.88.10.0/24 }
+  - { id: devices, name: Staff devices, cidr: 10.88.11.0/24 }
+  - { id: office, name: Office network, cidr: 10.88.12.0/24, from: 2 }
+
+policy:
+  - src: internet
+    dst: cloud
+    ports: [22, 25, 80, 443, 3000, 8888, 9000]
+    until: 1
+    note: A startup's cloud firewall, left wide open. The notebook, Git and storage ports face the internet.
+  - src: internet
+    dst: cloud
+    ports: [25, 80, 443]
+    from: 2
+    note: Only mail and the web face the internet. Everything else goes through the VPN.
+  - { src: devices, dst: cloud, ports: any, note: Staff laptops reach every cloud service. }
+  - { src: office, dst: cloud, ports: any, from: 2 }
+  - { src: office, dst: devices, ports: any, from: 2 }
+
+# The room the security team sits in: the learner's own desk on the map.
+home: trust-risk
+
+departments:
+  - strategy-leadership
+  - growth
+  - solutions-studio
+  - data-insights
+  - ai-operations
+  - offensive-security
+  - trust-risk
+  - academy
+  - operations

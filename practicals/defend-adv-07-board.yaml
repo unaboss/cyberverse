@@ -1,0 +1,329 @@
+# Advanced defend tower, floor 7, the top. Built on 2026-11-21 from the
+# agreed floor plan.
+#
+# The board has approved R3 million for security in 2027, and the audit and
+# risk committee wants the plan tomorrow. The learner prices each risk as a
+# single loss times how often a year, adds the return on each project,
+# turns down the AI platform a friend of the CIO sells, funds the mix that
+# buys down the most risk, writes the job profile for the new analysts,
+# researches the skills the SOC will need, writes the board presentation,
+# and takes part in the meeting: a 4IR question, a question they can't
+# answer, and the minutes.
+#
+# The floor's new desk tool is the security budget; the board presentation
+# reuses the write-up from the intermediate tower.
+
+id: defend-adv-07-board
+title: "The board"
+status: draft
+role: prey
+org: ikhaya
+startTime: "13:30"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+briefing: |
+  The board has approved R3 million for security in 2027. Tomorrow at 09:00
+  the audit and risk committee wants to see what it buys.
+
+  Thato is presenting with you, and the slides are yours. Palesa, the
+  company secretary, closes the board pack at 17:00 today.
+tools:
+  budget:
+    year: "2027"
+    envelope: 3000000
+    projects:
+      - { id: soc247, name: "24/7 SOC: two more analysts", risk: "Attacks at night run for hours before anyone looks.", sle: 1500000, aro: 2, aroAfter: 0.6, cost: 1100000 }
+      - { id: segment, name: Store segmentation firewalls, risk: Ransomware spreading from one store to all 120 over the VPN., sle: 6800000, aro: 0.6, aroAfter: 0.1, cost: 900000 }
+      - { id: bots, name: Bot protection and API security, risk: "Credential stuffing, and scraping of customers' data.", sle: 2000000, aro: 1, aroAfter: 0.2, cost: 480000 }
+      - { id: backups, name: Immutable backups at head office, risk: Ransomware destroying the backups as well., sle: 9600000, aro: 0.35, aroAfter: 0.05, cost: 350000 }
+      - { id: button, name: Report button and phishing banner, risk: A phished store PC leading to fraud or ransomware., sle: 600000, aro: 2, aroAfter: 0.5, cost: 150000 }
+      - id: ai
+        name: AI threat-hunting platform
+        risk: "Attacks today's tools miss, by the vendor's estimate."
+        sle: 1500000
+        aro: 0.5
+        aroAfter: 0.1
+        cost: 2400000
+        reply: "It may be good, but not at this price for this risk. Trial a cheaper tool on one problem first, and measure it."
+      - id: cameras
+        name: Smart cameras in every store
+        risk: Camera recorders taken over again.
+        sle: 400000
+        aro: 1.2
+        aroAfter: 0.2
+        cost: 2800000
+        reply: Segmentation and unique device passwords already took most of that risk away. New cameras would buy back very little.
+      - { id: insurance, name: "Cyber insurance, R50m cover", risk: "The cost of a major breach, passed to an insurer.", sle: 9000000, aro: 0.15, aroAfter: 0.022, cost: 420000 }
+  compose:
+    heading: "Board presentation: security plan for 2027"
+    to: "The board's audit and risk committee, tomorrow at 09:00, ten minutes on the agenda"
+    send: Put it in the board pack
+    done: >-
+      In the pack. What it costs, what it saves, one story they'll
+      remember, what's left, and the decision you need. Ten minutes is
+      plenty.
+    parts:
+      - id: open
+        label: Opening
+        options:
+          - id: plain
+            text: "This year we stopped attacks that would have cost Ikhaya millions. For 2027 we ask for R2.98 million, to cut our expected losses by about R11 million a year."
+            correct: true
+            reply: Money in, money saved, in one breath. That's the board's language.
+          - id: jargon
+            text: Our NIST CSF maturity moved from tier 2 to tier 3 across identify, protect, detect, respond and recover.
+            reply: Maybe true, and meaningless to most of the room. Start with what it means for Ikhaya.
+          - id: fear
+            text: "Cyber criminals are coming for every retailer. It's not if, but when."
+            reply: Fear gets attention once, then gets ignored. Give them numbers.
+      - id: story
+        label: One story
+        options:
+          - id: insider
+            text: "In November, one account changed a supplier's bank details and approved the change itself. R277 150 was gone; R2.4 million more was stopped an hour before it went. The fix cost nothing: a second person approves every bank change."
+            correct: true
+            reply: One real story the room will remember, with a fix they can see.
+          - id: list
+            text: A table of all 370 incidents since August, by category.
+            reply: Nobody reads 370 rows in ten minutes. Tell one story that stands for the rest.
+          - id: tech
+            text: How the camera recorder's BusyBox shell was used to scan port 445 on the domain controller.
+            reply: Fascinating to us, noise to the board. Tell them what happened to the business.
+      - id: ask
+        label: The ask
+        options:
+          - id: plan
+            text: "R2.98 million for five projects, ranked by risk reduced per rand. Every one of them saves more than it costs."
+            correct: true
+            reply: An amount, what it buys, and why these five.
+          - id: vague
+            text: As much as the board can spare for security.
+            reply: The board can't approve a feeling. Give an amount and what it buys.
+          - id: more
+            text: "R5.38 million, including the AI platform."
+            reply: That's over the envelope, and it includes a project that costs more than it saves.
+      - id: left
+        label: "What it won't fix"
+        options:
+          - id: honest
+            text: "About R2.8 million a year of expected loss remains on these five risks alone. We recommend accepting it this year and pricing cyber insurance for 2028."
+            correct: true
+            reply: Honest about what's left, with a clear choice for the board.
+          - id: promise
+            text: "With this plan, Ikhaya will be fully secure."
+            reply: Nobody can promise that, and the first incident makes every other line in your pack doubtful.
+          - id: hide
+            text: "Leave it out: the board doesn't need the worry."
+            reply: Risk the board doesn't know about is risk it can't accept. Say what's left.
+      - id: close
+        label: Close
+        options:
+          - id: decide
+            text: "We ask the committee to approve the plan. We'll report against these five numbers every quarter."
+            correct: true
+            reply: A clear decision, and how they'll know it worked.
+          - id: questions
+            text: Thank you. Any questions?
+            reply: Then the item ends without a decision. Say what you're asking them to decide.
+          - id: later
+            text: "We'll come back next quarter with a fuller analysis."
+            reply: That delays the decision by a quarter, and the risks don't wait. Ask for it now.
+guide:
+  mentor: soc-lead
+  target: 25
+  steps:
+    - id: ale
+      title: Risk in rands
+      say: The budget lists each risk the way a board compares them, in rands a year.
+      do: Open the Security budget and answer the question.
+      hint: Press the arrow on "Security budget" at the top left of the desk.
+      show: { tab: budget }
+      ask:
+        question: "Segmentation's risk is R6.8m × 0.6. What is the R4.08m next to it?"
+        options:
+          - text: "What we expect to lose to that risk in an average year: R6.8m each time, about three times every five years."
+            correct: true
+            reply: >-
+              Yes. Annual loss expectancy: the single loss times how often a
+              year. It turns very different risks into one number you can
+              compare, in rands.
+          - text: What it will cost next year
+            reply: It's an average, not a forecast. Some years it happens and costs R6.8m; most years it doesn't.
+          - text: The cost of the segmentation project
+            reply: The project costs R900 000. R4.08m is what the risk costs us, on average, every year.
+      done: { answer: correct }
+
+    - id: rosi
+      title: What it returns
+      say: Risk reduced isn't the whole story. Every project also costs money.
+      do: Add the return column to the budget.
+      hint: Press "Add a return column".
+      done: { action: budget.rosi, target: rosi }
+
+    - id: ai
+      title: The AI platform
+      say: Rajesh would like the AI threat-hunting platform. A friend of his sells it, and the demo was impressive.
+      do: Answer the question.
+      hint: Read its return.
+      ask:
+        question: What do you tell him?
+        options:
+          - text: "It costs R2.4m a year to reduce R600 000 of risk: a return of −75%. Not this year. Trial a cheaper tool on one problem, and measure it."
+            correct: true
+            reply: >-
+              Yes. Numbers, not opinions, and a way forward that isn't just
+              no. And his friendship with the seller goes in the minutes: a
+              conflict of interest gets declared.
+          - text: "Fund it. AI is the future."
+            reply: Maybe, but this one costs four times what it saves. The future can be trialled cheaply first.
+          - text: "Fund it. It's Rajesh's call."
+            reply: It's the board's money and the plan carries your name. A friend selling it is a conflict of interest to declare, not a reason.
+      done: { answer: correct }
+
+    - id: plan
+      title: R3 million
+      say: Fund the projects that buy down the most risk for the money.
+      do: Tick the projects to fund, then put the plan in the board pack.
+      hint: Rank by return. Fund from the top while the money lasts, and skip anything below zero.
+      done: { action: budget.fund, target: plan }
+
+    - id: insurance
+      title: Why not insure?
+      say: "Anton, the CFO, notices that cyber insurance has a good return and isn't in the plan."
+      do: Answer the question.
+      hint: What does insurance change about a breach, and what doesn't it?
+      ask:
+        question: What do you tell him?
+        options:
+          - text: "The five projects reduce more risk for the money. Insurance passes a breach's cost to an insurer; it doesn't make one less likely. Price it for 2028."
+            correct: true
+            reply: >-
+              Yes. Reduce what you can, transfer some of what's left, and
+              accept the rest knowingly. That's risk treatment, and the board
+              chooses which.
+          - text: Insurance is a waste of money
+            reply: "It isn't: it's a sensible way to transfer what's left. It's just not the best use of this year's R3 million."
+          - text: "We forgot about it"
+            reply: The numbers say otherwise. The five projects reduce more risk for the same money.
+      done: { answer: correct }
+
+    - id: profile
+      title: Two new analysts
+      say: The 24/7 SOC needs two new analysts. Busisiwe needs a job profile by Friday to advertise.
+      do: Answer the question.
+      hint: Purpose, duties, skills, qualification. And nothing that keeps out people who could do the job.
+      ask:
+        question: Which job profile do you send her?
+        options:
+          - text: "SOC analyst, night shift. Watches and triages alerts, contains incidents by the playbook, escalates to the on-call lead, writes it up. Needs networks, Windows and Linux logs, SQL, clear writing and calm under pressure. NQF 5 Cybersecurity Analyst, or equivalent experience."
+            correct: true
+            reply: >-
+              Yes. Purpose, duties, skills and qualification, in words a good
+              candidate recognises, with nothing that keeps out people who
+              could do the job.
+          - text: "Rockstar cyber ninja. Ten years' experience, CISSP, OSCP and CEH. Young and energetic, able to work any hours."
+            reply: "Ten years and three senior certifications for a first-line role, and \"young\" is unfair discrimination under the Employment Equity Act. You'd get nobody, or the wrong people."
+          - text: Someone to help with security, printers and the website when needed
+            reply: Nobody can tell what the job is, what it needs, or whether they'd be good at it.
+      done: { answer: correct }
+
+    - id: skills
+      title: Three years from now
+      say: Thato asks you to find out which skills the SOC will need in three years, for its training plan.
+      do: Answer the question.
+      hint: How many sources, and who's selling what?
+      ask:
+        question: How do you go about it?
+        options:
+          - text: "Gather from several sources (the QCTO curriculum, industry and government reports, job adverts, peers at other SOCs), weigh who's selling what, and summarise the skills that keep coming up, with the evidence."
+            correct: true
+            reply: >-
+              Yes. That's research: several sources, weighed, summarised with
+              evidence. Expect cloud security, automation and scripting, data
+              analysis, AI literacy, and the human skills machines don't do.
+          - text: Ask the AI vendor what skills its platform needs
+            reply: One source, and one with something to sell. Use several, and weigh them.
+          - text: "Copy last year's training plan"
+            reply: Then the plan is a year behind, every year. The question is what's coming.
+      done: { answer: correct }
+
+    - id: deck
+      title: The board pack
+      say: Ten minutes on the agenda, and the committee will have read the pack before they arrive.
+      do: Write the board presentation and put it in the pack.
+      hint: Open the Board presentation window. Choose a line for each part, then press "Put it in the board pack".
+      show: { tab: compose }
+      done: { action: compose.publish, target: draft }
+
+    - id: deepfake
+      title: "Tuesday, 09:00"
+      say: >-
+        Dr Mokoena chairs. Halfway through, a member asks about 4IR: "I read
+        that criminals can now fake a CEO's voice. Should we worry?"
+      do: Answer the question.
+      hint: What stopped the insider's payment on floor 5?
+      ask:
+        question: What do you say?
+        options:
+          - text: "Yes. AI makes phishing and voice fakes cheap and convincing. What stops them is process, not spotting the fake: two people approve payments, and we call back on a number we already have."
+            correct: true
+            reply: >-
+              Yes. A trend, what it means for Ikhaya, and the control that
+              already handles it. The call-back works however real the voice
+              sounds.
+          - text: "No, that's science fiction"
+            reply: It's here. A cloned voice needs a few seconds of audio, and a CEO's voice is in every results video.
+          - text: We should buy deepfake detection software
+            reply: Detection is a race you lose slowly. A process that never trusts a voice alone works today, for nothing.
+      done: { answer: correct }
+
+    - id: unknown
+      title: A question you can't answer
+      say: Then Dr Mokoena asks something you don't know. How many of Ikhaya's suppliers have had a security review?
+      do: Answer the question.
+      hint: What ends up in the minutes?
+      ask:
+        question: What do you do?
+        options:
+          - text: Say you don't know, offer to find out, and agree with Palesa that it goes in the minutes as an action with your name and a date.
+            correct: true
+            reply: An honest "I don't know" with an owned action is worth more than a guess that ends up in the minutes as a fact.
+          - text: Give your best guess, to look prepared
+            reply: A guess said at a board meeting becomes a fact in the minutes. Say you'll find out.
+          - text: "Say it's not the SOC's job"
+            reply: It may not be, but the committee asked you. Take the action, and find out who owns it.
+      done: { answer: correct }
+
+    - id: minutes
+      title: The minutes
+      say: The committee approves the plan. Palesa sends the draft minutes on Wednesday.
+      do: Answer the question.
+      hint: Whose words are you held to?
+      ask:
+        question: What do you check in them?
+        options:
+          - text: That the decision and the amount are right, and every action has an owner and a date, including yours.
+            correct: true
+            reply: >-
+              Yes. The minutes are the board's memory. If it isn't in them,
+              correctly, it wasn't decided.
+          - text: "Nothing. Minutes are the secretary's job."
+            reply: Palesa writes them, but you'll be held to what they say. Check your part.
+          - text: Rewrite them so the plan sounds even better
+            reply: "Minutes record what was said and decided, not what you wish you'd said. Correct errors; don't polish."
+      done: { answer: correct }
+  outro:
+    title: The advanced tower is complete
+    learned:
+      - Price risk as a single loss times how often a year. Rands make different risks comparable.
+      - Return on security investment is risk reduced, less cost, over cost. Below zero, it costs more than it saves.
+      - Fund from the best return while the money lasts. Reduce, transfer, or accept the rest knowingly.
+      - Declare a conflict of interest, even a friend's.
+      - A job profile is purpose, duties, skills and qualification, fair to everyone who could do the job.
+      - Research from several sources, weighed, with evidence.
+      - Tell a board what it costs, what it saves, one story, what's left, and the decision you need.
+      - Say "I don't know" and own the action. Check the minutes.
+    next: "You've climbed all three defend towers"
+qcto: [KM-04-KT07, KM-04-KT08, KM-04-KT09, FA1.5, KM-09-KT01, KM-09-KT03, KM-09-KT04, KM-09-KT07, KM-09-KT08, KM-09-KT09, KM-09-KT11, KM-09-KT12, PM-08-PS01, PM-08-PS02, PM-08-PS05]

@@ -1,0 +1,257 @@
+# Advanced defend tower, floor 3. Built on 2026-11-21 from the agreed floor
+# plan.
+#
+# Store 47 in Mthatha went dark this morning: its tills are selling offline
+# and its line is crawling. Its camera recorder still had the factory
+# password, and the alarm company had forwarded its web page to the
+# internet. A botnet logged in at 08:31. Now the recorder is scanning head
+# office's servers across a VPN that lets every store device reach
+# everything.
+#
+# The floor's new desk tool is the store network map: one store as the
+# pattern for all 120, its devices, everything they can reach, and the
+# router's port forwards. The learner cuts the recorder off, closes the way
+# in, reflashes it and gives it its own password, then draws the
+# segmentation: block everything, allow exactly what each device's job needs,
+# and apply it to every store at once.
+
+id: defend-adv-03-branch-dark
+title: "A branch went dark"
+status: draft
+role: prey
+org: ikhaya
+startTime: "11:05"
+durationMin: 0
+speed: 1
+map:
+  rooms: [technology, ecommerce, customer, stores, supply-chain]
+  perimeter: true
+  note: The distribution centre, and the suppliers who deliver to it, come into view.
+briefing: |
+  Zanele, the manager of store 47 in Mthatha, is on the phone. The tills
+  have been selling offline since 08:40, card machines keep timing out, and
+  the store's internet is crawling.
+
+  The store's router shows its line full, all day, with traffic going out.
+  Store 47 is the one that didn't answer your script this morning.
+controls:
+  store-segmentation: off
+  device-passwords: off
+tools:
+  segments:
+    site: Store 47, Mthatha
+    stores: 120
+    control: store-segmentation
+    sources:
+      - { id: tills, name: Tills, does: Ring up sales and send each one to the POS server at head office. }
+      - { id: office, name: Back-office PC, does: "The manager signs in, reads store reports, orders stock from the warehouse system, and looks up supplier websites." }
+      - { id: cameras, name: Camera recorder, does: Records the store's cameras and copies the recordings to the alarm company's video cloud. }
+      - { id: guest, name: Guest Wi-Fi, does: Customers' phones on the free Wi-Fi. }
+    destinations:
+      - { id: pos, name: POS server, group: Head office, does: "Takes every sale, on 443." }
+      - { id: wms, name: Warehouse system, group: Head office, does: "Stock and deliveries, on 443." }
+      - { id: directory, name: Directory, group: Head office, does: "Staff sign-in: Kerberos, LDAP and file shares." }
+      - { id: video, name: Video cloud, group: Internet, does: "The alarm company's recording backup, on 443." }
+      - { id: web, name: The web, group: Internet, does: "Websites, through head office's web proxy." }
+      - { id: stores, name: Other stores, group: Other stores, does: The other 119 stores on the VPN. }
+    needs:
+      - { from: tills, to: pos, missing: "Every store would sell offline, and stock would stop updating." }
+      - { from: office, to: pos, missing: The manager can't see the store's sales reports. }
+      - { from: office, to: wms, missing: The store can't order stock or see tonight's delivery. }
+      - { from: office, to: directory, missing: Nobody in the store can sign in to the back-office PC. }
+      - { from: office, to: web, missing: The manager can't reach suppliers' websites. }
+      - { from: cameras, to: video, missing: "Recordings stop going to the video cloud, so a break-in at night leaves no copy." }
+      - { from: guest, to: web, missing: Customers lose the free Wi-Fi. }
+    replies:
+      cameras>directory: That's what the recorder did this morning. It tried passwords on the directory.
+      cameras>pos: It scanned the POS server too. A recorder has no business with sales.
+      cameras>stores: That's how one recorder becomes 120. It looks for more recorders with admin/admin in the other stores.
+      guest>pos: A customer's phone, one hop from the server that takes every sale. Never.
+      tills>web: Tills don't browse. Malware on a till would use that to send card data out.
+      office>stores: Stores never need to talk to each other. Store support reaches them from head office.
+      default: Nothing in the store needs that. If nothing needs it, block it.
+    forwards:
+      - id: nvr
+        name: "Internet → camera recorder, port 80"
+        by: Set up by the alarm company in 2021, to view the cameras remotely.
+        reply: >-
+          Closed on all 120 routers. That's how the botnet got in: admin/admin
+          on a recorder anyone on the internet could reach. The alarm company
+          views the cameras through its video cloud, which the recorder
+          connects out to.
+      - id: rdp
+        name: "Internet → back-office PC, port 3389"
+        by: Remote desktop, set up by an IT contractor in 2022 for remote support.
+        reply: >-
+          Closed on all 120 routers. Remote desktop open to the internet is
+          one of the commonest ways in for ransomware. Store support uses the
+          VPN.
+guide:
+  mentor: soc-lead
+  target: 20
+  steps:
+    - id: alert
+      title: A scan from a store
+      say: >-
+        The network sensor watches head office's servers. Something inside
+        a store has just started knocking on them.
+      do: Find the machine at 10.88.33.47 on the floor plan and open it.
+      hint: It's in Store operations, on the right of the floor. Its name starts with "Store 47".
+      script:
+        - { after: 3, event: scan, from: cctv, system: dc01 }
+        - { after: 30, event: scan, from: cctv, system: pos }
+        - { after: 50, event: sweep, from: cctv, zone: stores, ports: [23, 80], every: 3, for: 900 }
+      done: { look: host, id: cctv }
+      praise: >-
+        Store 47's camera recorder. It's scanning the directory, and the
+        alert says it's trying the ports you'd try to break into Windows.
+
+    - id: why
+      title: A camera?
+      say: A camera recorder is a small Linux computer with a hard drive, in a back office.
+      do: Answer the question.
+      hint: What did your script find at 09:10, and what didn't answer it?
+      ask:
+        question: Why is a camera recorder scanning head office?
+        options:
+          - text: It's been taken over. It still had admin/admin, and somebody reached it from outside.
+            correct: true
+            reply: >-
+              Yes. Botnets try factory passwords on every camera and router
+              on the internet, around the clock. Once in, the recorder is
+              their computer inside our network: it floods targets for hire,
+              which is what's filling the store's line, and it scans for more.
+          - text: It's a fault in the recorder's firmware
+            reply: A fault doesn't scan the directory for Windows ports. Somebody is driving it.
+          - text: The alarm company is doing maintenance
+            reply: Maintenance doesn't look like a port scan of our directory, and the alarm company would have logged a change.
+      done: { answer: correct }
+
+    - id: isolate
+      title: Cut it off
+      say: >-
+        Store 47 loses its cameras for a while. That's a small price next to
+        a computer that isn't ours, inside the VPN.
+      do: Isolate the store 47 camera recorder.
+      hint: Open the recorder on the floor plan and press Isolate.
+      done: { action: isolate, target: cctv }
+      wrong: Isolate the camera recorder, not the store's tills or PC.
+      praise: Cut off. Within a minute, Zanele says the card machines are working again.
+
+    - id: map
+      title: What could it reach?
+      say: >-
+        The store network map draws store 47 as the pattern for all 120
+        stores. Every line is a flow the VPN allows today.
+      do: Open the Store network map, then answer the question.
+      hint: Press the arrow on "Store network map" at the top left of the desk.
+      show: { tab: segments }
+      ask:
+        question: From store 47's recorder, what can it reach today?
+        options:
+          - text: Everything. Every head office server, the internet, and all 119 other stores.
+            correct: true
+            reply: >-
+              Yes. One flat VPN: every device in every store can talk to
+              everything. That's what turns one weak recorder into a way into
+              the whole company.
+          - text: Only the video cloud, like it should
+            reply: Look at the lines from the camera recorder. It reaches every head office server and every other store.
+          - text: Only store 47
+            reply: Look at the lines. The VPN joins every store to head office and, through it, to every other store.
+      done: { answer: correct }
+
+    - id: forwards
+      title: Close the way in
+      say: >-
+        The recorder isn't meant to face the internet at all. Look at what
+        the store routers forward from outside.
+      do: Close the port forwards on the store routers.
+      hint: They're at the bottom of the Store network map. Close both.
+      show: { tab: segments }
+      done: { action: segments.close, targets: [nvr, rdp] }
+
+    - id: reflash
+      title: Never trust it again
+      say: >-
+        A device somebody else controlled can't be cleaned by deleting
+        files: on a recorder the botnet may have changed the firmware itself.
+        Reflash it from the maker's firmware.
+      do: Rebuild the camera recorder.
+      hint: Open the recorder on the floor plan and press Rebuild.
+      done: { action: rebuild, target: cctv }
+      wrong: Rebuild the camera recorder, not another machine.
+      praise: Reflashing, from the maker's current firmware. It'll be back in about two minutes.
+
+    - id: password
+      title: The factory password, again
+      say: A reflash puts everything back the way the factory made it. Everything.
+      do: Reset the recorder's admin password.
+      hint: In the recorder's window, reset the password for admin, or type cctv:admin.
+      done: { action: reset, target: "cctv:admin" }
+      wrong: Reset the camera recorder's admin account.
+      praise: A long random password, in the vault under store 47. Floor 1's script checks it every morning now.
+
+    - id: segment
+      title: Segment the stores
+      say: >-
+        Now the real fix. Start from block everything, then allow only what
+        each device's job needs. Read what each device does: the answer is
+        in there.
+      do: Draw the plan in the Store network map and apply it to all 120 stores.
+      hint: Press Block everything, then allow seven flows. Tills to the POS server; the back-office PC to the POS server, warehouse system, directory and web; the recorder to the video cloud; guest Wi-Fi to the web.
+      show: { tab: segments }
+      done: { action: segments.apply, target: stores }
+      wrong: Apply the plan to every store from the Store network map.
+
+    - id: iot
+      title: Why cameras?
+      say: Recorders, cameras, smart TVs, printers, door controllers. Every store has a dozen.
+      do: Answer the question.
+      hint: Think about how they're bought, installed and looked after.
+      ask:
+        question: Why are devices like these a favourite target?
+        options:
+          - text: Factory passwords, firmware nobody updates, always on, and nobody watching them, sitting inside the network.
+            correct: true
+            reply: >-
+              Yes. That's IoT hacking: not clever, just patient. An inventory
+              of every device, its owner, its firmware and its password, and a
+              network segment of its own, takes most of it away.
+          - text: They have the most valuable data
+            reply: Camera footage isn't what the botnet wanted. It wanted a computer nobody watches, inside our network.
+          - text: They're made in other countries
+            reply: Where they're made matters much less than how they're installed and looked after.
+      done: { answer: correct }
+
+    - id: vpn
+      title: The VPN was encrypted
+      say: Sipho, the head of store operations, says the store network was safe because it's on an encrypted VPN.
+      do: Answer the question.
+      hint: What does encryption protect, and what does it not decide?
+      ask:
+        question: What do you tell him?
+        options:
+          - text: Encryption stops anyone reading the traffic on the way. It doesn't decide who may talk to whom. Segmentation does.
+            correct: true
+            reply: >-
+              Yes. The VPN carried the recorder's attack to head office
+              beautifully, encrypted all the way. Confidentiality on the wire
+              and control over who reaches what are different jobs.
+          - text: He's right. The VPN kept us safe.
+            reply: The VPN carried the attack from the store straight to head office. Encryption doesn't decide who may talk to whom.
+          - text: We should turn the VPN off
+            reply: Then the stores can't sell. Keep the VPN; segment what travels over it.
+      done: { answer: correct }
+  outro:
+    title: Floor 3 complete
+    learned:
+      - A camera recorder is a computer. With a factory password on the internet, it's somebody else's.
+      - Cut a taken-over device off first, then close the way in.
+      - Reflash a device somebody else controlled, then set its password, because a reflash brings back the factory one.
+      - Segment from block everything, then allow exactly what each device's job needs.
+      - Apply it to every store at once. A pattern beats 120 one-offs.
+      - Encryption protects the traffic on the way. It doesn't decide who may talk to whom.
+      - Know every device you have, who owns it, and what it runs.
+    next: "Floor 4: Why do they click?"
+qcto: [KM-03-KT18, PM-01-PS03, KM-02-KT02, KM-07-KT20, FA1.5]

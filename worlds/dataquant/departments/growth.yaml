@@ -1,0 +1,146 @@
+id: growth
+name: Growth
+purpose: Finds and wins clients, markets DataQuant and looks after client success after the sale.
+room: { x: 4, y: 0, w: 4, h: 3 }
+
+people:
+  - id: lead-agent
+    role: Lead research agent
+    kind: agent
+    name: Lead research agent
+    permissions: [read:public-web, write:crm]
+    description: Finds organisations that need data or security work and adds them to the CRM with notes.
+  - id: content-agent
+    role: Content agent
+    kind: agent
+    name: Content agent
+    permissions: [write:website-drafts]
+    description: Drafts articles, case studies and social posts for a person to publish.
+  - id: growth-lead
+    role: Growth and client success lead
+    kind: human
+    name: Kabelo Mokoena
+    awareness: 0.5
+    from: 2
+
+processes:
+  - id: lead-research
+    name: Lead research
+    owner: lead-agent
+    every: 1h
+    hours: work
+    steps:
+      - Research prospects from public sources only, and log them in the CRM.
+      - Never buy contact lists; POPIA requires a lawful basis for direct marketing.
+    activity:
+      - { action: http, system: crm, path: /api/leads }
+  - id: publish-content
+    name: Publish to the website
+    owner: content-agent
+    every: 4h
+    cadence: weekly
+    hours: work
+    steps:
+      - Draft content; a person reviews and publishes it.
+    activity:
+      - { action: http, system: website, path: /blog }
+
+  - id: website-gap-recon
+    name: Website gap lead recon
+    proposed: true
+    owner: lead-agent
+    every: 2h
+    cadence: in batches, one target market at a time
+    hours: work
+    steps:
+      - List guesthouses in the target market from OpenStreetMap (Google Places later).
+      - Read up to four public pages per site with a scanner that names itself honestly. Skip any site that blocks bots.
+      - Flag the gaps - no booking engine, dependence on online travel agents, a WhatsApp button with no automation, no chat - then score and rank the leads.
+      - Write a personal audit for each lead and log it in the CRM.
+      - Public pages only. Nothing behind a login, no contact lists.
+    activity:
+      - { action: http, system: crm, path: /api/leads/audits }
+
+systems:
+  - id: website
+    name: Public website
+    hostname: www
+    kind: web
+    zone: cloud
+    ip: 10.88.10.10
+    os: Ubuntu 24.04
+    critical: true
+    services:
+      - { port: 80, name: http, product: nginx, version: 1.24.0 }
+      - { port: 443, name: https, product: nginx, version: 1.24.0 }
+    live: { image: "nginx:1.24-alpine" }
+  - id: crm
+    name: CRM
+    hostname: crm
+    kind: web
+    zone: cloud
+    ip: 10.88.10.11
+    os: Ubuntu 24.04
+    services:
+      - { port: 443, name: https, product: Open-source CRM, version: "0.30" }
+    accounts:
+      - { user: admin, password: admin123, role: admin, service: https }
+      - { user: ayanda, password: Dataquant2026, role: user, person: founder, service: https }
+    weaknesses:
+      - id: crm-default-admin
+        name: CRM installed with its default admin password
+        kind: default-credentials
+        port: 443
+        account: admin
+        grants: user
+        description: The setup wizard's admin account was never changed.
+
+data:
+  - id: leads
+    name: Prospect and client contacts
+    sensitivity: confidential
+    personalInformation: true
+    system: crm
+    path: /var/lib/crm/contacts
+    records: 1200
+    impact: 150000
+
+connections:
+  - { to: strategy-leadership, kind: internal, trust: Proposals go to the founder for approval. }
+  - { to: external:prospects, kind: email, trust: Public contact form and email only. }
+  - { to: "external:Cape Town guesthouses (first target market)", kind: outreach, trust: Public website pages for research; first electronic contact only asks consent. }
+
+threats:
+  - id: crm-takeover
+    name: CRM default admin login
+    attack: T1078.001
+    stage: initial-access
+    target: crm
+    uses: crm-default-admin
+    description: The attacker logs in to the CRM with the factory password and exports every contact.
+    qcto: [KM-03-KT07, KM-08-KT01]
+
+controls:
+  - id: crm-hardening
+    name: Change default passwords on new systems
+    kind: preventive
+    status: in-place
+    lab: off
+    fixes: [crm-default-admin]
+    description: Every new system gets its default accounts changed or disabled before it goes live.
+    policy: No system goes live with a vendor default password.
+  - id: consent-first-outreach
+    name: Consent-first outreach (POPIA section 69)
+    proposed: true
+    kind: preventive
+    status: planned
+    description: Direct marketing by email, SMS or WhatsApp needs consent first, so the first electronic message to a new lead only asks whether we may send their audit.
+    policy: The first email, SMS or WhatsApp to a new lead may only ask consent to send the audit, and must include an opt-out. Phone calls, LinkedIn and walk-ins are allowed for first contact.
+
+maturity:
+  1: Agents research and draft; the founder sells.
+  2: A growth lead owns sales and client success.
+  3: A small team with marketing, sales and account management.
+  4: Partner channel and training-provider sales for CyberLab.
+
+qcto: [KM-08-KT01, KM-09-KT13, KM-09-KT14, PM-01-PS01]

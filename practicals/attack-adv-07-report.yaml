@@ -1,0 +1,115 @@
+# Advanced attack tower, floor 7. The report. The whole engagement — cloud,
+# stores, the domain — only helps Ikhaya if it is written for the people who
+# decide what to fix and what to spend. This floor turns the technical findings
+# into business risk, ranks them, and pitches the fixes to executives, mirroring
+# the board-level work the advanced defend tower ends on.
+
+id: attack-adv-07-report
+title: "The report to the board"
+status: draft
+role: predator
+org: ikhaya
+startTime: "14:00"
+durationMin: 0
+speed: 1
+defender: { enabled: false }
+briefing: |
+  You went from the internet to the cloud, into a store, across the VPN, and up
+  to the keys of the whole company. Now you write it up — not for engineers, for
+  the people who decide the budget.
+
+  At this size, the test is only worth what the report changes. A board does not
+  read command logs; it reads risk, in money and in trust, and a short list of the
+  things to fix first. That list is the real deliverable.
+guide:
+  mentor: founder
+  target: 12
+  steps:
+    - id: rank
+      title: Rank by risk, not by cleverness
+      say: You found a lot. Some of it would end the company; some of it is tidy-up. The report has to say which is which.
+      do: Answer the question.
+      hint: How do you decide what goes at the top of the report?
+      ask:
+        question: How do you order the findings for Ikhaya's board?
+        options:
+          - text: By business risk — likelihood times impact — so the domain takeover and the million-customer data exposure come first, and smaller issues follow.
+            correct: true
+            reply: >-
+              Yes. The board thinks in risk, not technique. The things that could
+              end the business — total compromise, a mass data breach — lead the
+              report. A clever but low-impact finding does not jump the queue.
+          - text: By how technically impressive each finding was
+            reply: Impressive is for peers, not the board. Findings are ranked by the risk they carry to the business — likelihood and impact — so the company fixes the right things first.
+          - text: In the order you happened to find them
+            reply: A timeline of your work is not a risk report. Reorder by business impact, so the most dangerous findings are the first thing a busy executive reads.
+      done: { answer: correct }
+
+    - id: language
+      title: Speak their language
+      say: The CIO and the board do not own a packet capture. They own a budget and a duty to customers.
+      do: Answer the question.
+      hint: What does an executive need from a finding to act on it?
+      ask:
+        question: What makes a finding land with executives?
+        options:
+          - text: The business consequence in plain terms, the evidence that it is real, and a specific, costed fix — so they can weigh it and act.
+            correct: true
+            reply: >-
+              Yes. "A store camera let us reach every till in the country" plus
+              the proof plus "segment the stores, here is the effort" is
+              something a board can decide on. Jargon and raw logs are not.
+          - text: Every technical detail, so they can judge it themselves
+            reply: Executives will not and should not parse packet captures. Give them the consequence, the proof, and the fix. The deep detail belongs in an appendix for the engineers.
+          - text: A severity score and nothing else
+            reply: A score without the business consequence and a concrete fix tells a board nothing it can act on. Explain what it means for the company and what to do about it.
+      done: { answer: correct }
+
+    - id: disclosure
+      title: Handle the findings carefully
+      say: You are holding a map of how to destroy a company, and samples of real customers' data.
+      do: Answer the question.
+      hint: How do you treat the report itself, and the data you sampled?
+      ask:
+        question: How do you handle the report and the evidence?
+        options:
+          - text: Share it securely with Ikhaya only, keep data samples minimal and encrypted, delete them after sign-off, and give the serious issues to the client before anyone else.
+            correct: true
+            reply: >-
+              Yes. The report is as dangerous as the access it describes.
+              Encrypted, client-first, minimal data, deleted after. You disclose
+              to Ikhaya, give them time to fix, and never leak the findings.
+          - text: Publish the findings so the industry can learn from them
+            reply: Not without the client's agreement and not until it is fixed. These findings disclose to Ikhaya first, privately. A map to destroy a company is not yours to publish.
+          - text: Keep a copy of everything, in case you need it later
+            reply: Keeping the customer samples and the attack map is the breach you were hired to prevent. Minimal evidence, secured, deleted after sign-off.
+      done: { answer: correct }
+
+    - id: retest
+      title: The job is not done at delivery
+      say: You hand over the report. There is one more thing a good engagement promises.
+      do: Answer the question.
+      hint: How does the client know the fixes actually worked?
+      ask:
+        question: What closes the engagement out properly?
+        options:
+          - text: A retest after Ikhaya fixes the serious findings, to confirm the fixes hold — so the report ends in risk reduced, not just risk found.
+            correct: true
+            reply: >-
+              Yes. Finding the holes is half the value; confirming they are
+              closed is the other half. A retest turns a list of problems into
+              proof that the company is actually safer. That is how you close out.
+          - text: Nothing; once the report is delivered, the work is finished
+            reply: Delivery is not the end. A retest confirms the fixes worked, which is what turns the engagement from "here are your problems" into "here is the risk you have removed".
+          - text: Starting a brand-new test of everything from scratch
+            reply: A full retest of everything is rarely needed. You retest the serious findings that were fixed, to confirm they hold. That is the proportionate close-out.
+      done: { answer: correct }
+  outro:
+    title: The engagement is closed
+    learned:
+      - At scale, the report is the deliverable — it is only worth what the client changes.
+      - Findings are ranked by business risk, likelihood times impact, not by how clever they were.
+      - Executives need the business consequence, the proof, and a specific costed fix — not raw logs.
+      - Handle the report and data samples securely, disclose to the client first, and retest to confirm the fixes hold.
+    next: "You have climbed every attack tower"
+qcto: [KM-03-KT12, KM-03-KT13, KM-03-KT14, PM-02-PS02, PM-06-PS01, PM-08-PS01, FA3.4]

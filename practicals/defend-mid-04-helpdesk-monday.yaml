@@ -1,0 +1,337 @@
+# Intermediate defend tower, floor 4. Built on 2026-11-21 from the agreed
+# floor plan.
+#
+# Monday morning on the helpdesk, the floor's new desk tool: six tickets,
+# each an everyday request with a security catch. A password reset for the
+# Municipal Manager asked for by somebody else, to a personal address. A USB
+# stick from the car park labelled "Salaries 2027". A printer driver from a
+# strange site and a request for an admin password. A keylogger on a library
+# PC. An intern's badge on LinkedIn. A PC that keeps postponing the end of
+# Windows 10. The learner triages by risk, handles each one, and then deals
+# with the people: an annoyed caller and the pattern behind the tickets.
+
+id: defend-mid-04-helpdesk-monday
+title: "Helpdesk Monday"
+status: draft
+role: prey
+org: siyakhula
+startTime: "08:05"
+durationMin: 0
+speed: 1
+map:
+  perimeter: true
+briefing: |
+  Monday morning. Bongani runs the helpdesk, and Mondays are his busiest
+  day. Half of the SOC's work starts as a helpdesk ticket, so today you sit
+  next to him and take the queue.
+
+  Six tickets are waiting. Each one looks ordinary.
+tools:
+  tickets:
+    tickets:
+      - id: lost-phone
+        from: pa
+        channel: phone
+        priority: high
+        subject: Reset the Municipal Manager's password, urgently
+        body: >-
+          "Hi, it's Kagiso, Lerato's PA. She left her phone in a taxi this
+          morning and she's locked out. Please reset her email password and
+          send the new one to her Gmail, lerato.mokoena.sa@gmail.com. She's
+          in council at nine, so please hurry."
+        options:
+          - id: gmail
+            text: Reset it and send the new password to the Gmail address. She's the Municipal Manager.
+            reply: >-
+              That's how identity theft works: an urgent call, an important
+              name, a personal address. Anyone can say "I'm the PA". Verify
+              the person before you change anything.
+          - id: verify
+            text: Call Lerato back on the number in the staff directory, verify her, wipe the lost phone remotely and reset her password with her
+            correct: true
+            reply: >-
+              Verified first, through a number we already had, not one the
+              caller gave. The phone is wiped, so whoever finds it gets
+              nothing: no mailbox, no authenticator. Her new password went to
+              her, not to an inbox outside the municipality.
+          - id: wait
+            text: Tell Kagiso to wait a day in case the phone turns up
+            reply: >-
+              The phone holds her mailbox and her authenticator app. A day is
+              plenty for whoever picked it up. Wipe it today.
+        thanks: >-
+          "Sorry, I didn't think about it like that. Lerato says
+          thanks for wiping the phone, and for calling her back."
+      - id: usb-stick
+        from: payroll-officer
+        channel: walk-in
+        priority: high
+        subject: Found a USB stick in the car park
+        body: >-
+          Sello is at your desk with a USB stick. "This was lying next to my
+          car. It says 'Salaries 2027'. Can I plug it into my PC to see whose
+          it is? Somebody must be panicking."
+        options:
+          - id: plug
+            text: Let him plug it in. The antivirus will catch anything bad.
+            reply: >-
+              A USB stick can pretend to be a keyboard and type commands faster
+              than any antivirus reacts. And "Salaries 2027", dropped next to
+              a payroll officer's car, is bait made for him.
+          - id: bin
+            text: Throw it in the bin
+            reply: >-
+              Safer than plugging it in, but if it's an attack, we want to know
+              who is targeting payroll. Hand it to ICT instead.
+          - id: hand-in
+            text: Thank him, keep it away from every PC on our network, and send it to the isolated analysis PC in the SOC
+            correct: true
+            reply: >-
+              Right. It gets opened on a machine that is on no network, by us.
+              A stick left where a payroll officer parks is very likely a
+              trap, and now we can see what it would have done.
+        thanks: >-
+          "I honestly thought I was being helpful. Glad I asked
+          first."
+      - id: printer-driver
+        from: hr-officer
+        channel: email
+        priority: medium
+        subject: Printer wants a driver update and an admin password
+        body: >-
+          "My new printer keeps showing 'Driver update required' with a link
+          to printerdrivers-free.top. When I click it, Windows asks for an
+          admin password. Can you send me one so I can stop bothering you?"
+        options:
+          - id: admin
+            text: Give her the local admin password so she can install drivers herself
+            reply: >-
+              Then every link she clicks runs with full control of her PC, and
+              the HR files on it. Staff work as standard users. That's least
+              privilege.
+          - id: signed
+            text: Push the signed driver from the printer maker through our software deployment, and leave her a standard user
+            correct: true
+            reply: >-
+              Yes. Drivers run with full rights inside Windows, so they come
+              from the maker, signed, through us. That pop-up and its site are
+              malware dressed as a driver.
+          - id: click
+            text: Remote in, click her link and install the driver for her
+            reply: >-
+              printerdrivers-free.top is not the printer maker. A "driver" from
+              a site like that is the classic way malware gets full rights.
+              Use the maker's signed driver.
+        thanks: >-
+          "The printer works and the pop-up is gone. I didn't know
+          drivers could be dangerous."
+      - id: keylogger
+        from: librarian
+        channel: phone
+        priority: high
+        subject: Something plugged into library PC 3
+        body: >-
+          "There's a little plug between the keyboard cable and the back of
+          PC 3. It looks like a USB adapter. It wasn't there last week. Should
+          I just pull it out?"
+        options:
+          - id: pull
+            text: Yes, ask her to pull it out and throw it away
+            reply: >-
+              That destroys the evidence. Whoever planted it can't collect it
+              now, but we'll never know whose passwords it caught or who put
+              it there.
+          - id: evidence
+            text: Ask her not to touch it, take PC 3 out of use, and go and photograph it, bag it as evidence and check who booked PC 3
+            correct: true
+            reply: >-
+              That's a hardware keylogger: it records every key typed,
+              including residents' e-services passwords. Photographed, bagged,
+              and its chain of custody started. The booking list says who sat
+              there, and the residents who logged in get told to change their
+              passwords.
+          - id: ignore
+            text: It's just an adapter. Close the ticket.
+            reply: >-
+              Adapters don't appear on their own overnight. Something new
+              between a keyboard and a PC is a keylogger until proven
+              otherwise.
+        thanks: >-
+          "PC 3 has an 'out of order' sign on it, and I've printed
+          last week's bookings for you."
+      - id: linkedin-badge
+        from: building-inspector
+        channel: email
+        priority: medium
+        subject: Intern's badge on LinkedIn
+        body: >-
+          "Our new intern, Zanele, posted a 'first day at Siyakhula!' selfie on
+          LinkedIn. Her access badge is in the photo, perfectly readable.
+          Thought you should know."
+        options:
+          - id: discipline
+            text: Report her to HR for a disciplinary hearing
+            reply: >-
+              She was proud of her new job, not careless on purpose. Punish
+              people for honest mistakes and they stop telling you about them.
+              Fix it kindly.
+          - id: kind
+            text: Ask her kindly to remove the photo or blur the badge, explain why, check her badge can't be copied, and add it to onboarding
+            correct: true
+            reply: >-
+              Yes. A clear photo of a badge is enough to print a convincing
+              copy and follow staff through a door. She learns why, without
+              shame, and every intern after her hears it on day one.
+          - id: ignore
+            text: Leave it. Badges aren't secret.
+            reply: >-
+              A readable badge, with a name, a photo and our logo, is a
+              template. Somebody prints one and walks in behind staff at the
+              door.
+        thanks: >-
+          "Zanele blurred it straight away. She says thanks for explaining
+          instead of shouting."
+      - id: windows-10
+        from: scm-officer
+        channel: email
+        priority: low
+        subject: Windows keeps telling me to upgrade
+        body: >-
+          "My PC says Windows 10 support has ended and I must upgrade. I keep
+          pressing 'Remind me later' because I have tender documents due on
+          Friday. Is that OK?"
+        options:
+          - id: now
+            text: Upgrade her to Windows 11 right now, tender or not
+            reply: >-
+              Right goal, wrong moment. An upgrade that goes wrong on the week
+              of a tender costs the municipality more than three days' wait.
+              Plan it with her.
+          - id: schedule
+            text: Book her upgrade to Windows 11 for Monday after the tender, and keep the PC on extended security updates until then
+            correct: true
+            reply: >-
+              Yes. An operating system out of support gets no more security
+              fixes, so every new flaw stays open for good. Extended updates
+              cover the gap, and the upgrade happens when it won't hurt her
+              work.
+          - id: fine
+            text: Tell her it's fine. Windows 10 still works.
+            reply: >-
+              It works, but it no longer gets security fixes. Every flaw found
+              from now on stays open on her PC forever.
+        thanks: >-
+          "Monday works. And thanks for not breaking my PC this
+          week."
+guide:
+  mentor: helpdesk
+  target: 15
+  hold: [vulnerability-scan]
+  steps:
+    - id: triage
+      title: Six tickets
+      say: >-
+        Morning! Six tickets in the queue. You can't do them all at once, so
+        the first skill is choosing the order.
+      do: Look at the queue, then answer.
+      hint: Each ticket has a priority dot. Think about what could do the most harm, soonest.
+      show: { tab: tickets }
+      ask:
+        question: How do you order a queue like this?
+        options:
+          - text: Oldest first, so it's fair
+            reply: >-
+              Fair to the callers, but not to the municipality. A lost phone
+              with the manager's mailbox on it can't wait behind a printer.
+          - text: By risk, what could do the most harm, soonest
+            correct: true
+            reply: >-
+              Yes. The lost phone, the USB stick and the keylogger first, then
+              the rest. And whoever shouts loudest doesn't skip the line.
+          - text: Whoever is most senior first
+            reply: >-
+              Seniority isn't risk. Sometimes the most senior person's ticket
+              is the most urgent, but because of what's at stake, not because
+              of their title.
+      done: { answer: correct }
+
+    - id: queue
+      title: Work the queue
+      say: >-
+        Every ticket has something hidden in it. Read what the caller actually
+        asked, then choose how you'd handle it.
+      do: Resolve all six tickets.
+      hint: For each one, ask yourself what an attacker would want to happen next.
+      show: { tab: tickets }
+      done: { action: tickets.resolve, targets: [lost-phone, usb-stick, keylogger, printer-driver, linkedin-badge, windows-10] }
+      wrong: Not that one. Read the ticket again and think about what could go wrong.
+      praise: >-
+        Queue's clear. Six ordinary requests, and three of them were attacks,
+        or would have helped one.
+
+    - id: annoyed
+      title: An unhappy caller
+      say: >-
+        Lerato phones you herself. "I had to wait ten minutes for a password
+        reset while council was starting. Why all the fuss?"
+      do: Answer the question.
+      hint: She's annoyed and she's senior. What does she need to hear?
+      ask:
+        question: What do you say?
+        options:
+          - text: "\"Sorry for the wait. We only reset a password once we know it's really you, because a phone call can be anyone. It protects your mailbox.\""
+            correct: true
+            reply: >-
+              Good customer service: acknowledge the wait, explain the reason
+              in her terms, and stand by the rule. Most people accept a
+              control once they hear why it protects them.
+          - text: "\"It's policy.\""
+            reply: >-
+              True, but it sounds like a wall. People work around rules they
+              don't understand. Say why it protects her.
+          - text: "\"Next time we'll skip the check for you.\""
+            reply: >-
+              Then the next caller who says "I'm the Municipal Manager's PA"
+              gets in too. The check only works if it applies to everyone.
+      done: { answer: correct }
+
+    - id: pattern
+      title: The pattern
+      say: >-
+        Look back at the queue. Sello picked up a stick, Refilwe wanted a
+        driver, Zanele shared her first day. None of them was careless on
+        purpose. They were being helpful, or proud.
+      do: Answer the question.
+      hint: "What changes behaviour for good: blame, or understanding?"
+      ask:
+        question: What's the best long-term fix?
+        options:
+          - text: Short, regular awareness that shows the catch in real examples, and an easy way to report without being blamed
+            correct: true
+            reply: >-
+              Yes. Today's tickets become next month's examples. People who
+              aren't afraid to report bring you the USB stick before they
+              plug it in.
+          - text: Lock everything down so staff can't do anything themselves
+            reply: >-
+              Some controls help, like no admin rights. But lock down
+              everything and people find ways around you. Teach as well.
+          - text: Warn staff that mistakes will be disciplined
+            reply: >-
+              Then they hide mistakes instead of reporting them, and you hear
+              about the USB stick after it was plugged in.
+      done: { answer: correct }
+  outro:
+    title: Floor 4 complete
+    learned:
+      - Order a queue by risk, not by age, rank or noise.
+      - Verify a caller through a number you already have before resetting anything. Never send a password to a personal address.
+      - Wipe a lost phone remotely. It holds the mailbox and the second factor.
+      - A found USB stick is bait until proven otherwise. Open it only on an isolated PC.
+      - Drivers run with full rights. Install signed ones from the maker, and keep staff as standard users.
+      - Something new between a keyboard and a PC is a keylogger. Keep it as evidence.
+      - A readable badge online is a template for a fake one.
+      - An operating system out of support gets no security fixes. Plan the upgrade.
+      - Explain the reason for a control, kindly. People report what they aren't punished for.
+    next: "Floor 5: The evil twin"
+qcto: [KM-01-KT01, KM-01-KT03, KM-01-KT04, KM-01-KT05, KM-07-KT11, KM-07-KT12, KM-07-KT13, KM-07-KT16, KM-07-KT17, KM-07-KT19, KM-07-KT23, KM-07-KT24, KM-03-KT17, KM-09-KT05, KM-09-KT14, PM-01-PS02]
