@@ -73,7 +73,7 @@ export function createLab(data: WorldFiles) {
     const parts = apiParts(url);
     const method = request.method;
     if (parts[0] === 'version' && parts.length === 1 && method === 'GET') {
-      return json(200, { boot: data.stamp, dev: false, ui: 0 });
+      return json(200, { boot: data.stamp, dev: false, ui: 0, notes: false });
     }
     const listed = catalogue(bundle(), parts, method, url);
     if (listed) {

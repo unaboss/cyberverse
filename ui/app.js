@@ -10,6 +10,7 @@ import { alertSound, doneSound, floorSound, isMuted, setMuted, stepSound, unlock
 import { renderMarkdown } from './markdown.js';
 import { ToolDesk } from './tools.js';
 import { Tour, tourSeen } from './tour.js';
+import { NotePad } from './notepad.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -538,6 +539,7 @@ async function watchVersion() {
   } catch {
     return;
   }
+  if (first.notes) notePad.enable();
   if (!first.dev) return;
   setInterval(async () => {
     let now;
@@ -1706,6 +1708,32 @@ $('manual-org').addEventListener('change', () => {
   void loadManual();
 });
 $('manual-level').addEventListener('change', () => void loadManual());
+
+// ------------------------------------------------------------- notes pad
+
+/** Where you are, saved with a note from the notes pad so Claude can find it. */
+function noteWhere() {
+  const shown = (id) => Boolean($(id) && !$(id).hidden);
+  const inRound = shown('round');
+  const where = { screen: inRound ? 'Round' : 'Town' };
+  const over = [['briefing', 'floor brief'], ['debrief', 'debrief'], ['complete', 'floor complete'], ['manual', 'operating manual']].find(([id]) => shown(id));
+  if (over) where.screen += `, ${over[1]}`;
+  const practical = inRound ? state.snap?.practical : null;
+  const spot = practical ? towerSpot(practical.id) : null;
+  if (spot) where.tower = spot.tower.name;
+  else if (!inRound && pickedTower()) where.tower = `${pickedTower().name} (picked)`;
+  if (practical) where.floor = `${spot ? `${spot.floor.floor}, ` : ''}${practical.title} (${practical.id})`;
+  const step = state.snap?.guide?.current;
+  if (inRound && step) where.step = `${step.index + 1}. ${step.title}`;
+  if (inRound && shown('room')) where.room = $('room').querySelector('h3')?.textContent ?? '';
+  if (inRound && state.host) where.machine = hostByKey(state.host)?.host.name ?? state.host;
+  if (inRound && state.lastWin) where.window = state.lastWin;
+  if (inRound && state.snap?.clock) where.clock = state.snap.clock.text;
+  where.size = `${innerWidth} × ${innerHeight}`;
+  return where;
+}
+
+const notePad = new NotePad({ where: noteWhere });
 
 async function boot() {
   await loadPracticals();

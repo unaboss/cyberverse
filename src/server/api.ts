@@ -14,6 +14,8 @@
 //   POST /api/sessions/:id/console {line}     an attack-terminal line (predator), 202
 //   GET  /api/sessions/:id/events             server-sent events
 //   GET  /api/sessions/:id/hosts/:key/logs    a machine's captured log lines
+//
+// The local server also takes POST /api/notes, the notes pad (notes.ts).
 
 import type { WorldBundle } from '../world/build.ts';
 import { buildManual, manualToMarkdown } from '../world/manual.ts';
@@ -61,9 +63,9 @@ export function apiParts(url: URL): string[] {
   return url.pathname.split('/').filter(Boolean).slice(1).map(decodeURIComponent);
 }
 
-export async function readJson(request: Request): Promise<Record<string, unknown>> {
+export async function readJson(request: Request, limit = MAX_BODY): Promise<Record<string, unknown>> {
   const declared = Number(request.headers.get('content-length') ?? 0);
-  if (declared > MAX_BODY) {
+  if (declared > limit) {
     throw new HttpError(413, 'Request too large.');
   }
   const chunks: Uint8Array[] = [];
@@ -73,7 +75,7 @@ export async function readJson(request: Request): Promise<Record<string, unknown
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > MAX_BODY) {
+    if (size > limit) {
       await reader.cancel();
       throw new HttpError(413, 'Request too large.');
     }

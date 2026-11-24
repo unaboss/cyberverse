@@ -7,3 +7,6 @@ node_modules/
 /cloudflare/.wrangler/
 /.wrangler/
 .dev.vars
+
+# Notes from the ✎ notes pad (src/server/notes.ts): yours, not the project's
+/notes/
