@@ -12,6 +12,7 @@ import { extname, join, normalize, resolve, sep } from 'node:path';
 import { loadWorld, PROJECT_ROOT, type WorldBundle } from '../world/load.ts';
 import { snapshot } from '../engine/view.ts';
 import { apiParts, catalogue, errorResponse, HttpError, json, MAX_BODY, newSession, readJson, sessionRoute, type Live } from './api.ts';
+import { NOTE_MAX_BODY, NotesBook } from './notes.ts';
 
 export { parseAction } from './api.ts';
 
@@ -23,6 +24,8 @@ export interface ServeOptions {
   uiDir?: string;
   /** Development mode (npm run dev): open pages reload when the server or the UI changes. */
   dev?: boolean;
+  /** Where the notes pad saves notes (default: notes/ in the project). Null turns the pad off. */
+  notesDir?: string | null;
   log?: (line: string) => void;
 }
 
@@ -47,6 +50,8 @@ export class LabServer {
   /** Changes every time the server starts, so a page can tell it restarted. */
   readonly boot = randomUUID();
   readonly dev: boolean;
+  /** The notes pad's notes, or null when the pad is off. */
+  readonly notes: NotesBook | null;
   private readonly uiDir: string;
   private readonly sessions = new Map<string, Live>();
   private readonly log: (line: string) => void;
@@ -57,6 +62,8 @@ export class LabServer {
     this.bundle = opts.bundle ?? loadWorld();
     this.uiDir = resolve(opts.uiDir ?? join(PROJECT_ROOT, 'ui'));
     this.dev = opts.dev ?? process.env.CYBERVERSE_DEV === '1';
+    const notesDir = opts.notesDir === undefined ? join(PROJECT_ROOT, 'notes') : opts.notesDir;
+    this.notes = notesDir === null ? null : new NotesBook(resolve(notesDir));
     this.log = opts.log ?? ((line) => console.log(line));
   }
 
@@ -112,7 +119,8 @@ export class LabServer {
       this.checkHost(req);
       const url = new URL(req.url ?? '/', 'http://localhost');
       if (url.pathname.startsWith('/api/')) {
-        const response = await this.api(await toRequest(req, url), url).catch((err: unknown) => errorResponse(err, this.log, `${req.method} ${req.url}`));
+        const limit = url.pathname === '/api/notes' && this.notes ? NOTE_MAX_BODY : MAX_BODY;
+        const response = await this.api(await toRequest(req, url, limit), url).catch((err: unknown) => errorResponse(err, this.log, `${req.method} ${req.url}`));
         await reply(response, req, res);
         return;
       }
@@ -146,7 +154,11 @@ export class LabServer {
     const method = request.method;
 
     if (parts[0] === 'version' && parts.length === 1 && method === 'GET') {
-      return json(200, { boot: this.boot, dev: this.dev, ui: this.dev ? await this.uiStamp() : 0 });
+      return json(200, { boot: this.boot, dev: this.dev, ui: this.dev ? await this.uiStamp() : 0, notes: this.notes !== null });
+    }
+    if (parts[0] === 'notes' && parts.length === 1 && method === 'POST' && this.notes) {
+      fromThisPage(request);
+      return json(201, await this.notes.add(await readJson(request, NOTE_MAX_BODY)));
     }
     const listed = catalogue(this.bundle, parts, method, url);
     if (listed) {
@@ -214,13 +226,36 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(text);
 }
 
+/**
+ * Notes are written to disk, so only the lab's own page may send one: a JSON
+ * body (another website can't send that without the browser asking first, and
+ * this server never says yes) from a page on this computer.
+ */
+function fromThisPage(request: Request): void {
+  if (!(request.headers.get('content-type') ?? '').startsWith('application/json')) {
+    throw new HttpError(415, 'Send the note as JSON.');
+  }
+  const origin = request.headers.get('origin');
+  let host = '';
+  try {
+    host = origin ? new URL(origin).hostname.replace(/^\[|\]$/g, '') : 'localhost';
+  } catch {
+    host = '';
+  }
+  if (!LOOPBACK.has(host) || request.headers.get('sec-fetch-site') === 'cross-site') {
+    throw new HttpError(403, 'Notes can only come from the lab page on this computer.');
+  }
+}
+
 /** A Node request as a standard Request, its body read up to the limit. */
-async function toRequest(req: IncomingMessage, url: URL): Promise<Request> {
+async function toRequest(req: IncomingMessage, url: URL, limit = MAX_BODY): Promise<Request> {
   const method = req.method ?? 'GET';
   const headers = new Headers();
-  const type = req.headers['content-type'];
-  if (typeof type === 'string') {
-    headers.set('content-type', type);
+  for (const name of ['content-type', 'origin', 'sec-fetch-site']) {
+    const value = req.headers[name];
+    if (typeof value === 'string') {
+      headers.set(name, value);
+    }
   }
   if (method === 'GET' || method === 'HEAD') {
     return new Request(url, { method, headers });
@@ -229,7 +264,7 @@ async function toRequest(req: IncomingMessage, url: URL): Promise<Request> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     size += (chunk as Buffer).length;
-    if (size > MAX_BODY) {
+    if (size > limit) {
       throw new HttpError(413, 'Request too large.');
     }
     chunks.push(chunk as Buffer);

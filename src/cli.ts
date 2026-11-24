@@ -196,6 +196,9 @@ async function serve(args: Args): Promise<void> {
   if (server.dev) {
     console.log('Development mode: open pages reload themselves when the lab changes.');
   }
+  if (server.notes) {
+    console.log(`Notes from the ✎ pad are saved in ${server.notes.dir}.`);
+  }
   const stop = (): void => {
     void server.close().then(() => process.exit(0));
   };

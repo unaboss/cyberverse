@@ -159,6 +159,26 @@ npm run typecheck
 The server binds to 127.0.0.1 only and refuses any other address. Putting the
 lab on a network goes through `DECISIONS.md` first.
 
+### Notes for Claude
+
+The ✎ button at the top right of every screen (or the **N** key) opens the
+notes pad. It's how you ask for changes while you play:
+
+- Pick a tab. **UI** is how it looks and works: layout, colours, screens,
+  buttons. **Practicals** is the floors themselves: steps, wording, the
+  attack, the marking.
+- Write what you'd change. **Add a screenshot** takes a picture of the tab
+  (the browser asks which tab to share; pick this one), and you drag to draw
+  red boxes round what you mean.
+- **Send note** (or Ctrl+Enter) saves it, together with where you were: the
+  screen, tower, floor, guide step, open room or machine, and game clock.
+
+Notes go into `notes/` in this folder, which git ignores: `notes/ui-notes.md`,
+`notes/practicals-notes.md` and the pictures in `notes/shots/`. Claude reads
+them from there, makes the change and pushes it, and `npm run dev` pulls it in
+so the page reloads with the fix. The pad is on the local server only; the
+hosted lab doesn't have it.
+
 ### On your own domain, with Cloudflare
 
 The lab can also run fully on Cloudflare, at
