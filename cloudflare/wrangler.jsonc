@@ -11,8 +11,9 @@
   "workers_dev": false,
   "preview_urls": false,
 
-  // Your domain. Uncomment and change it before the first deploy.
-  // "routes": [{ "pattern": "lab.example.co.za", "custom_domain": true }],
+  // The lab's address. dataquant.dev must be a zone in the same Cloudflare
+  // account; Cloudflare then creates the DNS record and the certificate.
+  "routes": [{ "pattern": "cyberverse.dataquant.dev", "custom_domain": true }],
 
   // The screens, served before the Worker runs. Built by `npm run cf:build`.
   "assets": { "directory": "dist/public" },

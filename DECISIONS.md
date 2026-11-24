@@ -23,7 +23,8 @@ Cyberverse became its own project (2026-11-24).
 
 ### 2026-11-23: host on Cloudflare
 
-Cyberverse (simulated mode only) may run on the owner's Cloudflare account:
+Cyberverse (simulated mode only) may run on the owner's Cloudflare account,
+at `cyberverse.dataquant.dev` (the owner chose the address on 2026-11-24):
 static UI, a Worker for the API, and one Durable Object per round. Every API
 call needs a valid Cloudflare Access login, the Worker refuses all calls until
 Access is set up, and there is no `workers.dev` address. Live mode is not part

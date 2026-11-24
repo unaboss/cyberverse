@@ -140,8 +140,8 @@ lab on a network goes through `DECISIONS.md` first.
 
 ### On your own domain, with Cloudflare
 
-The lab can also run fully on Cloudflare (see `DECISIONS.md`,
-2026-11-23). The screens are static files, each round runs in its own Durable
+The lab can also run fully on Cloudflare, at
+**cyberverse.dataquant.dev** (see `DECISIONS.md`, 2026-11-23). The screens are static files, each round runs in its own Durable
 Object, and Cloudflare Access asks every learner to sign in. The steps are in
 [docs/hosting-cloudflare.md](docs/hosting-cloudflare.md).
 

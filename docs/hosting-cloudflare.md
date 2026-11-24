@@ -50,20 +50,24 @@ dashboard, search the dashboard for it.
 
    `wrangler login` opens your browser to sign in to Cloudflare.
 
-2. **Choose the address.** In `cloudflare/wrangler.jsonc`, uncomment
-   `routes` and put in the address learners will use, for example:
+2. **Check the address.** The lab lives at **cyberverse.dataquant.dev**, set
+   in `cloudflare/wrangler.jsonc`:
 
    ```jsonc
-   "routes": [{ "pattern": "lab.example.co.za", "custom_domain": true }],
+   "routes": [{ "pattern": "cyberverse.dataquant.dev", "custom_domain": true }],
    ```
 
-   Cloudflare creates the DNS record and the HTTPS certificate for it.
+   `dataquant.dev` has to be added to the same Cloudflare account you sign in
+   with (Cloudflare's dashboard, **Add a domain**). Cloudflare then creates the
+   DNS record and the HTTPS certificate for `cyberverse.dataquant.dev` on the
+   first deploy. If `cyberverse.dataquant.dev` already has a DNS record, delete
+   it first, or the deploy stops.
 
 3. **Set up the login (Cloudflare Access).** In the Cloudflare dashboard, open
    **Zero Trust**. The first time, pick a team name and the free plan, which
    covers up to 50 users. Then:
    1. Go to **Access → Applications → Add an application → Self-hosted**.
-   2. Application domain: the same address as in step 2, for the whole site.
+   2. Application domain: `cyberverse.dataquant.dev`, for the whole site.
    3. Add a policy with the action **Allow**, and include the people who may
       play. You can list emails one by one, or allow every address that ends
       in your company's domain.
@@ -90,7 +94,7 @@ dashboard, search the dashboard for it.
    ```
 
    This builds `cloudflare/dist/` (the UI and the bundled world) and uploads
-   the Worker. Open your address, sign in with your email, and play.
+   the Worker. Open <https://cyberverse.dataquant.dev>, sign in with your email, and play.
 
 ## Updating
 
