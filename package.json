@@ -3,7 +3,7 @@
   "version": "8.0.0-foundation",
   "private": true,
   "type": "module",
-  "description": "Cyberverse: a living DataQuant and a municipality to attack and defend, for the QCTO Cybersecurity Analyst course.",
+  "description": "Cyberverse: a game where you grow an organisation's security from nothing, one working day at a time. Mapped to the QCTO Cybersecurity Analyst qualification.",
   "engines": {
     "node": ">=22.18"
   },

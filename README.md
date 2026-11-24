@@ -1,30 +1,51 @@
 # Cyberverse
 
-A living miniverse for learning cybersecurity, mapped to the QCTO
-Cybersecurity Analyst course (SAQA 118986).
-Two organisations go about their day: **DataQuant**, a South African data
-consultancy (a twin of the real company, on lab-only `.internal` names), and
-**Siyakhula Local Municipality** (fictional, the mature organisation and
-DataQuant's client). Staff and AI agents do their jobs, the business earns
-money, sensors watch, and somebody is about to try their luck.
+**Cyberverse is a game where you grow an organisation's security from nothing,
+one working day at a time.**
 
-Every practical is one of two sides:
+You arrive as the first security person at a place that has almost none. Each
+floor you climb is a working day: something goes wrong, or something needs
+building, and you deal with it. The organisation grows around you as you
+climb, with more rooms, more people, more systems and more ways in, and the
+attackers get smarter with it. You take it from "nobody reads the logs" to the
+board deciding what security gets to spend. The higher you climb, the further
+you see.
 
-- **Prey:** you are the SOC analyst on shift. A live attacker adapts to what
-  you do. You triage alerts, read logs, block, isolate, reset, switch controls
-  on, and write the status report (EAS focus area 4.3).
-- **Predator:** you are DataQuant's pentester with a signed scope letter and a
-  Kali terminal. A defender bot watches. The floor starts in fog and fills in
-  as your recon finds things.
+## How it plays
 
-The round ends in a two-sided debrief: what really happened (attacker,
-detection, response, business), your score, the data that left the building,
-and the blind spots where an attack step happened and no sensor saw it.
+- **Towers are stages of growth.** Each tower is an organisation of a size:
+  a small company in one office (intro), a campus of buildings and networks
+  (intermediate), and a business spread across a head office, the cloud and
+  120 stores (advanced).
+- **Floors are steps up.** Every tower climbs from your first morning to its
+  hardest day. The intro defend tower goes *First day, Your first alert, Real
+  or not?, Close the door, The default password, The lure, What you can't
+  see, Night shift*. The advanced one ends in front of the board.
+- **Two sides.** Blue towers defend from the inside: triage alerts, read logs,
+  block, isolate, switch controls on and write the report, while a live
+  attacker adapts to what you do. Red towers test from the outside the way an
+  attacker would, with a Kali terminal and a signed scope letter, while a
+  defender bot watches. Every round ends in a debrief: what really happened,
+  the data that left the building, and the blind spots no sensor saw.
+- **A living office.** Staff and AI agents do their jobs, the business earns
+  money and loses it when systems go down, and the map shows all of it: desks
+  and people, servers, alarms, fire and smoke when something breaks.
+- **The organisations are the setting, not the subject.** DataQuant (a data
+  consultancy, a twin of a real South African company on lab-only `.internal`
+  names), Siyakhula Local Municipality and Ikhaya Stores (both fictional) are
+  where it happens. They can be swapped for others.
 
-> **Status:** foundation, plus the first real floor. Practicals are floors in
-> towers, drawn as a town on the start screen (see below). Defend floors 0 and
-> 1 are built; the night shift and the pentest are placeholders that prove the
-> loop works end to end. The rest are designed one by one.
+The floors map to the QCTO Cybersecurity Analyst qualification (SAQA 118986).
+
+> **Where it's going:** today each floor starts fresh. Next, what you build
+> carries up the tower: controls you switch on, gaps you close and attackers
+> you block stay for the floors above, a meter shows the organisation's
+> security growing, and the office looks safer as you secure it (agreed
+> 2026-11-24, being designed).
+>
+> **Status:** every tower has its floors written, 47 in all. Two are still
+> placeholders: the intro night shift and the intro pentest. The low floors
+> are guided step by step.
 
 ## The towers
 
@@ -36,14 +57,14 @@ Click a building to see its floors. `practicals/towers.yaml` lists the towers
 without a practical shows as "coming", and a tower with no floors is drawn
 under construction.
 
-- **Intro defend tower.** You're DataQuant's first security hire. Floors 0 to 6
-  happen in DataQuant's small office; floor 7 is the night shift at Siyakhula
-  (DataQuant has won its security contract by then).
-- **Intro attack tower.** DataQuant's Offensive Security team. Designed after
-  the intro defend tower.
-- **Intermediate and advanced towers.** Under construction. The advanced towers
-  are big organisations: branch offices joined by VPNs, a cloud estate and
-  thousands of accounts.
+| Tower | You are | Where |
+|---|---|---|
+| Intro defend | the first security hire | DataQuant's small office, then a municipality's night shift |
+| Intro attack | new on DataQuant's offensive security team | footprinting to proving impact, inside a signed scope |
+| Intermediate defend | on loan to the municipality's SOC | Siyakhula: five networks, quieter attackers, recovery and the write-up |
+| Intermediate attack | running an internal penetration test | from a foothold to the crown-jewel data and the water plant |
+| Advanced defend | in the SOC of a national retailer | Ikhaya Stores: problems too big to read by eye, up to the board |
+| Advanced attack | red-teaming the retailer | from the cloud shop through a store to the domain, reported to the board |
 
 The low floors are **guided**: a mentor card says why, one instruction at a
 time says what to do, and each step ticks itself off when you do it, with a
